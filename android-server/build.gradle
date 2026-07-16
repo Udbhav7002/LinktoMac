@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.linktomac'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+repositories {
+    mavenCentral()
+}
+
+// Find Android SDK
+def androidHome = System.getenv('ANDROID_HOME') ?: "${System.getProperty('user.home')}/Library/Android/sdk"
+def androidJar = "${androidHome}/platforms/android-34/android.jar"
+
+if (!file(androidJar).exists()) {
+    println "WARNING: android.jar not found at ${androidJar}"
+    println "Set ANDROID_HOME or install Android SDK platform 34"
+}
+
+dependencies {
+    // Android API stubs for compilation
+    compileOnly files(androidJar)
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+// Create a fat JAR with all dependencies (none for this project)
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.linktomac.Server'
+    }
+    from {
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+task buildServerJar(type: Jar) {
+    archiveFileName = 'server.jar'
+    manifest {
+        attributes 'Main-Class': 'com.linktomac.Server'
+    }
+    from sourceSets.main.output
+    dependsOn classes
+}

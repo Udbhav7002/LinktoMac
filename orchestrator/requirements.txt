@@ -1,0 +1,6 @@
+# Dependencies
+# No required external dependencies for CLI
+# pybind11 is needed if building the native module from source
+
+pybind11>=2.11.0
+zeroconf>=0.131.0

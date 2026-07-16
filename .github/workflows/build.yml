@@ -1,0 +1,111 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          brew install cmake ffmpeg sdl2 python
+          pip install pyinstaller pywebview zeroconf
+      
+      - name: Build C++ native client
+        run: |
+          cd native-client
+          mkdir -p build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j$(sysctl -n hw.ncpu)
+      
+      - name: Build Android server JAR
+        run: |
+          cd android-server
+          ./gradlew jar
+          # Copy to expected location for build_mac_app.sh and config.py
+          cp build/libs/server.jar ./server.jar
+      
+      - name: Build macOS app
+        run: |
+          chmod +x build_mac_app.sh
+          ./build_mac_app.sh
+      
+      - name: Notarize app (optional - requires Apple Developer ID)
+        if: env.APPLE_DEVELOPER_ID != ''
+        run: |
+          xcrun notarytool submit dist/LinktoMac.app --apple-id ${{ secrets.APPLE_ID }} --team-id ${{ secrets.APPLE_TEAM_ID }} --password ${{ secrets.APPLE_APP_PASSWORD }} --wait
+          xcrun stapler staple dist/LinktoMac.app
+      
+      - name: Create DMG
+        run: |
+          hdiutil create -volname "LinktoMac" -srcfolder dist/LinktoMac.app -ov -format UDZO dist/LinktoMac.dmg
+      
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: |
+            dist/LinktoMac.app
+            dist/LinktoMac.dmg
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 11
+      
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Build Android server JAR
+        run: |
+          cd android-server
+          ./gradlew jar
+      
+      - name: Build Android companion app
+        run: |
+          cd android-app
+          ./gradlew assembleRelease
+      
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-artifacts
+          path: |
+            android-server/build/libs/server.jar
+            android-app/app/build/outputs/apk/release/app-release.apk
+
+  create-release:
+    needs: [build-macos, build-android]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/macos-app/LinktoMac.dmg
+            artifacts/android-artifacts/server.jar
+            artifacts/android-artifacts/app-release.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

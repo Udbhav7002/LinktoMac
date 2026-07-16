@@ -1,0 +1,53 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.linktomac.companion'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.linktomac.companion"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    // Signing config for release (optional - requires keystore) - MUST be before buildTypes
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("KEYSTORE_FILE") ?: "keystore.jks")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Only use signing config if keystore exists
+            if (file(System.getenv("KEYSTORE_FILE") ?: "keystore.jks").exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+}

@@ -1,0 +1,13 @@
+<resources>
+    <style name="Theme.LinktoMacCompanion" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#0A84FF</item>
+        <item name="colorPrimaryVariant">#005ECB</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#0A84FF</item>
+        <item name="colorSecondaryVariant">#005ECB</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:statusBarColor">#09090E</item>
+        <item name="android:navigationBarColor">#171721</item>
+        <item name="android:windowBackground">#171721</item>
+    </style>
+</resources>

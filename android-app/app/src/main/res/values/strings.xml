@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">LinktoMac Companion</string>
+    <string name="notification_channel_name">Screen Mirroring</string>
+    <string name="notification_channel_description">Active screen mirroring session</string>
+    <string name="notification_title">LinktoMac</string>
+    <string name="notification_text">Screen mirroring active - tap to disconnect</string>
+</resources>

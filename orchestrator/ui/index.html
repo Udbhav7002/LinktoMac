@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinktoMac</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Modern CSS variables and styling */
+        :root {
+            --bg-dark: #0f111a;
+            --card-bg: #1e2130;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .code-container {
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .support-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 1.1rem;
+            color: #38bdf8;
+            word-break: break-all;
+            margin: 0;
+            padding-bottom: 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .copy-btn {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container" style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+        <div>
+            <h1 style="margin: 0; font-size: 24px; text-align: center;">LinktoMac</h1>
+            <p style="color: var(--text-muted); text-align: center; margin-top: 4px;">Wireless Mirroring</p>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <div>
+                <h2 class="title">Remote Support Mode</h2>
+                <p class="description" style="margin-top: 8px;">Copy the Support Code below and send it to your friend.</p>
+            </div>
+
+            <button id="btn-start" class="btn" onclick="startSession()">Start Session</button>
+            <button id="btn-stop" class="btn hidden" onclick="stopSession()" style="background-color: #ef4444;">Stop Session</button>
+
+            <div id="code-container" class="code-container hidden">
+                <p class="support-code" id="support-code" style="font-size: 0.9rem;">Loading...</p>
+                <button id="btn-copy" class="copy-btn hidden" onclick="copyCode()">Copy Code</button>
+            </div>
+        </div>
+    </div>
+
+    <svg style="display: none;">
+        <symbol id="icon-play" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M8 5v14l11-7z"/>
+        </symbol>
+        <symbol id="icon-stop" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M6 6h12v12H6z"/>
+        </symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/>
+        </symbol>
+        <symbol id="icon-phone" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+        </symbol>
+    </svg>
+
+    <script src="script.js"></script>
+</body>
+</html>

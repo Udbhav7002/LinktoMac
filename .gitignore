@@ -1,0 +1,43 @@
+# Mac / Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.spec
+*.app/
+*.dmg
+*.zip
+.Python
+env/
+venv/
+.venv/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Android
+android-client/.gradle/
+android-client/local.properties
+android-client/build/
+android-client/app/build/
+android-client/app/release/
+*.apk
+*.ap_
+
+# C++ Build
+native-client/build/
+native-client/CMakeCache.txt
+native-client/CMakeFiles/
+native-client/Makefile
+native-client/cmake_install.cmake
+
+# Logs
+*.log
+
+# Private / Old Scripts
+devices.json
+test_pinggy.py
