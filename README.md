@@ -404,3 +404,4 @@ MIT License — see [LICENSE](LICENSE) for details.
   <a href="https://github.com/yourusername/LinktoMac/issues">Request Feature</a> •
   <a href="https://github.com/yourusername/LinktoMac/releases">Download Latest</a>
 </p>
+
