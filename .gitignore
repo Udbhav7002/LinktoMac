@@ -41,3 +41,6 @@ native-client/cmake_install.cmake
 # Private / Old Scripts
 devices.json
 test_pinggy.py
+
+# System
+.DS_Store
