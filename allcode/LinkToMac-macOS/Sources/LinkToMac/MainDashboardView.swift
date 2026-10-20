@@ -174,10 +174,3 @@ struct StatusPill: View {
     }
 }
 
-// MARK: - Temporary Stub until Task 09 creates dedicated file
-struct PairingQRSetupView: View {
-    var body: some View {
-        Text("Pairing QR Workspace Loading...")
-            .foregroundStyle(LinkTheme.textSecondary)
-    }
-}

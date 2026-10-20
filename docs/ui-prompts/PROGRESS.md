@@ -111,3 +111,17 @@
   - [x] scrcpy button appears only under isScrcpyAvailable && isUSBDeviceConnected
   - [x] No animation added to video rendering
 - **Decisions:** Created `MirrorCameraView.swift` containing `MirrorAndCameraWorkspaceView`, `KeyButton`, and `VideoKeyButton`. Build passed cleanly.
+
+## Task 09 — macOS Pairing QR & Incoming Call HUD
+- **Files Touched:**
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/PairingCallHUDView.swift` (created)
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift` (removed temporary `PairingQRSetupView` stub)
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift` (deleted obsolete file)
+- **Checklist Results:**
+  - [x] QR scan payload string byte-identical
+  - [x] Token renders in mono accent (`MonoValue` prominent) with textSelection
+  - [x] Numbered GroupBoxes replaced by clean `MonoValue` cards
+  - [x] Answer = solid accent; Decline/End = danger solid; SMS/Mute = quiet; zero green buttons
+  - [x] HUD uses material + hairline + single soft shadow
+  - [x] `swift build` clean; forbidden patterns check and stale copy check returned "clean"
+- **Decisions:** Created `PairingCallHUDView.swift` containing `PairingQRSetupView` and `IncomingCallHUDView`. Fully deleted `FeatureViews.swift`. macOS migration is complete.
