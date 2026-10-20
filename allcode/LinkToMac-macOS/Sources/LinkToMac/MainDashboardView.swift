@@ -174,15 +174,7 @@ struct StatusPill: View {
     }
 }
 
-// MARK: - Temporary Stubs until Tasks 03 & 09 create their respective dedicated files
-struct OverviewWorkflowView: View {
-    @Binding var selectedSection: DashboardSection
-    var body: some View {
-        Text("Overview Workspace Loading...")
-            .foregroundStyle(LinkTheme.textSecondary)
-    }
-}
-
+// MARK: - Temporary Stub until Task 09 creates dedicated file
 struct PairingQRSetupView: View {
     var body: some View {
         Text("Pairing QR Workspace Loading...")
