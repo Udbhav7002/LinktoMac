@@ -1,16 +1,38 @@
-# LinktoMac Android Companion App
+# LinktoMac Android Companion Module
 
-This directory is reserved for the Android companion application.
-To make LinktoMac a true "One-Shot" application, you need to implement an Android app that:
+Engineering documentation and architecture for the Android companion application subsystem.
 
-1. Uses `MediaProjection` to capture the Android screen.
-2. Uses `MediaCodec` to encode the frames in H.265 (HEVC).
-3. Connects to the Mac over TCP (port 27189) or listens if `AdbClient` forwarded it.
-4. Uses `NsdManager` (mDNS) to broadcast the `_linktomac._tcp.local` service so the Mac automatically discovers the phone on the same Wi-Fi.
+```text
++-----------------------------------------------------------------------------+
+|                     ANDROID COMPANION ARCHITECTURE                          |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|  [ MainActivity ]           [ LinkConnectionService ]                       |
+|   - Permission Requests      - TCP Socket Server (Port 27189/27190)         |
+|   - Foreground Controls      - Foreground Service Lifecycle                 |
+|   - PIN State Display        - mDNS Service Registration (Port 27191)       |
+|                                                                             |
+|  [ ScreenCameraStreamer ]   [ LinkTouchAccessibilityService ]               |
+|   - MediaProjection          - MotionEvent Injection                        |
+|   - Hardware MediaCodec      - Global Navigation Actions                    |
+|   - Dynamic HEVC/AVC         - Text & IME Input Bridge                      |
+|                                                                             |
++-----------------------------------------------------------------------------+
+```
 
-## Basic Structure:
-- `MainActivity.kt`: Handles the PIN display and Permissions (Screen Capture).
-- `MirrorService.kt`: A Foreground Service that runs the MediaCodec video encoder and streams sockets.
-- `NsdBroadcaster.kt`: Broadcasts the mDNS service.
+## Technical Specification
 
-For USB mode, you can continue to use the headless `server.jar` located in `orchestrator/linktomac/android-server/server.jar`.
+1. **Display Frame Acquisition**: Leverages Android `MediaProjection` to acquire virtual display buffers directly from the surface flinger.
+2. **Hardware Video Compression**: Streams frames into on-device `MediaCodec` encoders with hardware-accelerated HEVC (H.265) or AVC (H.264) baseline profiles.
+3. **Local Network Beacon**: Publishes `_linktomac._tcp.local` via `NsdManager` for automatic zero-configuration discovery by the macOS workstation.
+4. **Input Dispatcher**: `LinkTouchAccessibilityService` dispatches gestures and touch sequences without requiring device rooting or continuous ADB tethering.
+
+## Build Instructions
+
+```bash
+# Debug build
+./gradlew assembleDebug
+
+# Release APK build
+./gradlew assembleRelease
+```
