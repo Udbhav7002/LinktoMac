@@ -9,50 +9,49 @@ struct LinkToMacApp: App {
         WindowGroup("LinkToMac") {
             MainDashboardView()
                 .frame(minWidth: 980, minHeight: 640)
-                .preferredColorScheme(.dark)
+            // NOTE: no .preferredColorScheme(.dark) — Quiet Premium follows the system appearance.
         }
 
-        // Native macOS Menu Bar Companion Popover
+        // Native macOS menu bar companion popover
         MenuBarExtra {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Circle()
-                        .fill(conn.isConnected ? Color.green : Color.orange)
-                        .frame(width: 8, height: 8)
-                    Text(conn.isConnected ? "\(conn.connectedDeviceName) (\(conn.connectionTransport))" : "LinkToMac: Waiting for Phone")
-                        .font(.headline)
+            VStack(alignment: .leading, spacing: LS.m) {
+                HStack(spacing: LS.s) {
+                    StatusDot(state: conn.isConnected ? .connected : .waiting)
+                    Text(conn.isConnected
+                         ? "\(conn.connectedDeviceName) · \(conn.connectionTransport)"
+                         : "Waiting for your phone")
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
                 }
 
                 if conn.isConnected {
-                    Text("Battery: \(conn.batteryLevel)% • Notifications: \(conn.notifications.count)")
+                    Text("Battery \(conn.batteryLevel)%\(conn.isCharging ? " · charging" : "") · \(conn.notifications.count) notifications")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(LinkTheme.textSecondary)
                 }
 
-                Divider()
+                HairlineDivider()
+                    .padding(.vertical, 2)
 
                 Toggle("Universal Clipboard Sync", isOn: $clip.isSyncEnabled)
+                    .font(.subheadline)
 
-                Button("Play / Pause Android Media") {
-                    conn.sendMediaAction("PLAY_PAUSE")
-                }
-                Button("Ring My Android Phone") {
-                    conn.sendMediaAction("RING_PHONE")
-                }
+                Button("Play / Pause Android Media") { conn.sendMediaAction("PLAY_PAUSE") }
+                Button("Ring My Android Phone")    { conn.sendMediaAction("RING_PHONE") }
 
-                Divider()
+                HairlineDivider()
+                    .padding(.vertical, 2)
+
                 Button("Quit LinkToMac") {
                     NSApplication.shared.terminate(nil)
                 }
+                .foregroundStyle(LinkTheme.danger)
             }
-            .padding(12)
+            .padding(LS.m)
+            .frame(minWidth: 260)
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: conn.isConnected ? "iphone.radiowaves.left.and.right" : "iphone.slash")
-                if conn.isConnected {
-                    Text("\(conn.batteryLevel)%")
-                }
-            }
+            Image(systemName: conn.isConnected ? "iphone.radiowaves.left.and.right" : "iphone")
         }
+        .menuBarExtraStyle(.window)
     }
 }
