@@ -84,3 +84,16 @@
   - [x] Transfers pane separated by a 1px hairline, transport chips neutral
   - [x] Bookmarks navigate to same paths with simplified labels
 - **Decisions:** Created `FilesPhotosView.swift` containing `FilesWorkspaceView`, `FileRow`, `TransferRow`, `PhotosWorkspaceView`, and `PhotoCard`. Build passed cleanly.
+
+## Task 07 — macOS Clipboard Workspace
+- **Files Touched:**
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardView.swift` (created)
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift` (removed old `ClipboardWorkspaceView`)
+- **Checklist Results:**
+  - [x] "Open on phone" is the only solid-accent button and disables on empty input
+  - [x] Row icons monochrome (accent link / tertiary doc) — no blue+green pair
+  - [x] Source chip neutral (`surfaceAlt`); no green text anywhere
+  - [x] All row actions hit original manager methods; concealed-password toggle intact
+  - [x] Mono font only on content + chips captions stay proportional
+  - [x] History rows readable with 2-line clamp
+- **Decisions:** Created `ClipboardView.swift` containing `ClipboardWorkspaceView` and `ClipboardRow`. Build passed cleanly.
