@@ -56,3 +56,31 @@
   - [x] Empty state uses `EmptyStateView`
   - [x] Tooltips preserved on action buttons
 - **Decisions:** Created `MessagesView.swift` and extracted `ThreadRow` and `ChatBubble` components.
+
+## Task 05 — macOS Notifications Workspace
+- **Files touched:**
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/NotificationsView.swift` (created)
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift` (removed old NotificationsWorkspaceView)
+- **Checklist results:**
+  - [x] `swift build` succeeds in `allcode/LinkToMac-macOS`
+  - [x] App name rendered as tertiary caption; OTP chip uses quiet accent with readable digits
+  - [x] "Reply sent" confirmation is the only use of semantic `success`
+  - [x] Unmute-all, clear-all, OTP copy, mute, and dismiss actions wired to identical manager methods
+  - [x] Reply works via Return and send icon button; clears draft
+  - [x] Notification rows use matte cards with hairline borders (`.linkCard()`)
+  - [x] Contrast verified in light and dark modes
+- **Decisions:** Created `NotificationsView.swift` containing `NotificationsWorkspaceView` and `NotificationRow`.
+
+## Task 06 — macOS Files & Photos Workspaces
+- **Files Touched:**
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/FilesPhotosView.swift` (created)
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift` (removed old `FilesWorkspaceView` and `PhotosWorkspaceView`)
+- **Checklist Results:**
+  - [x] Zero `Color.yellow` / `Color.blue` icon pairs; file icons monochrome (accent folder / tertiary doc)
+  - [x] Drop overlay: 1.5pt accent stroke + 6% tint, no `lineWidth: 3`, no green
+  - [x] Progress bars tinted accent; "Completed" is the only success-green text
+  - [x] Drag-and-drop from Finder streams to target folder; NSOpenPanel multi-send works
+  - [x] Photo cards reveal "Save" on hover, thumbnail decode path unchanged
+  - [x] Transfers pane separated by a 1px hairline, transport chips neutral
+  - [x] Bookmarks navigate to same paths with simplified labels
+- **Decisions:** Created `FilesPhotosView.swift` containing `FilesWorkspaceView`, `FileRow`, `TransferRow`, `PhotosWorkspaceView`, and `PhotoCard`. Build passed cleanly.
