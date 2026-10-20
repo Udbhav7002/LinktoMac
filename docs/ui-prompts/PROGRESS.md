@@ -153,3 +153,16 @@
   - [x] USB cable banner, status messages, and recovery HUD logic intact
   - [x] Google sign-in buttons render with brand mark on matte surface
 - **Decisions:** Implemented full Quiet Premium redesign for web orchestrator. Verified all hooks and absence of inline styles.
+
+## Task 12 — Menu Bar Apps Polish
+- **Files Touched:**
+  - `orchestrator/linktomac/menubar_app.py` (replaced `_run_menubar` with Quiet Premium implementation)
+  - `orchestrator/menubar_app.py` (cleaned emoji icons and active status strings)
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/LinkToMacApp.swift` (verified SwiftUI `MenuBarExtra` styling from Task 02)
+- **Checklist Results:**
+  - [x] Python AST parsing passes cleanly on both menubar files
+  - [x] Menubar title is plain "LinktoMac"; zero emoji in menubar files
+  - [x] Empty state shows "No paired devices"; callbacks intact
+  - [x] Mirror / Discover / Remote Session / Quit call original backend methods
+  - [x] SwiftUI `MenuBarExtra` verified: SF Symbol label, window popover, StatusDot, hairline dividers, LinkTheme.danger Quit
+- **Decisions:** Removed all emoji glyphs from both menubar apps and verified native SwiftUI MenuBarExtra. AST parse passed.

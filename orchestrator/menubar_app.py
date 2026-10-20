@@ -38,7 +38,7 @@ class LinktoMacMenuBarApp(rumps.App):
 
     def __init__(self):
         # App name shown in menu bar (we'll use an emoji icon)
-        super().__init__("🔗", quit_button=None)
+        super().__init__("LinktoMac", quit_button=None)
         
         self.backend = LinktoMacBackend()
         self._discovered_devices = {}
@@ -74,24 +74,24 @@ class LinktoMacMenuBarApp(rumps.App):
         
         # Actions
         self.menu.add(rumps.MenuItem(
-            "🔍 Discover Devices", 
+            "Discover Devices", 
             callback=self._on_discover_clicked
         ))
         
         self.menu.add(rumps.MenuItem(
-            "🌐 Remote Session...", 
+            "Remote Session...", 
             callback=self._on_remote_session_clicked
         ))
         
         self.menu.add(rumps.MenuItem(
-            "⚙️ Preferences...", 
+            "Preferences...", 
             callback=self._on_preferences_clicked
         ))
         
         self.menu.add(rumps.separator)
         
         self.menu.add(rumps.MenuItem(
-            "❌ Quit LinktoMac", 
+            "Quit LinktoMac", 
             callback=self._on_quit_clicked
         ))
         
@@ -115,7 +115,7 @@ class LinktoMacMenuBarApp(rumps.App):
                 if ip not in ("ngrok", "mirror") and proc.poll() is None:
                     device = self._discovered_devices.get(ip)
                     name = device["name"] if device else ip
-                    item = rumps.MenuItem(f"🟢 {name} ({ip}) - Active")
+                    item = rumps.MenuItem(f"{name} ({ip}) - Active")
                     item.set_callback(lambda _: None)  # Just show status
                     self._mirror_menu.add(item)
                     running_count += 1
@@ -128,7 +128,7 @@ class LinktoMacMenuBarApp(rumps.App):
                     is_running = True
             
             if not is_running:
-                item = rumps.MenuItem(f"📱 Mirror: {device['name']} ({ip})")
+                item = rumps.MenuItem(f"Mirror: {device['name']} ({ip})")
                 item.set_callback(lambda _, ip=ip: self._start_mirror(ip))
                 self._mirror_menu.add(item)
         

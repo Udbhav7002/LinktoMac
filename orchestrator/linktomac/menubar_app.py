@@ -88,7 +88,7 @@ def _run_window_fallback():
     webview.start()
 
 def _run_menubar():
-    """Full rumps menu bar implementation."""
+    """Quiet Premium rumps menu bar implementation."""
     import rumps
     import json
     import threading
@@ -98,7 +98,7 @@ def _run_menubar():
 
     class LinktoMacApp(rumps.App):
         def __init__(self):
-            super().__init__("🔗", quit_button=None)
+            super().__init__("LinktoMac", quit_button=None)
             self.backend = backend
             self._refresh_menu()
             self.backend.set_callback(self._on_devices_updated)
@@ -107,16 +107,20 @@ def _run_menubar():
         def _refresh_menu(self):
             items = []
             paired = self.backend.get_paired_devices()
+
             if paired:
-                items.append(rumps.separator)
                 for dev in paired:
                     name = dev.get("name", dev.get("ip", "Device"))
                     ip = dev.get("ip", "")
-                    item = rumps.MenuItem(f"📱 Mirror: {name}", callback=lambda _, i=ip: self._mirror(i))
+                    item = rumps.MenuItem(f"Mirror {name}",
+                                          callback=lambda _, i=ip: self._mirror(i))
                     items.append(item)
+            else:
+                items.append(rumps.MenuItem("No paired devices", callback=None))
+
             items.append(rumps.separator)
-            items.append(rumps.MenuItem("🔍 Discover Devices", callback=self._discover))
-            items.append(rumps.MenuItem("🌐 Remote Session…", callback=self._remote))
+            items.append(rumps.MenuItem("Discover Devices", callback=self._discover))
+            items.append(rumps.MenuItem("Remote Session…", callback=self._remote))
             items.append(rumps.separator)
             items.append(rumps.MenuItem("Quit LinktoMac", callback=rumps.quit_application))
             self.menu = items
