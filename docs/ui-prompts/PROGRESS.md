@@ -41,3 +41,18 @@
   - [x] Clipboard toggle writes through to `ClipboardSyncManager.isSyncEnabled`
   - [x] Adaptive light/dark styling with high contrast
 - **Decisions:** Created `OverviewView.swift` containing `OverviewWorkflowView`, `QuickAccessCard`, and `ImageToolbarButton`.
+
+## Task 04 — macOS Messages Workspace
+- **Files touched:**
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/MessagesView.swift` (created)
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift` (removed old MessagesWorkspaceView)
+- **Checklist results:**
+  - [x] `swift build` succeeds in `allcode/LinkToMac-macOS`
+  - [x] Outgoing bubble: solid `LinkTheme.accent` with white text
+  - [x] Incoming bubble: `surfaceAlt` fill with `textPrimary` text, `LR.card` corners
+  - [x] Deterministic muted initials avatar via `AvatarView`
+  - [x] Zero green; accent blue used consistently
+  - [x] Thread creation, dialing, and SMS sending logic preserved identically
+  - [x] Empty state uses `EmptyStateView`
+  - [x] Tooltips preserved on action buttons
+- **Decisions:** Created `MessagesView.swift` and extracted `ThreadRow` and `ChatBubble` components.
