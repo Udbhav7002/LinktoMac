@@ -97,3 +97,17 @@
   - [x] Mono font only on content + chips captions stay proportional
   - [x] History rows readable with 2-line clamp
 - **Decisions:** Created `ClipboardView.swift` containing `ClipboardWorkspaceView` and `ClipboardRow`. Build passed cleanly.
+
+## Task 08 — macOS Mirror & Camera Workspace
+- **Files Touched:**
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/MirrorCameraView.swift` (created)
+  - `allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift` (removed old `MirrorAndCameraWorkspaceView`)
+- **Checklist Results:**
+  - [x] GroupBox completely replaced by LinkCard; no default macOS chrome
+  - [x] Active stream option shows accent selection state (10% fill + check) — quiet, not green
+  - [x] "Stop all streams" is dangerPrimary and disabled when already stopped
+  - [x] Video tap gesture math identical (event.location / geo.size, clamped 0–1)
+  - [x] Video well is pure black; mode chip + floating keys are 55% black capsules
+  - [x] scrcpy button appears only under isScrcpyAvailable && isUSBDeviceConnected
+  - [x] No animation added to video rendering
+- **Decisions:** Created `MirrorCameraView.swift` containing `MirrorAndCameraWorkspaceView`, `KeyButton`, and `VideoKeyButton`. Build passed cleanly.
