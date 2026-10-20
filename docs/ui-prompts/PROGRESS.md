@@ -125,3 +125,16 @@
   - [x] HUD uses material + hairline + single soft shadow
   - [x] `swift build` clean; forbidden patterns check and stale copy check returned "clean"
 - **Decisions:** Created `PairingCallHUDView.swift` containing `PairingQRSetupView` and `IncomingCallHUDView`. Fully deleted `FeatureViews.swift`. macOS migration is complete.
+
+## Task 10 — Android App Redesign (Jetpack Compose)
+- **Files Touched:**
+  - `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/MainActivity.kt` (replaced)
+- **Checklist Results:**
+  - [x] `./gradlew assembleDebug` succeeds with 0 errors and no new dependencies
+  - [x] Zero hardcoded `Color(0xFF…)` in composables; all colors via `MaterialTheme.colorScheme` / `linkStatusColors()`
+  - [x] App follows system light/dark; status dot is semantic success when connected, warning amber otherwise
+  - [x] Permission rows show live state: ✓ when granted, "Fix" FilledTonalButton when not; polls every 1s
+  - [x] QR scan → auto-fill → connect flow identical; USB hits `127.0.0.1:54921`
+  - [x] Share sheet ("Send to Mac") untouched
+  - [x] Zero emoji; brand is plain "LinkToMac"
+- **Decisions:** Replaced `MainActivity.kt` with quiet premium theme implementation. Row spacing adjusted to standard `horizontalArrangement = Arrangement.spacedBy(8.dp)`. Build succeeded in 5s.
