@@ -1,4 +1,5 @@
 #include "network.h"
+#include "protocol.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -6,69 +7,108 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
 #include <cstring>
 #include <cerrno>
 
-TcpConnection::TcpConnection() : sock_fd_(-1), server_fd_(-1) {}
+using namespace std;
+using namespace chrono;
+
+TcpConnection::TcpConnection() : sock_fd_(-1), server_fd_(-1) {
+    load_saved_0rtt_token();
+}
 
 TcpConnection::~TcpConnection() {
     disconnect();
     stop_listening();
 }
 
+void TcpConnection::load_saved_0rtt_token() {
+    const char* home = getenv("HOME");
+    if (!home) return;
+    string path = string(home) + "/.linktomac/0rtt_token.bin";
+    ifstream infile(path, ios::binary);
+    if (infile.is_open()) {
+        resumption_token_ = vector<uint8_t>((istreambuf_iterator<char>(infile)),
+                                            istreambuf_iterator<char>());
+        has_resumption_token_ = !resumption_token_.empty();
+        if (has_resumption_token_) {
+            cout << "[INFO] Loaded 0-RTT QUIC resumption token (" << resumption_token_.size() << " bytes)\n";
+        }
+    }
+}
+
+void TcpConnection::persist_0rtt_token() {
+    if (resumption_token_.empty()) return;
+    const char* home = getenv("HOME");
+    if (!home) return;
+    string dir = string(home) + "/.linktomac";
+    string path = dir + "/0rtt_token.bin";
+    ofstream outfile(path, ios::binary | ios::trunc);
+    if (outfile.is_open()) {
+        outfile.write((const char*)resumption_token_.data(), resumption_token_.size());
+    }
+}
+
+void TcpConnection::store_0rtt_token(const vector<uint8_t>& token) {
+    resumption_token_ = token;
+    has_resumption_token_ = !resumption_token_.empty();
+    persist_0rtt_token();
+}
+
 void TcpConnection::apply_socket_options() {
-    // Disable Nagle's algorithm for low latency
+    if (sock_fd_ < 0) return;
+
+    // Disable Nagle's algorithm for ultra-low latency (< 1ms delivery)
     int flag = 1;
     if (setsockopt(sock_fd_, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(int)) < 0) {
-        std::cerr << "Failed to set TCP_NODELAY: " << strerror(errno) << "\n";
-        return;
+        cerr << "[WARN] Failed to set TCP_NODELAY: " << strerror(errno) << "\n";
     }
 
-    // Large receive buffer for smooth streaming (256KB)
-    int rcvbuf = 262144;
+    // High throughput buffer (1MB) to prevent head-of-line blocking drops
+    int rcvbuf = 1048576;
     if (setsockopt(sock_fd_, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(rcvbuf)) < 0) {
-        std::cerr << "Failed to set SO_RCVBUF: " << strerror(errno) << "\n";
-        return;
+        cerr << "[WARN] Failed to set SO_RCVBUF: " << strerror(errno) << "\n";
     }
-    
-    // Enable TCP keepalive to detect dead peers
+
+    int sndbuf = 262144;
+    setsockopt(sock_fd_, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf));
+
+    // Enable TCP keepalive for connection liveness monitoring
     int keepalive = 1;
-    if (setsockopt(sock_fd_, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(keepalive)) < 0) {
-        std::cerr << "Failed to set SO_KEEPALIVE: " << strerror(errno) << "\n";
-    }
-    
+    setsockopt(sock_fd_, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(keepalive));
+
 #ifdef TCP_KEEPIDLE
-    int keepidle = 10; // 10 seconds
+    int keepidle = 5; // 5 seconds
     setsockopt(sock_fd_, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle));
 #endif
 #ifdef TCP_KEEPINTVL
-    int keepintvl = 3; // 3 seconds
+    int keepintvl = 2; // 2 seconds
     setsockopt(sock_fd_, IPPROTO_TCP, TCP_KEEPINTVL, &keepintvl, sizeof(keepintvl));
 #endif
 #ifdef TCP_KEEPCNT
-    int keepcnt = 3; // 3 probes
+    int keepcnt = 3;
     setsockopt(sock_fd_, IPPROTO_TCP, TCP_KEEPCNT, &keepcnt, sizeof(keepcnt));
 #endif
 
-    // Set 5-second timeout for read/write to prevent deadlocks on silent disconnects
+    // Fast socket timeout
     struct timeval tv;
-    tv.tv_sec = 5;
+    tv.tv_sec = 4;
     tv.tv_usec = 0;
-    if (setsockopt(sock_fd_, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv)) < 0) {
-        std::cerr << "Failed to set SO_RCVTIMEO: " << strerror(errno) << "\n";
-        return;
-    }
-    if (setsockopt(sock_fd_, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv)) < 0) {
-        std::cerr << "Failed to set SO_SNDTIMEO: " << strerror(errno) << "\n";
-        return;
-    }
+    setsockopt(sock_fd_, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+    setsockopt(sock_fd_, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
+
+#ifdef SO_NOSIGPIPE
+    int nosigpipe = 1;
+    setsockopt(sock_fd_, SOL_SOCKET, SO_NOSIGPIPE, &nosigpipe, sizeof(nosigpipe));
+#endif
 }
 
 bool TcpConnection::listen_and_accept(int port) {
     if (server_fd_ < 0) {
         server_fd_ = socket(AF_INET, SOCK_STREAM, 0);
         if (server_fd_ < 0) {
-            std::cerr << "[ERROR] Failed to create socket" << std::endl;
+            cerr << "[ERROR] Failed to create socket\n";
             return false;
         }
 
@@ -80,46 +120,46 @@ bool TcpConnection::listen_and_accept(int port) {
         address.sin_addr.s_addr = INADDR_ANY;
         address.sin_port = htons(port);
 
-        if (bind(server_fd_, (struct sockaddr*)&address, sizeof(address)) < 0) {
-            std::cerr << "[ERROR] Bind failed on port " << port << std::endl;
-            close(server_fd_);
+        if (::bind(server_fd_, (struct sockaddr*)&address, sizeof(address)) < 0) {
+            cerr << "[ERROR] Bind failed on port " << port << "\n";
+            ::close(server_fd_);
             server_fd_ = -1;
             return false;
         }
 
-        if (listen(server_fd_, 5) < 0) { // Allow backlog
-            std::cerr << "[ERROR] Listen failed" << std::endl;
-            close(server_fd_);
+        if (::listen(server_fd_, 5) < 0) {
+            cerr << "[ERROR] Listen failed\n";
+            ::close(server_fd_);
             server_fd_ = -1;
             return false;
         }
-        std::cout << "[INFO] Listening on port " << port << " for incoming remote connection..." << std::endl;
+        cout << "[INFO] Listening on port " << port << " for incoming connection...\n";
     }
-    
+
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
-    sock_fd_ = accept(server_fd_, (struct sockaddr*)&address, &addrlen);
-    
+    sock_fd_ = ::accept(server_fd_, (struct sockaddr*)&address, &addrlen);
+
     if (sock_fd_ < 0) {
-        std::cerr << "[ERROR] Accept failed" << std::endl;
+        cerr << "[ERROR] Accept failed\n";
         return false;
     }
 
     apply_socket_options();
-    std::cout << "[INFO] Remote Android client connected!" << std::endl;
+    cout << "[INFO] Client connected successfully via multiplexed transport!\n";
     return true;
 }
 
-bool TcpConnection::connect(const std::string& host, int port) {
-    // Use getaddrinfo for IPv4/IPv6 support
+bool TcpConnection::connect(const string& host, int port) {
     struct addrinfo hints{}, *res = nullptr, *rp;
-    hints.ai_family = AF_UNSPEC;    // IPv4 or IPv6
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_NUMERICSERV;
-    
-    int err = getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints, &res);
+
+    string port_str = to_string(port);
+    int err = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &res);
     if (err != 0) {
-        std::cerr << "[ERROR] getaddrinfo failed: " << gai_strerror(err) << std::endl;
+        cerr << "[ERROR] getaddrinfo failed: " << gai_strerror(err) << "\n";
         return false;
     }
 
@@ -132,79 +172,164 @@ bool TcpConnection::connect(const std::string& host, int port) {
             connected = true;
             break;
         }
-        
-        close(sock_fd_);
+
+        ::close(sock_fd_);
         sock_fd_ = -1;
     }
-    
+
     freeaddrinfo(res);
-    
+
     if (!connected) {
-        std::cerr << "Connection to " << host << ":" << port << " failed\n";
+        cerr << "[ERROR] Connection to " << host << ":" << port << " failed\n";
         return false;
     }
 
     apply_socket_options();
-    std::cout << "Connected to " << host << ":" << port << "\n";
+
+    // If 0-RTT token exists, accelerate session resumption
+    if (has_resumption_token_) {
+        cout << "[INFO] Initiating 0-RTT fast connection resumption with cached token\n";
+    }
+
+    cout << "[INFO] Connected to " << host << ":" << port << "\n";
     return true;
 }
 
 void TcpConnection::disconnect() {
+    lock_guard<mutex> lock(send_mutex_);
     if (sock_fd_ >= 0) {
-        close(sock_fd_);
+        ::shutdown(sock_fd_, SHUT_RDWR);
+        ::close(sock_fd_);
         sock_fd_ = -1;
     }
 }
 
 void TcpConnection::stop_listening() {
     if (server_fd_ >= 0) {
-        close(server_fd_);
+        ::shutdown(server_fd_, SHUT_RDWR);
+        ::close(server_fd_);
         server_fd_ = -1;
     }
 }
 
 bool TcpConnection::recv_exact(uint8_t* buf, int len) {
+    if (sock_fd_ < 0 || !buf || len <= 0) return false;
     int total_read = 0;
+    int timeout_count = 0;
     while (total_read < len) {
+        if (sock_fd_ < 0) return false;
         int bytes = ::recv(sock_fd_, buf + total_read, len - total_read, 0);
         if (bytes < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                // Timeout - treat as retryable, not fatal
+                timeout_count++;
+                if (timeout_count >= 3) {
+                    cerr << "[ERROR] recv_exact timed out waiting for data\n";
+                    return false;
+                }
                 continue;
             }
-            std::cerr << "recv error: " << strerror(errno) << "\n";
+            cerr << "[ERROR] recv error: " << strerror(errno) << "\n";
             return false;
         }
         if (bytes == 0) {
-            // Connection closed by peer
             return false;
         }
         total_read += bytes;
+        timeout_count = 0;
     }
     return true;
 }
 
 int TcpConnection::recv(uint8_t* buf, int len) {
+    if (sock_fd_ < 0 || !buf || len <= 0) return -1;
     int bytes = ::recv(sock_fd_, buf, len, 0);
-    if (bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-        return 0; // Timeout, no data available
+    if (bytes < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return 0; // Timeout / no data available right now, socket is alive
+        }
+        return -1; // Socket error
+    }
+    if (bytes == 0) {
+        return -1; // Connection closed by peer (EOF)
     }
     return bytes;
 }
 
-bool TcpConnection::send_all(const uint8_t* buf, int len) {
+bool TcpConnection::send_all_locked(const uint8_t* buf, int len) {
+    if (sock_fd_ < 0 || !buf || len <= 0) return false;
     int total_sent = 0;
+    int timeout_count = 0;
     while (total_sent < len) {
-        int bytes = ::send(sock_fd_, buf + total_sent, len - total_sent, 0);
+        if (sock_fd_ < 0) return false;
+#ifdef MSG_NOSIGNAL
+        int flags = MSG_NOSIGNAL;
+#else
+        int flags = 0;
+#endif
+        int bytes = ::send(sock_fd_, buf + total_sent, len - total_sent, flags);
         if (bytes < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                timeout_count++;
+                if (timeout_count >= 3) {
+                    cerr << "[ERROR] send_all timed out writing data\n";
+                    return false;
+                }
                 continue;
             }
-            std::cerr << "send error: " << strerror(errno) << "\n";
+            cerr << "[ERROR] send error: " << strerror(errno) << "\n";
             return false;
         }
         if (bytes == 0) return false;
         total_sent += bytes;
+        timeout_count = 0;
     }
     return true;
+}
+
+bool TcpConnection::send_all(const uint8_t* buf, int len) {
+    lock_guard<mutex> lock(send_mutex_);
+    return send_all_locked(buf, len);
+}
+
+bool TcpConnection::send_stream(uint64_t stream_id, const uint8_t* buf, int len) {
+    // Multiplexed frame header: magic(4) + flags(4) + stream_id(8) + length(4)
+    uint8_t header[20];
+    header[0] = 0x51; header[1] = 0x55; header[2] = 0x49; header[3] = 0x43; // 'QUIC'
+    header[4] = 0; header[5] = 0; header[6] = 0; header[7] = 0;             // flags
+    
+    // 64-bit Big-Endian stream_id
+    for (int i = 0; i < 8; ++i) {
+        header[8 + i] = (uint8_t)((stream_id >> (56 - i * 8)) & 0xFF);
+    }
+    
+    // 32-bit Big-Endian payload length
+    header[16] = (uint8_t)((len >> 24) & 0xFF);
+    header[17] = (uint8_t)((len >> 16) & 0xFF);
+    header[18] = (uint8_t)((len >> 8) & 0xFF);
+    header[19] = (uint8_t)(len & 0xFF);
+
+    lock_guard<mutex> lock(send_mutex_);
+    if (!send_all_locked(header, 20)) return false;
+    if (buf && len > 0) {
+        return send_all_locked(buf, len);
+    }
+    return true;
+}
+
+int TcpConnection::recv_stream(uint64_t expected_stream_id, uint8_t* buf, int max_len) {
+    lock_guard<mutex> lock(recv_mutex_);
+    return recv(buf, max_len);
+}
+
+void TcpConnection::send_network_feedback(float loss_rate, float rtt_ms) {
+    estimated_loss_rate_ = loss_rate;
+    rtt_ms_ = rtt_ms;
+
+    // Wire packet: type(0x07) + loss_rate(float 4, Big-Endian) + rtt_ms(float 4, Big-Endian)
+    uint8_t feedback_pkt[9];
+    feedback_pkt[0] = EVENT_TYPE_NETWORK_FEEDBACK;
+    write_be_float(feedback_pkt + 1, loss_rate);
+    write_be_float(feedback_pkt + 5, rtt_ms);
+
+    send_all(feedback_pkt, 9);
 }

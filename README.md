@@ -47,18 +47,29 @@
 
 ### Option 2: Build & Run (2 minutes)
 
-#### 🍏 macOS App (`.app` bundle)
+#### 🍏 macOS App (`.app` bundle + `.dmg`)
 ```bash
-# 1. Install dependencies
-brew install cmake ffmpeg sdl2 python3
-
-# 2. Clone & build
+# 1. Clone
 git clone https://github.com/Udbhav7002/LinktoMac.git
 cd LinktoMac
+
+# 2. Build (auto-installs deps, builds native client, packages .app + .dmg)
 ./build_mac_app.sh
 
-# 3. Run! (You can also double-click the .app file)
-open dist/LinktoMac.app
+# 3. Run!
+open dist/LinktoMac.dmg
+```
+
+**Outputs:**
+- `dist/LinktoMac.app` — Universal macOS app bundle (arm64 + x86_64)
+- `dist/LinktoMac.dmg` — Distributable disk image
+
+#### 🍏 Menu Bar Mode (Optional)
+```bash
+# Run as menu bar app (no dock icon)
+./build_mac_app.sh
+# Then run the built app with:
+open -a dist/LinktoMac.app --args --menubar
 ```
 
 #### 🤖 Android Apps
@@ -177,6 +188,71 @@ graph LR
 - **PIN Pairing:** Prevents unauthorized connections on public Wi-Fi.
 - **mDNS Discovery:** Only broadcasts locally.
 - **Secure Tunnels:** Remote mode uses encrypted SSH tunnels via Pinggy.
+
+---
+
+## 🛠️ Troubleshooting
+
+### ADB Not Found
+**Error:** `adb not found in PATH` or `ADB error: adb not found`
+**Fix:** The app bundles ADB automatically. If you see this error:
+- Rebuild with `./build_mac_app.sh` (downloads and bundles ADB)
+- Or install manually: `brew install android-platform-tools`
+
+### Phone Not Discovered (Wireless)
+**Symptom:** "Scanning for devices..." never finds your phone
+**Fixes:**
+- Ensure both devices are on the **same Wi-Fi network** (same subnet)
+- Check firewall: allow incoming UDP 27191 and TCP 27189/27190/27192 on macOS
+- Restart the Android companion app
+- Try "Discover Devices" in the menu bar app
+- Some routers isolate clients (AP Isolation) — disable it in router settings
+
+### USB ADB Not Working
+**Symptom:** "No USB device connected" or `adb devices` shows empty
+**Fixes:**
+- Enable **USB Debugging** in Android Developer Options
+- Authorize the computer on the phone's prompt
+- Use a data-capable USB cable (not charge-only)
+- Try: `adb kill-server && adb start-server`
+- On macOS, allow terminal/IDE in **System Settings → Privacy & Security → USB**
+
+### Mirror Window Doesn't Appear / Black Screen
+**Symptom:** Mirroring starts but no window or black screen
+**Fixes:**
+- Ensure `mirror_client` built successfully (check `native-client/build/`)
+- Check logs at `~/.linktomax/app.log`
+- Verify SDL2 is installed: `brew install sdl2`
+- Some Android versions require "Display over other apps" permission for the companion app
+
+### High Latency / Lag
+**Fixes:**
+- Use **USB ADB mode** for lowest latency (Method 2)
+- Ensure 5 GHz Wi-Fi for wireless mode
+- Close other bandwidth-heavy apps
+- Android 14+ has better MediaCodec performance
+
+### Remote Session (Pinggy) Fails
+**Symptom:** "Pinggy failed to establish a tunnel"
+**Fixes:**
+- Check internet connectivity
+- Firewall may block SSH outbound (port 443)
+- Try again — Pinggy occasionally has capacity issues
+- Free tier has session limits
+
+### Build Fails on macOS
+**Common issues:**
+| Error | Fix |
+|-------|-----|
+| `cmake: command not found` | `brew install cmake` |
+| `SDL2 not found` | `brew install sdl2` |
+| `pyinstaller: command not found` | `pip3 install pyinstaller` |
+| Codesign fails | Run `codesign --force --deep --sign - dist/LinktoMac.app` manually |
+
+### Menu Bar App Doesn't Show
+- The menu bar app runs without a Dock icon by design
+- Look for the 🔗 icon in the top-right menu bar
+- If not visible, check **System Settings → Control Center → Other Modules → LinktoMac** → "Show in Menu Bar"
 
 ---
 

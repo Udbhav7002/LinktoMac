@@ -23,7 +23,9 @@ def get_devices():
         with open(DEVICES_FILE, "r") as f:
             fcntl.flock(f.fileno(), fcntl.LOCK_SH)
             try:
-                return json.load(f)
+                devices = json.load(f)
+                # Filter out loopback or mock addresses
+                return [d for d in devices if isinstance(d, dict) and d.get("ip") not in ("127.0.0.1", "localhost", "0.0.0.0")]
             finally:
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
     except Exception as e:

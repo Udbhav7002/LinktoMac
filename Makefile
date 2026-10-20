@@ -1,25 +1,27 @@
-.PHONY: all server client clean run deploy
+.PHONY: all app client clean run deploy export
 
-all: server client
+all: app client
 
-server:
-	@echo "Building Android Server..."
-	cd android-server && ./build.sh
+app:
+	@echo "Building Android App..."
+	cd android-app && ./gradlew assembleDebug
 
 client:
 	@echo "Building Native Client..."
 	mkdir -p native-client/build
-	cd native-client/build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j$$(sysctl -n hw.ncpu)
+	cd native-client/build && cmake .. -DCMAKE_BUILD_TYPE=Release && cmake --build . --parallel
 
-deploy: server
-	@echo "Deploying to device..."
-	adb push android-server/server.jar /data/local/tmp/linktomac-server.jar
+deploy: app
+	@echo "Installing Android App to device..."
+	adb install -r android-app/app/build/outputs/apk/debug/app-debug.apk
 
-run: all
+run: client
 	@echo "Starting LinktoMac..."
 	PYTHONPATH=$$(pwd)/orchestrator python3 -m linktomac.cli
 
 clean:
-	rm -rf android-server/build
-	rm -f android-server/server.jar
+	cd android-app && ./gradlew clean
 	rm -rf native-client/build
+
+export:
+	python3 export_all_code.py

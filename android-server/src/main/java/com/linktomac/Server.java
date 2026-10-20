@@ -25,7 +25,9 @@ public class Server {
             Object vmRuntime = getRuntime.invoke(null);
             // Only exempt specific classes we actually use, not entire packages
             setHiddenApiExemptions.invoke(vmRuntime, new Object[]{new String[]{
+                "Landroid/view/SurfaceControl",
                 "Landroid/view/SurfaceControl;",
+                "Landroid/view/SurfaceControl$Transaction;",
                 "Landroid/hardware/input/InputManagerGlobal;",
                 "Landroid/hardware/input/InputManager;",
                 "Landroid/hardware/display/DisplayManagerGlobal;"
@@ -67,14 +69,12 @@ try (ServerSocket videoServerSocket = new ServerSocket(VIDEO_PORT);
                 videoSocket.setTcpNoDelay(true);
                 videoSocket.setSendBufferSize(256 * 1024); // STRICT 256KB Latency Limit! Drops frames instead of buffering
                 System.out.println("Video connection accepted.");
-                
-                controlSocket = controlServerSocket.accept();
-                controlSocket.setTcpNoDelay(true);
-                controlSocket.setSoTimeout(5000); // 5 second read timeout for control channel
-                System.out.println("Control connection accepted.");
 
                 OutputStream videoOut = videoSocket.getOutputStream();
-                InputStream controlIn = controlSocket.getInputStream();
+                InputStream videoIn = videoSocket.getInputStream();
+
+                ScreenEncoder encoder = new ScreenEncoder(width, height, bitRate, frameRate);
+                int codecFlags = encoder.initCodec();
 
                 // Send handshake: 20 bytes = magic(4) + version(4) + width(4) + height(4) + flags(4)
                 // Protocol version 1 = legacy, 2 = current with version field
@@ -83,29 +83,42 @@ try (ServerSocket videoServerSocket = new ServerSocket(VIDEO_PORT);
                 handshake.putInt(2); // Protocol version 2
                 handshake.putInt(width);
                 handshake.putInt(height);
-                handshake.putInt(0); // flags
+                handshake.putInt(codecFlags); // flags: 0x00 = HEVC, 0x01 = AVC
                 handshake.flip();
                 Connection.writeFully(videoOut, handshake);
-                System.out.println("Handshake sent: magic=0x" + Integer.toHexString(PROTOCOL_MAGIC) + " version=2 " + width + "x" + height);
+                System.out.println("Handshake sent: magic=0x" + Integer.toHexString(PROTOCOL_MAGIC) + " version=2 " + width + "x" + height + " flags=" + codecFlags);
 
-                ScreenEncoder encoder = new ScreenEncoder(width, height, bitRate, frameRate);
                 encoder.start(videoOut);
-                
+
                 InputController inputController = new InputController();
-                inputController.start(controlIn, width, height);
-                
-                // Wait for disconnect by reading from the video socket with a timeout
-                videoSocket.setSoTimeout(3000);
-                byte[] discardBuf = new byte[1024];
-                try {
-                    while (true) {
-                        int read = videoSocket.getInputStream().read(discardBuf);
-                        if (read == -1) break;
+                // Multiplexed input: read control events directly from video socket input stream
+                inputController.start(videoIn, width, height);
+
+                // Optional secondary listener on CONTROL_PORT (27190) for dual-socket clients
+                final ServerSocket finalControlServer = controlServerSocket;
+                final int finalWidth = width;
+                final int finalHeight = height;
+                Thread controlThread = new Thread(() -> {
+                    try {
+                        finalControlServer.setSoTimeout(3000);
+                        Socket separateControl = finalControlServer.accept();
+                        separateControl.setTcpNoDelay(true);
+                        System.out.println("Separate control connection accepted.");
+                        inputController.start(separateControl.getInputStream(), finalWidth, finalHeight);
+                    } catch (Exception ignored) {
+                        // Dual socket connection is optional; multiplexed socket already active
                     }
-                } catch (java.net.SocketTimeoutException e) {
-                    // Timeout means socket is still alive, continue waiting
-                } catch (java.io.IOException e) {
-                    System.out.println("Video socket disconnected");
+                });
+                controlThread.setDaemon(true);
+                controlThread.start();
+
+                // Keep session alive as long as video encoder and connection are active
+                while (encoder.isRunning() && !videoSocket.isClosed()) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
                 }
 
                 encoder.stop();

@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">LinktoMac Client</string>
-    <string name="accessibility_description">LinktoMac requires this service to allow the remote Mac to simulate touches on your screen during a support session.</string>
-</resources>

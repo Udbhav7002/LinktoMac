@@ -2,6 +2,8 @@ package com.linktomac;
 
 import android.content.Context;
 import android.hardware.display.DisplayManager;
+import android.hardware.input.InputManager;
+import android.os.Build;
 import android.os.SystemClock;
 import android.view.Display;
 import android.view.InputDevice;
@@ -22,7 +24,9 @@ public class InputController {
     
     private static final int INJECT_INPUT_EVENT_MODE_ASYNC = 0;
 
-    private Object inputManager;
+    // Official Android 12+ (API 31+) InputManager instance
+    private InputManager officialInputManager;
+    private Object inputManagerGlobal;
     private Method injectInputEventMethod;
     private long lastTouchDownTime = 0;
     private int virtualWidth = 0;
@@ -149,29 +153,46 @@ public class InputController {
 
     public InputController() {
         try {
-            // Android 14+ InputManagerGlobal
-            try {
-                Class<?> globalClass = Class.forName("android.hardware.input.InputManagerGlobal");
-                Method getInstanceMethod = globalClass.getMethod("getInstance");
-                inputManager = getInstanceMethod.invoke(null);
-            } catch (Exception e) {
-                // Fallback to InputManager
+            // Android 12+ (API 31+) Official InputInjection API
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 try {
-                    Class<?> inputManagerClass = Class.forName("android.hardware.input.InputManager");
-                    Method getInstanceMethod = inputManagerClass.getMethod("getInstance");
-                    inputManager = getInstanceMethod.invoke(null);
-                } catch (Exception e2) {
-                    System.err.println("Failed to get InputManager: " + e2.getMessage());
-                    inputManager = null;
+                    Method getInstance = InputManager.class.getMethod("getInstance");
+                    officialInputManager = (InputManager) getInstance.invoke(null);
+                    if (officialInputManager != null) {
+                        injectInputEventMethod = InputManager.class.getMethod("injectInputEvent", InputEvent.class, int.class);
+                        System.out.println("[INFO] Initialized official Android 12+ InputInjection API");
+                    }
+                } catch (Throwable t) {
+                    // Fall through to global singleton resolution
                 }
             }
-            if (inputManager != null) {
-                injectInputEventMethod = inputManager.getClass().getMethod("injectInputEvent", android.view.InputEvent.class, int.class);
-            } else {
-                System.err.println("InputManager not available — input injection disabled (requires INJECT_EVENTS permission)");
+
+            // Android 14+ InputManagerGlobal or legacy fallback
+            if (officialInputManager == null) {
+                try {
+                    Class<?> globalClass = Class.forName("android.hardware.input.InputManagerGlobal");
+                    Method getInstanceMethod = globalClass.getMethod("getInstance");
+                    inputManagerGlobal = getInstanceMethod.invoke(null);
+                    if (inputManagerGlobal != null) {
+                        injectInputEventMethod = inputManagerGlobal.getClass().getMethod("injectInputEvent", InputEvent.class, int.class);
+                        System.out.println("[INFO] Initialized InputManagerGlobal injection interface");
+                    }
+                } catch (Throwable t) {
+                    try {
+                        Class<?> inputManagerClass = Class.forName("android.hardware.input.InputManager");
+                        Method getInstanceMethod = inputManagerClass.getMethod("getInstance");
+                        inputManagerGlobal = getInstanceMethod.invoke(null);
+                        if (inputManagerGlobal != null) {
+                            injectInputEventMethod = inputManagerGlobal.getClass().getMethod("injectInputEvent", InputEvent.class, int.class);
+                            System.out.println("[INFO] Initialized legacy InputManager injection interface");
+                        }
+                    } catch (Throwable t2) {
+                        System.err.println("[WARN] Input injection unavailable: " + t2.getMessage());
+                    }
+                }
             }
         } catch (Exception e) {
-            System.err.println("Input controller initialization failed: " + e.getMessage());
+            System.err.println("[ERROR] Input controller initialization failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -180,24 +201,20 @@ public class InputController {
         for (int[] mapping : SDL_TO_ANDROID_KEYCODE) {
             if (mapping[0] == sdlKeycode) return mapping[1];
         }
-        // Default: if it's a printable ASCII, try direct mapping
         if (sdlKeycode >= 32 && sdlKeycode <= 126) {
-            // Android KeyEvent keycodes for printable ASCII roughly match ASCII for letters/numbers
-            return sdlKeycode; // best effort
+            return sdlKeycode;
         }
-        return sdlKeycode; // pass through unknown
+        return sdlKeycode;
     }
     
     private void initDisplayMetrics() {
-        if (realWidth > 0) return; // already initialized
+        if (realWidth > 0) return;
         try {
-            // Try to get real display metrics via reflection
             Class<?> displayManagerClass = Class.forName("android.hardware.display.DisplayManagerGlobal");
             Method getInstanceMethod = displayManagerClass.getMethod("getInstance");
             Object displayManager = getInstanceMethod.invoke(null);
             Method getRealDisplayMetricsMethod = displayManagerClass.getMethod("getRealDisplayMetrics", int.class, android.util.DisplayMetrics.class);
             
-            // Get default display (0)
             android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
             getRealDisplayMetricsMethod.invoke(displayManager, 0, metrics);
             realWidth = metrics.widthPixels;
@@ -205,7 +222,6 @@ public class InputController {
             System.out.println("Real device screen: " + realWidth + "x" + realHeight);
         } catch (Exception e) {
             System.err.println("Could not get real display metrics: " + e.getMessage());
-            // Fallback to virtual dimensions
             realWidth = virtualWidth;
             realHeight = virtualHeight;
         }
@@ -230,7 +246,6 @@ public class InputController {
     }
     
     public void start(InputStream inputStream) {
-        // Backward compat - will use virtual dimensions if not set
         running.set(true);
         new Thread(() -> controlLoop(inputStream)).start();
     }
@@ -297,7 +312,6 @@ public class InputController {
         
         if (androidAction == -1) return;
 
-        // Scale coordinates from virtual display space to real device space
         float scaledX = scaleX(x);
         float scaledY = scaleY(y);
         
@@ -315,7 +329,6 @@ public class InputController {
         long now = SystemClock.uptimeMillis();
         int action = (actionCode == 0) ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP;
         
-        // Map SDL keycode to Android keycode
         int androidKeycode = mapSDLKeycode(keycode);
         
         KeyEvent event = new KeyEvent(now, now, action, androidKeycode, 0, 0, -1, 0, 0, InputDevice.SOURCE_KEYBOARD);
@@ -345,14 +358,21 @@ public class InputController {
     }
     
     private void injectEvent(InputEvent event) {
-        if (injectInputEventMethod != null && inputManager != null) {
+        if (officialInputManager != null && injectInputEventMethod != null) {
             try {
-                injectInputEventMethod.invoke(inputManager, event, INJECT_INPUT_EVENT_MODE_ASYNC);
+                injectInputEventMethod.invoke(officialInputManager, event, INJECT_INPUT_EVENT_MODE_ASYNC);
+                return;
+            } catch (Exception e) {
+                // Fall through to fallback
+            }
+        }
+        if (inputManagerGlobal != null && injectInputEventMethod != null) {
+            try {
+                injectInputEventMethod.invoke(inputManagerGlobal, event, INJECT_INPUT_EVENT_MODE_ASYNC);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
-            // Log once to avoid spam
             System.err.println("Input injection unavailable (requires INJECT_EVENTS permission)");
         }
     }

@@ -1,7 +1,12 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 #include <string>
+
+// Handshake constants
+constexpr uint32_t HANDSHAKE_MAGIC = 0x4C494E4B; // "LINK"
+constexpr size_t HANDSHAKE_SIZE = 20;
 
 // Event Types
 constexpr uint8_t EVENT_TYPE_TOUCH = 0x01;
@@ -9,6 +14,10 @@ constexpr uint8_t EVENT_TYPE_KEY = 0x02;
 constexpr uint8_t EVENT_TYPE_SCROLL = 0x03;
 // Server -> Client events
 constexpr uint8_t EVENT_TYPE_FORMAT_CHANGE = 0x04; // SPS/PPS changed
+// Client -> Server events
+constexpr uint8_t EVENT_TYPE_SYNC_REQUEST = 0x05;  // On-demand IDR sync request
+constexpr uint8_t EVENT_TYPE_TEXT = 0x06;          // UTF-8 text transmission
+constexpr uint8_t EVENT_TYPE_NETWORK_FEEDBACK = 0x07; // Dynamic ABR telemetry
 
 // Endianness helpers (Big Endian over wire)
 inline void write_be32(uint8_t* buf, uint32_t val) {

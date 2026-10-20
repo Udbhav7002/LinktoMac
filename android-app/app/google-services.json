@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "386131511747",
+    "project_id": "linktomac",
+    "storage_bucket": "linktomac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386131511747:android:9e45ec9ba7ea6887165576",
+        "android_client_info": {
+          "package_name": "com.linktomac.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "386131511747-i8kkeruuhkq2a2tnphp9jhgtctdku3og.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.linktomac.app",
+            "certificate_hash": "97975313887f45074faf1d45f2b141352f76a42a"
+          }
+        },
+        {
+          "client_id": "386131511747-d42426v7rka5scfbk0l68mi49vvftrsa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCr6T3Np-dI8lax8R2PfGDO57ZTPr0Eb2g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "386131511747-d42426v7rka5scfbk0l68mi49vvftrsa.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

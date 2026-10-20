@@ -1,0 +1,63 @@
+name: Build Android Apps
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build APK & JAR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle (Companion App)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android-app/.gradle
+          key: gradle-android-app-${{ runner.os }}-${{ hashFiles('android-app/**/*.gradle', 'android-app/**/gradle-wrapper.properties') }}
+
+      - name: Build Companion App APK
+        run: |
+          cd android-app
+          ./gradlew assembleRelease
+
+      - name: Cache Gradle (Server JAR)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android-server/.gradle
+          key: gradle-android-server-${{ runner.os }}-${{ hashFiles('android-server/**/*.gradle', 'android-server/**/gradle-wrapper.properties') }}
+
+      - name: Build Server JAR
+        run: |
+          cd android-server
+          ./gradlew jar
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            android-app/app/build/outputs/apk/release/app-release.apk
+            android-server/build/libs/server.jar
+          generate_release_notes: true

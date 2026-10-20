@@ -13,6 +13,7 @@ dist/
 env/
 venv/
 .venv/
+**/.build/
 
 # IDEs
 .idea/
@@ -25,10 +26,19 @@ venv/
 **/build/
 **/bin/
 *.apk
+!public/LinkToMac.apk
+!downloads/LinkToMac.apk
 *.ap_
 
 
 # C++ Build
+*.dSYM/
+tests/adversarial_native/test_decoder_rotation
+tests/adversarial_native/test_decoder_stress
+tests/adversarial_native/test_m2_decoder_resilience_stress
+tests/adversarial_native/test_m2_renderer_rapid_flips
+tests/adversarial_native/test_resize_stress
+tests/adversarial_native/test_scroll_stress
 native-client/build/
 native-client/CMakeCache.txt
 native-client/CMakeFiles/
@@ -42,5 +52,9 @@ native-client/cmake_install.cmake
 devices.json
 test_pinggy.py
 
-# System
+# System & Tool Metadata
 .DS_Store
+.agents/
+.claude/
+skills-lock.json
+bundled/

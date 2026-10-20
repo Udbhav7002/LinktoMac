@@ -7,6 +7,8 @@
 #include <SDL2/SDL_syswm.h>
 #endif
 
+using namespace std;
+
 Renderer::Renderer() : 
     window_(nullptr), renderer_(nullptr), texture_(nullptr),
     device_width_(0), device_height_(0), tex_width_(0), tex_height_(0), tex_format_(0) {}
@@ -19,12 +21,18 @@ bool Renderer::init(int width, int height, const char* title) {
     device_width_ = width;
     device_height_ = height;
 
+    bool is_headless = (getenv("LINKTOMAC_HEADLESS") != nullptr ||
+                         getenv("TESTING") != nullptr ||
+                         getenv("CI") != nullptr);
+
 #ifdef __APPLE__
-    // Force macOS to treat this background executable as a foreground interactive application
-    // so that the window will actually appear and receive focus.
-    [NSApplication sharedApplication];
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-    [NSApp activateIgnoringOtherApps:YES];
+    if (!is_headless) {
+        // Force macOS to treat this background executable as a foreground interactive application
+        // so that the window will actually appear and receive focus.
+        [NSApplication sharedApplication];
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+        [NSApp activateIgnoringOtherApps:YES];
+    }
 #endif
 
     // Set hints BEFORE SDL_Init and SDL_CreateRenderer — they only take effect if set early
@@ -32,18 +40,19 @@ bool Renderer::init(int width, int height, const char* title) {
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
-        std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
+        cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
         return false;
     }
 
     // Default window size scaled down if needed to fit typical Mac screens
-    int win_h = std::min(height, 800);
+    int win_h = min(height, 800);
     int win_w = (int)((float)width / height * win_h);
 
+    Uint32 visibility_flag = is_headless ? SDL_WINDOW_HIDDEN : SDL_WINDOW_SHOWN;
     window_ = SDL_CreateWindow(title,
                                SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                win_w, win_h,
-                               SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+                               visibility_flag | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!window_) return false;
 
 #ifdef __APPLE__
@@ -76,9 +85,21 @@ void Renderer::destroy() {
 }
 
 void Renderer::reallocate_texture(AVFrame* frame) {
+    if (!frame || frame->width <= 0 || frame->height <= 0) {
+        return;
+    }
+
     if (texture_ && tex_width_ == frame->width && tex_height_ == frame->height && tex_format_ == frame->format) {
         return; // Already matched
     }
+
+    // Determine prior orientation vs new frame orientation
+    int prev_w = (tex_width_ > 0) ? tex_width_ : device_width_;
+    int prev_h = (tex_height_ > 0) ? tex_height_ : device_height_;
+    bool had_prior_dimensions = (prev_w > 0 && prev_h > 0);
+    bool old_is_portrait = (prev_h > prev_w);
+    bool new_is_portrait = (frame->height > frame->width);
+    bool orientation_flipped = had_prior_dimensions && (old_is_portrait != new_is_portrait);
 
     if (texture_) {
         // Flush renderer before destroying texture to ensure it's not in use
@@ -111,7 +132,7 @@ void Renderer::reallocate_texture(AVFrame* frame) {
             sdl_format = SDL_PIXELFORMAT_NV12;
             break;
         default:
-            std::cerr << "Unsupported pixel format: " << frame->format << ", defaulting to IYUV\n";
+            cerr << "Unsupported pixel format: " << frame->format << ", defaulting to IYUV\n";
             sdl_format = SDL_PIXELFORMAT_IYUV;
             break;
     }
@@ -122,8 +143,60 @@ void Renderer::reallocate_texture(AVFrame* frame) {
         tex_width_ = frame->width;
         tex_height_ = frame->height;
         tex_format_ = frame->format;
+        device_width_ = frame->width;
+        device_height_ = frame->height;
+
+#ifdef __APPLE__
+        SDL_SysWMinfo info;
+        SDL_VERSION(&info.version);
+        if (SDL_GetWindowWMInfo(window_, &info)) {
+            if (info.subsystem == SDL_SYSWM_COCOA) {
+                NSWindow *nswin = info.info.cocoa.window;
+                [nswin setContentAspectRatio:NSMakeSize(frame->width, frame->height)];
+            }
+        }
+#endif
+
+        if (orientation_flipped && window_) {
+            int display_idx = SDL_GetWindowDisplayIndex(window_);
+            if (display_idx < 0) {
+                display_idx = 0;
+            }
+
+            SDL_Rect bounds = {0, 0, 1440, 900};
+            int max_w = 1200;
+            int max_h = 800;
+            if (SDL_GetDisplayUsableBounds(display_idx, &bounds) == 0) {
+                max_w = (int)(bounds.w * 0.85f);
+                max_h = (int)(bounds.h * 0.85f);
+            }
+
+            int target_w = 0;
+            int target_h = 0;
+            if (new_is_portrait) {
+                target_h = min(frame->height, min(max_h, 800));
+                target_w = (int)((float)frame->width / frame->height * target_h);
+                if (target_w > max_w) {
+                    target_w = max_w;
+                    target_h = (int)((float)frame->height / frame->width * target_w);
+                }
+            } else {
+                target_w = min(frame->width, min(max_w, 1100));
+                target_h = (int)((float)frame->height / frame->width * target_w);
+                if (target_h > max_h) {
+                    target_h = max_h;
+                    target_w = (int)((float)frame->width / frame->height * target_h);
+                }
+            }
+
+            target_w = max(100, target_w);
+            target_h = max(100, target_h);
+
+            SDL_SetWindowSize(window_, target_w, target_h);
+            SDL_SetWindowPosition(window_, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+        }
     } else {
-        std::cerr << "Failed to create texture: " << SDL_GetError() << "\n";
+        cerr << "Failed to create texture: " << SDL_GetError() << "\n";
     }
 }
 
@@ -177,8 +250,9 @@ void Renderer::window_to_device(int win_x, int win_y, float& dev_x, float& dev_y
     if (!window_) return;
 
     int win_w, win_h;
-    // Use renderer output size (pixels) for correct Retina/High-DPI handling
-    SDL_GetRendererOutputSize(renderer_, &win_w, &win_h);
+    // Use window size (logical points) to match event.button.x/y coordinate space
+    SDL_GetWindowSize(window_, &win_w, &win_h);
+    if (win_w <= 0 || win_h <= 0) return;
 
     float screen_aspect = (float)win_w / win_h;
     float frame_aspect = (float)device_width_ / device_height_;
@@ -198,9 +272,9 @@ void Renderer::window_to_device(int win_x, int win_y, float& dev_x, float& dev_y
     }
     
     // Clamp coordinates to render area
-    int mapped_x = std::max(0, std::min(win_x - draw_x, draw_w));
-    int mapped_y = std::max(0, std::min(win_y - draw_y, draw_h));
+    int mapped_x = max(0, min(win_x - draw_x, draw_w));
+    int mapped_y = max(0, min(win_y - draw_y, draw_h));
     
-    dev_x = (float)mapped_x / draw_w * device_width_;
-    dev_y = (float)mapped_y / draw_h * device_height_;
+    dev_x = (draw_w > 0) ? ((float)mapped_x / draw_w * device_width_) : 0.0f;
+    dev_y = (draw_h > 0) ? ((float)mapped_y / draw_h * device_height_) : 0.0f;
 }

@@ -14,33 +14,167 @@ repositories {
     mavenCentral()
 }
 
-// Find Android SDK
-def androidHome = System.getenv('ANDROID_HOME') ?: "${System.getProperty('user.home')}/Library/Android/sdk"
-def androidJar = "${androidHome}/platforms/android-34/android.jar"
+// Dynamically resolve Android SDK directory
+def resolveAndroidSdk() {
+    def candidates = []
+    if (System.getenv('ANDROID_HOME')) candidates.add(System.getenv('ANDROID_HOME'))
+    if (System.getenv('ANDROID_SDK_ROOT')) candidates.add(System.getenv('ANDROID_SDK_ROOT'))
 
-if (!file(androidJar).exists()) {
-    println "WARNING: android.jar not found at ${androidJar}"
-    println "Set ANDROID_HOME or install Android SDK platform 34"
+    // Read sdk.dir from local.properties if present
+    for (File propFile : [file("local.properties"), file("../local.properties"), file("../android-app/local.properties")]) {
+        if (propFile.exists()) {
+            Properties props = new Properties()
+            propFile.withInputStream { props.load(it) }
+            if (props.containsKey('sdk.dir')) {
+                candidates.add(props.getProperty('sdk.dir'))
+            }
+        }
+    }
+
+    // Default OS paths
+    candidates.add("${System.getProperty('user.home')}/Library/Android/sdk")
+    candidates.add("${System.getProperty('user.home')}/Android/Sdk")
+    candidates.add("/opt/android-sdk")
+    candidates.add("/usr/lib/android-sdk")
+
+    for (String path : candidates) {
+        if (path) {
+            File dir = file(path)
+            if (dir.isDirectory()) {
+                return dir
+            }
+        }
+    }
+    return null
+}
+
+// Dynamically find the highest Android platform jar (e.g. android-35)
+def resolveAndroidJar(File sdkDir) {
+    if (!sdkDir) return null
+    File platformsDir = new File(sdkDir, 'platforms')
+    if (!platformsDir.isDirectory()) return null
+
+    def platformDirs = platformsDir.listFiles()?.findAll {
+        it.isDirectory() && it.name.startsWith('android-') && new File(it, 'android.jar').isFile()
+    } ?: []
+
+    if (platformDirs.isEmpty()) return null
+
+    // Prefer standard integer API platforms (e.g. android-35, android-34) over previews (e.g. android-37.0)
+    def integerPlatforms = platformDirs.findAll { it.name ==~ /^android-\d+$/ }
+    def targetList = integerPlatforms.isEmpty() ? platformDirs : integerPlatforms
+
+    // Sort descending by API level (e.g. android-35 > android-34)
+    targetList.sort { a, b ->
+        def matcherA = (a.name =~ /^android-(\d+)/)
+        def matcherB = (b.name =~ /^android-(\d+)/)
+        int verA = matcherA ? matcherA[0][1].toInteger() : 0
+        int verB = matcherB ? matcherB[0][1].toInteger() : 0
+        return verB <=> verA
+    }
+
+    return new File(targetList[0], 'android.jar')
+}
+
+// Dynamically find d8 compiler in build-tools (e.g. 36.0.0)
+def resolveD8(File sdkDir) {
+    if (!sdkDir) return null
+    File buildToolsDir = new File(sdkDir, 'build-tools')
+    if (!buildToolsDir.isDirectory()) return null
+
+    boolean isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+    String d8Binary = isWindows ? 'd8.bat' : 'd8'
+
+    def toolDirs = buildToolsDir.listFiles()?.findAll {
+        it.isDirectory() && new File(it, d8Binary).isFile()
+    } ?: []
+
+    if (toolDirs.isEmpty()) return null
+
+    // Sort descending by version directory name
+    toolDirs.sort { a, b ->
+        b.name <=> a.name
+    }
+
+    return new File(toolDirs[0], d8Binary)
+}
+
+def androidSdkDir = resolveAndroidSdk()
+def androidJarFile = resolveAndroidJar(androidSdkDir)
+def d8File = resolveD8(androidSdkDir)
+
+if (androidJarFile == null) {
+    println "WARNING: android.jar not found! Please set ANDROID_HOME or install Android SDK platform (e.g. android-35)."
+} else {
+    println "Using Android platform JAR: ${androidJarFile.absolutePath}"
+}
+
+if (d8File == null) {
+    println "WARNING: d8 tool not found! Please install Android SDK build-tools."
+} else {
+    println "Using D8 compiler: ${d8File.absolutePath}"
 }
 
 dependencies {
-    // Android API stubs for compilation
-    compileOnly files(androidJar)
+    if (androidJarFile != null) {
+        compileOnly files(androidJarFile)
+    }
 }
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
-// Create a fat JAR with all dependencies (none for this project)
+task dexServer(type: Exec) {
+    dependsOn classes
+    def dexDir = layout.buildDirectory.dir("dex").get().asFile
+    outputs.file(new File(dexDir, "classes.dex"))
+
+    doFirst {
+        if (d8File == null || !d8File.exists()) {
+            throw new GradleException("d8 tool not found. Please install Android SDK build-tools.")
+        }
+        if (androidJarFile == null || !androidJarFile.exists()) {
+            throw new GradleException("android.jar not found. Please install Android SDK platform.")
+        }
+
+        dexDir.mkdirs()
+
+        def classFiles = sourceSets.main.output.classesDirs.asFileTree.matching {
+            include '**/*.class'
+        }.files.collect { it.absolutePath }
+
+        if (classFiles.isEmpty()) {
+            throw new GradleException("No compiled classes found to dex.")
+        }
+
+        commandLine = [
+            d8File.absolutePath,
+            '--output', dexDir.absolutePath,
+            '--lib', androidJarFile.absolutePath,
+            '--min-api', '26'
+        ] + classFiles
+    }
+}
+
 jar {
+    archiveFileName = 'server.jar'
     manifest {
         attributes 'Main-Class': 'com.linktomac.Server'
     }
-    from {
-        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    dependsOn dexServer
+    from(layout.buildDirectory.dir("dex")) {
+        include 'classes.dex'
     }
+    exclude '**/*.class'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    doLast {
+        copy {
+            from archiveFile
+            into projectDir
+        }
+    }
 }
 
 task buildServerJar(type: Jar) {
@@ -48,6 +182,18 @@ task buildServerJar(type: Jar) {
     manifest {
         attributes 'Main-Class': 'com.linktomac.Server'
     }
-    from sourceSets.main.output
-    dependsOn classes
+    dependsOn dexServer
+    from(layout.buildDirectory.dir("dex")) {
+        include 'classes.dex'
+    }
+    exclude '**/*.class'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    doLast {
+        copy {
+            from archiveFile
+            into projectDir
+        }
+    }
 }
+

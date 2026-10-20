@@ -1,22 +1,22 @@
 # ProGuard rules for LinktoMac Companion
 
 # Keep the MainActivity entry point
--keep class com.linktomac.companion.MainActivity {
+-keep class com.linktomac.app.MainActivity {
     public protected *;
 }
 
 # Keep MirrorService
--keep class com.linktomac.companion.MirrorService {
+-keep class com.linktomac.app.MirrorService {
     public protected *;
 }
 
 # Keep ScreenEncoder
--keep class com.linktomac.companion.ScreenEncoder {
+-keep class com.linktomac.app.ScreenEncoder {
     public protected *;
 }
 
-# Keep NSD related classes
--keep class com.linktomac.companion.** { *; }
+# Keep app package classes
+-keep class com.linktomac.app.** { *; }
 
 # Keep Android support library
 -keep class androidx.** { *; }

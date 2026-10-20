@@ -1,7 +1,14 @@
 <resources>
-    <string name="app_name">LinktoMac Companion</string>
-    <string name="notification_channel_name">Screen Mirroring</string>
-    <string name="notification_channel_description">Active screen mirroring session</string>
-    <string name="notification_title">LinktoMac</string>
-    <string name="notification_text">Screen mirroring active - tap to disconnect</string>
+    <string name="app_name">LinktoMac</string>
+    <string name="default_web_client_id">386131511747-d42426v7rka5scfbk0l68mi49vvftrsa.apps.googleusercontent.com</string>
+    <string name="notification_channel_name">Screen Streaming</string>
+    <string name="notification_channel_desc">Active screen streaming to Mac</string>
+    <string name="notification_title">LinktoMac Streaming</string>
+    <string name="notification_text">Streaming screen to your Mac</string>
+    <string name="btn_stop_stream">Stop Streaming</string>
+    <string name="btn_sign_out">Sign Out</string>
+    <string name="accessibility_service_desc">Enables remote touch, swipe, and navigation control from your Mac.</string>
+    <string name="btn_enable_control">Enable Remote Control</string>
+    <string name="status_control_enabled">Remote Control: Enabled</string>
+    <string name="status_control_disabled">Remote Control: Needs Permission</string>
 </resources>

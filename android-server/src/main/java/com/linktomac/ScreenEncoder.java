@@ -29,32 +29,54 @@ public class ScreenEncoder {
         this.frameRate = frameRate;
     }
 
+    private volatile boolean isHevc = false;
+
+    public int initCodec() throws IOException {
+        if (codec != null) {
+            return isHevc ? 0 : 1;
+        }
+
+        String[] mimeTypes = {MediaFormat.MIMETYPE_VIDEO_HEVC, MediaFormat.MIMETYPE_VIDEO_AVC};
+        MediaCodec configuredCodec = null;
+        for (String mimeType : mimeTypes) {
+            try {
+                MediaFormat format = MediaFormat.createVideoFormat(mimeType, width, height);
+                format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+                format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
+                format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
+                format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
+                MediaCodec encoder = MediaCodec.createEncoderByType(mimeType);
+                encoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                configuredCodec = encoder;
+                isHevc = MediaFormat.MIMETYPE_VIDEO_HEVC.equals(mimeType);
+                System.out.println("Using encoder: " + encoder.getName() + " (" + mimeType + ")");
+                break;
+            } catch (Exception e) {
+                System.out.println("Encoder " + mimeType + " failed: " + e.getMessage() + ", trying fallback...");
+            }
+        }
+        if (configuredCodec == null) {
+            throw new IOException("Unable to create a video encoder for HEVC or AVC");
+        }
+        codec = configuredCodec;
+        inputSurface = codec.createInputSurface();
+        return isHevc ? 0 : 1;
+    }
+
+    public boolean isHevc() {
+        return isHevc;
+    }
+
+    public int getCodecFlags() {
+        return isHevc ? 0 : 1;
+    }
+
     public void start(OutputStream outputStream) throws IOException {
+        if (codec == null) {
+            initCodec();
+        }
         running.set(true);
         this.outputStream = outputStream;
-
-        MediaFormat format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_HEVC, width, height);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1); // 1 second interval to quickly recover from dropped packets
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        format.setInteger(MediaFormat.KEY_LATENCY, 0);
-        format.setInteger(MediaFormat.KEY_PRIORITY, 0);
-        
-        // Use HEVC Main profile
-        format.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.HEVCProfileMain);
-        
-        // Explicitly disable B-frames to ensure decode order matches presentation order.
-        format.setInteger("max-bframes", 0);
-        
-        // Battery Optimization: If the screen is static for 100ms (100000 microseconds), 
-        // the encoder will stop blasting identical frames over the network, drastically saving battery!
-        format.setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER, 100000L);
-
-        codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_HEVC);
-        codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-        
-        inputSurface = codec.createInputSurface();
         codec.start();
 
         capture = new ScreenCapture();
@@ -145,5 +167,9 @@ public class ScreenEncoder {
                 inputSurface = null;
             }
         }
+    }
+
+    public boolean isRunning() {
+        return running.get();
     }
 }
