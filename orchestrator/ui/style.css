@@ -1,294 +1,478 @@
+/* ============================================================
+   LinktoMac — Quiet Premium (matches LinkTheme.swift / .kt)
+   Matte · minimal · no gradients · no neon · light + dark
+   ============================================================ */
+
 :root {
-  --bg: #1e1e1e;
-  --bg-vibrancy: rgba(30, 30, 30, 0.95);
-  --text-primary: rgba(255, 255, 255, 0.9);
-  --text-secondary: rgba(255, 255, 255, 0.55);
-  --accent-blue: #0A84FF;
-  --accent-blue-hover: #409CFF;
-  --accent-red: #FF453A;
-  --accent-green: #30D158;
-  --accent-amber: #FFD60A;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --card-bg: rgba(255, 255, 255, 0.04);
-  --btn-bg: rgba(255, 255, 255, 0.1);
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --bg:             #F5F5F7;
+  --surface:        #FFFFFF;
+  --surface-alt:    #F2F2F7;
+  --text-primary:   #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-tertiary:  #AEAEB2;
+  --hairline:       rgba(0, 0, 0, 0.08);
+  --separator:      rgba(0, 0, 0, 0.06);
+  --accent:         #0071E3;
+  --accent-quiet:   rgba(0, 113, 227, 0.10);
+  --on-accent:      #FFFFFF;
+  --success:        #34C759;
+  --warning:        #FF9500;
+  --danger:         #FF3B30;
+  --danger-quiet:   rgba(255, 59, 48, 0.10);
+  --radius-control: 8px;
+  --radius-card:    12px;
+  --radius-overlay: 16px;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-body {
-  font-family: var(--font-family); font-size: 13px; color: var(--text-primary);
-  background-color: var(--bg-vibrancy); overflow: hidden; overflow-x: hidden;
-  height: 100vh; display: flex; flex-direction: column;
+[data-theme="dark"] {
+  --bg:             #1C1C1E;
+  --surface:        #2C2C2E;
+  --surface-alt:    #38383A;
+  --text-primary:   #F5F5F7;
+  --text-secondary: #98989D;
+  --text-tertiary:  #636366;
+  --hairline:       rgba(255, 255, 255, 0.10);
+  --separator:      rgba(255, 255, 255, 0.08);
+  --accent:         #0A84FF;
+  --accent-quiet:   rgba(10, 132, 255, 0.14);
+  --success:        #30D158;
+  --warning:        #FF9F0A;
+  --danger:         #FF453A;
+  --danger-quiet:   rgba(255, 69, 58, 0.14);
+  color-scheme: dark;
 }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Layout shell (400×600 pywebview window) ---------- */
+body { display: flex; flex-direction: column; overflow: hidden; }
 
 .app-header {
-  height: 48px; display: flex; align-items: center; justify-content: center;
-  border-bottom: 1px solid var(--border-color); -webkit-app-region: drag;
-}
-.logo { display: flex; align-items: center; gap: 6px; }
-.logo svg { color: var(--text-secondary); width: 16px; height: 16px; }
-.logo h1 { font-size: 15px; font-weight: 600; }
-
-.content {
-  flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px;
-}
-.device-section { display: flex; flex-direction: column; gap: 8px; }
-.section-header {
-  display: flex; justify-content: space-between; align-items: center;
-}
-.section-header h2 {
-  font-size: 12px; font-weight: 600; color: var(--text-secondary);
-  display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;
-}
-.badge {
-  background: var(--btn-bg); padding: 2px 7px; border-radius: 10px; font-size: 11px;
+  flex: none;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--surface);
 }
 
-/* Device List & Items */
-.device-list {
-  background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px;
-  overflow: hidden; overflow-x: hidden; display: flex; flex-direction: column;
-}
-.device-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 14px; border-bottom: 1px solid var(--border-color);
-  transition: background 0.15s ease;
-}
-.device-item:last-child { border-bottom: none; }
-.device-item:hover { background: rgba(255, 255, 255, 0.05); }
-.device-info { display: flex; align-items: center; gap: 12px; }
-.device-details { display: flex; flex-direction: column; gap: 3px; }
-.device-name { font-weight: 500; font-size: 14px; color: #FFF; }
-.device-icon { color: var(--accent-blue); display: flex; align-items: center; }
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo svg { width: 16px; height: 16px; color: var(--accent); }
+.logo h1 { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
 
-/* Status Badges - Zero Technical Jargon */
-.status-badge {
-  display: inline-flex; align-items: center; font-size: 11px; font-weight: 500;
-  gap: 4px; padding: 2px 0;
-}
-.badge-local { color: var(--accent-green); }
-.badge-remote { color: var(--accent-blue); }
-.badge-cable { color: var(--accent-amber); }
+.screen { display: none; flex: 1; flex-direction: column; min-height: 0; }
+.screen.active { display: flex; }
+.hidden { display: none !important; }
 
-/* Cable Card Styling - High-priority 1-click hardware mirror */
-.cable-card {
-  background: rgba(255, 214, 10, 0.12);
-  border: 1px solid rgba(255, 214, 10, 0.35);
-  border-radius: 10px;
-  padding: 12px 14px;
+/* ---------- Login ---------- */
+#login-screen { justify-content: center; }
+
+.login-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px;
+  gap: 12px;
+}
+
+.hero-icon {
+  width: 44px; height: 44px;
+  color: var(--text-tertiary);
+}
+
+.login-center h2 { font-size: 17px; font-weight: 600; }
+.login-center p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-width: 280px;
+}
+
+/* ---------- Buttons ---------- */
+button {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: transparent;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+button:active { opacity: 0.8; }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  min-height: 30px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  min-height: 30px;
+  background: var(--surface-alt);
+  color: var(--text-primary);
+}
+.btn-secondary:hover { background: var(--hairline); }
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  min-height: 30px;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 600;
+}
+.btn-danger:hover { opacity: 0.9; }
+
+.btn-text { color: var(--accent); padding: 4px 6px; }
+.btn-text:hover { background: var(--accent-quiet); }
+
+.btn-sm { padding: 5px 10px; min-height: 26px; font-size: 12px; }
+.btn-xs { padding: 3px 8px; min-height: 22px; font-size: 11px; }
+
+.google-btn {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--hairline);
+  font-weight: 600;
+}
+.google-btn:hover { background: var(--surface-alt); }
+
+/* ---------- Profile bar ---------- */
+.user-profile-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
-}
-.cable-card-content { display: flex; align-items: center; gap: 12px; }
-.cable-icon { font-size: 20px; color: var(--accent-amber); display: flex; align-items: center; }
-.cable-title { font-weight: 600; font-size: 14px; color: #FFF; }
-
-.device-actions { display: flex; gap: 6px; align-items: center; }
-
-button {
-  font-family: inherit; font-size: 12px; font-weight: 500; border: none; border-radius: 6px;
-  padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-  transition: all 0.15s ease;
-}
-.btn-primary { background: var(--accent-blue); color: white; }
-.btn-primary:hover { background: var(--accent-blue-hover); }
-.btn-secondary { background: var(--btn-bg); color: white; }
-.btn-secondary:hover { background: rgba(255, 255, 255, 0.15); }
-.btn-danger { background: rgba(255, 69, 58, 0.2); color: var(--accent-red); border: 1px solid rgba(255, 69, 58, 0.3); }
-.btn-danger:hover { background: rgba(255, 69, 58, 0.35); }
-.btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
-.btn-xs { padding: 2px 8px; font-size: 10px; border-radius: 4px; }
-
-.app-footer {
-  padding: 14px 16px; border-top: 1px solid var(--border-color); background: rgba(0, 0, 0, 0.2);
-}
-.action-buttons { display: flex; gap: 8px; justify-content: center; }
-
-.empty-state { padding: 24px; text-align: center; color: var(--text-secondary); font-size: 12px; }
-
-/* Overlays */
-.overlay {
-  position: fixed; display: flex; align-items: center; justify-content: center;
-  background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  inset: 0; z-index: 200;
-}
-.hidden { display: none !important; }
-
-/* Status Notification Banner */
-.status-message {
-  padding: 10px 14px; border-radius: 8px; font-size: 12px;
-  background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border-color);
-  animation: fadeIn 0.2s ease;
-}
-.status-content {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-}
-.status-message.error {
-  background: rgba(255, 69, 58, 0.15); border-color: rgba(255, 69, 58, 0.4); color: #FF8F87;
-}
-.status-message.success {
-  background: rgba(48, 209, 88, 0.15); border-color: rgba(48, 209, 88, 0.4); color: #85E89D;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--separator);
 }
 
-/* Spinner */
-.spinner {
-  width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #FFF; border-radius: 50%;
-  animation: spin 0.7s linear infinite; display: inline-block;
-}
-.spinner-sm {
-  width: 12px; height: 12px; border-width: 2px;
-}
+.user-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Session Recovery HUD */
-.recovery-card {
-  background: rgba(35, 35, 38, 0.95); padding: 24px; border-radius: 14px;
-  width: 320px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; gap: 14px;
-  text-align: center;
-}
-.recovery-header {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-}
-.pulse-indicator {
-  width: 10px; height: 10px; border-radius: 50%; background: #FF9F0A;
-  box-shadow: 0 0 8px #FF9F0A; animation: pulse 1.2s infinite ease-in-out;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.15); }
-}
-.recovery-card h3 {
-  font-size: 15px; font-weight: 600; color: var(--text-primary);
-}
-.recovery-card p {
-  font-size: 12px; color: var(--text-secondary); line-height: 1.4;
-}
-.recovery-progress {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  font-size: 12px; color: var(--text-secondary); padding: 8px 0;
-}
-.recovery-actions {
-  display: flex; justify-content: center; gap: 10px; margin-top: 6px;
-}
-
-/* Screen States */
-.screen {
-  display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden;
-}
-.screen.hidden { display: none !important; }
-
-/* Login Screen */
-.login-center {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 40px; text-align: center;
-}
-.hero-icon {
-  width: 64px; height: 64px; color: var(--text-primary); margin-bottom: 24px; opacity: 0.9;
-}
-.login-center h2 {
-  font-size: 22px; font-weight: 600; margin: 0 0 12px 0; color: var(--text-primary);
-}
-.login-center p {
-  font-size: 13px; line-height: 1.5; color: var(--text-secondary); margin: 0 0 28px 0; max-width: 280px;
-}
-
-.google-btn {
-  padding: 12px 24px !important; background: #ffffff !important; color: #000000 !important;
-  border: none !important; border-radius: 8px !important; font-size: 14px !important;
-  font-weight: 500 !important; display: flex !important; align-items: center !important;
-  gap: 12px !important; cursor: pointer !important; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.2s ease !important;
-}
-.google-btn:hover {
-  transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-}
-
-/* User Profile Bar */
-.user-profile-bar {
-  display: flex; justify-content: space-between; align-items: center; padding: 12px 18px;
-  background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--border-color);
-}
-.user-info { display: flex; align-items: center; gap: 10px; }
 .avatar {
-  width: 26px; height: 26px; border-radius: 13px; background: var(--accent-blue);
-  color: white; display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 600;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  flex: none;
 }
-#user-email { font-size: 12px; color: var(--text-secondary); }
-.btn-text { background: none; border: none; color: var(--text-secondary); font-size: 12px; cursor: pointer; }
-.btn-text:hover { color: var(--text-primary); }
 
-/* Tab Navigation */
+#user-email {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ---------- Tabs ---------- */
 .tab-bar {
   display: flex;
-  background: rgba(0, 0, 0, 0.25);
-  border-bottom: 1px solid var(--border-color);
-  padding: 6px 16px;
-  gap: 8px;
-}
-.tab-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.tab-btn:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
-}
-.tab-btn.active {
-  color: #FFF;
-  background: var(--btn-bg);
-  font-weight: 600;
-}
-.tab-view {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-}
-.tab-view.hidden {
-  display: none !important;
+  gap: 4px;
+  padding: 10px 16px 0;
 }
 
-/* Remote Tab Card */
+.tab-btn {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: var(--radius-control);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+}
+.tab-btn:hover { background: var(--surface-alt); }
+.tab-btn.active {
+  background: var(--accent-quiet);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---------- Content ---------- */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.tab-view { display: flex; flex-direction: column; gap: 12px; }
+
+/* Status banner (success / error messages) */
+.status-message {
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--surface-alt);
+  font-size: 12px;
+}
+.status-message.error { color: var(--danger); }
+.status-message.success { color: var(--success); }
+
+.status-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ---------- Cable banner (USB priority card) ---------- */
+.cable-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+}
+
+.cable-card-content { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.cable-icon {
+  width: 32px; height: 32px;
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-control);
+  background: var(--accent-quiet);
+  color: var(--accent);
+}
+.cable-icon svg { width: 16px; height: 16px; }
+
+.cable-info { min-width: 0; }
+.cable-title {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ---------- Badges & status chips ---------- */
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-alt);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-top: 2px;
+}
+.status-badge::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.badge-cable, .badge-local { color: var(--success); background: transparent; padding-left: 0; }
+.badge-remote { color: var(--accent); background: transparent; padding-left: 0; }
+
+/* ---------- Device sections ---------- */
+.device-section {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--separator);
+}
+
+.section-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.section-header h2 svg { color: var(--text-tertiary); }
+
+.device-list { display: flex; flex-direction: column; }
+
+.device-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--separator);
+}
+.device-item:last-child { border-bottom: none; }
+.device-item:hover { background: var(--surface-alt); }
+
+.device-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.device-icon {
+  width: 32px; height: 32px;
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-control);
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+}
+.device-icon svg { width: 16px; height: 16px; }
+
+.device-details { min-width: 0; }
+.device-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.device-actions { flex: none; }
+.btn-label { display: inline-flex; }
+
+.empty-state {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ---------- Remote relay card ---------- */
 .remote-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 12px;
+  gap: 10px;
+  padding: 20px 16px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
 }
-.remote-card h3 {
-  font-size: 15px;
-  font-weight: 600;
-  color: #FFF;
-}
+.remote-card .hero-icon { width: 36px; height: 36px; }
+.remote-card h3 { font-size: 14px; font-weight: 600; }
 .remote-card p {
   font-size: 12px;
   color: var(--text-secondary);
-  line-height: 1.4;
-  max-width: 320px;
+  max-width: 300px;
 }
 
+/* ---------- Footer ---------- */
+.app-footer {
+  flex: none;
+  padding: 10px 16px;
+  border-top: 1px solid var(--hairline);
+  background: var(--surface);
+}
+.action-buttons { display: flex; }
+.action-buttons .btn-danger { width: 100%; justify-content: center; }
+
+/* ---------- Recovery HUD overlay ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);   /* scrim only — no blur (matte rule) */
+}
+
+.recovery-card {
+  width: 320px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-overlay);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);   /* the one allowed shadow: floating overlay */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recovery-header { display: flex; align-items: center; gap: 8px; }
+.recovery-header h3 { font-size: 15px; font-weight: 600; }
+
+/* Pulsing dot = active retry feedback (functional motion, opacity only) */
+.pulse-indicator {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+.recovery-card p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.recovery-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ---------- Spinners (functional loading feedback) ---------- */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--hairline);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.spinner-sm { width: 12px; height: 12px; border-width: 1.5px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.recovery-actions { display: flex; gap: 8px; }
+.recovery-actions button { flex: 1; justify-content: center; }
+
+/* ---------- Scrollbar (quiet) ---------- */
+.content::-webkit-scrollbar { width: 8px; }
+.content::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border-radius: 4px;
+}
+.content::-webkit-scrollbar-track { background: transparent; }
+
+/* Inline-style replacements */
+.login-button-wide { width: 100%; justify-content: center; }

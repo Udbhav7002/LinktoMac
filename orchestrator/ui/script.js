@@ -1,3 +1,14 @@
+// --- Quiet Premium theme bootstrap (presentation only) ---
+(function () {
+    var root = document.documentElement;
+    function applyTheme() {
+        root.setAttribute("data-theme",
+            window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    }
+    applyTheme();
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+})();
+
 const firebaseConfig = {
     apiKey: "AIzaSyCr6T3Np-dI8lax8R2PfGDO57ZTPr0Eb2g",
     authDomain: "linktomac.firebaseapp.com",
@@ -593,7 +604,7 @@ function renderDeviceCard(list, countEl, deviceName, ip, uid, badgeText) {
                 </div>
                 <div class="device-details">
                     <div class="device-name">${safeName}</div>
-                    <div class="status-badge ${badgeClass}">● ${escapeHtml(badgeText)}</div>
+                    <div class="status-badge ${badgeClass}">${escapeHtml(badgeText)}</div>
                 </div>
             </div>
             <div class="device-actions">
@@ -783,7 +794,7 @@ function loadPairedDevices() {
                             </div>
                             <div class="device-details">
                                 <div class="device-name">${name}</div>
-                                <div class="status-badge badge-local">● Linked</div>
+                                <div class="status-badge badge-local">Linked</div>
                             </div>
                         </div>
                         <div class="device-actions">
@@ -832,7 +843,7 @@ window.updateDiscoveredDevices = function(devices) {
                         </div>
                         <div class="device-details">
                             <div class="device-name">${name}</div>
-                            <div class="status-badge badge-local">● Ready (Local)</div>
+                            <div class="status-badge badge-local">Ready (Local)</div>
                         </div>
                     </div>
                     <div class="device-actions">

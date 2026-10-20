@@ -138,3 +138,18 @@
   - [x] Share sheet ("Send to Mac") untouched
   - [x] Zero emoji; brand is plain "LinkToMac"
 - **Decisions:** Replaced `MainActivity.kt` with quiet premium theme implementation. Row spacing adjusted to standard `horizontalArrangement = Arrangement.spacedBy(8.dp)`. Build succeeded in 5s.
+
+## Task 11 — Web Orchestrator UI Redesign
+- **Files Touched:**
+  - `orchestrator/ui/style.css` (replaced)
+  - `orchestrator/ui/index.html` (replaced)
+  - `orchestrator/ui/script.js` (patched theme bootstrap + badge strings)
+- **Checklist Results:**
+  - [x] All 30 required IDs and classes preserved exactly
+  - [x] Fixed 400×600 column layout preserved with zero horizontal scroll
+  - [x] Zero emoji in HTML or JS templates; zero inline style attributes in HTML
+  - [x] Zero backdrop-filter, zero gradients, zero #4ADE80; only shadow is on .recovery-card
+  - [x] Light and dark modes supported via data-theme and prefers-color-scheme
+  - [x] USB cable banner, status messages, and recovery HUD logic intact
+  - [x] Google sign-in buttons render with brand mark on matte surface
+- **Decisions:** Implemented full Quiet Premium redesign for web orchestrator. Verified all hooks and absence of inline styles.
