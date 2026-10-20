@@ -100,8 +100,13 @@ struct OverviewWorkflowView: View {
                 ImageToolbarButton(icon: "speaker.minus.fill") { conn.sendMediaAction("VOL_DOWN") }
                 ImageToolbarButton(icon: "speaker.plus.fill")  { conn.sendMediaAction("VOL_UP") }
                 Spacer(minLength: LS.m)
-                Button("Ring phone") { conn.sendMediaAction("RING_PHONE") }
-                    .buttonStyle(.quietWarning)
+                if conn.isRingingPhone {
+                    Button("Stop ringing") { conn.stopRingingPhone() }
+                        .buttonStyle(.dangerPrimary)
+                } else {
+                    Button("Ring phone") { conn.ringPhone() }
+                        .buttonStyle(.quietWarning)
+                }
             }
         }
         .linkCard()

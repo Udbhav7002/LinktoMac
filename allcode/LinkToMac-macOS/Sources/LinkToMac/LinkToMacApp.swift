@@ -19,7 +19,7 @@ struct LinkToMacApp: App {
                     StatusDot(state: conn.isConnected ? .connected : .waiting)
                     Text(conn.isConnected
                          ? "\(conn.connectedDeviceName) · \(conn.connectionTransport)"
-                         : "Waiting for your phone")
+                         : (conn.connectedDeviceName != "No Android Connected" ? "Waiting for \(conn.connectedDeviceName)" : "Waiting for your phone"))
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
                 }
@@ -37,7 +37,12 @@ struct LinkToMacApp: App {
                     .font(.subheadline)
 
                 Button("Play / Pause Android Media") { conn.sendMediaAction("PLAY_PAUSE") }
-                Button("Ring My Android Phone")    { conn.sendMediaAction("RING_PHONE") }
+                if conn.isRingingPhone {
+                    Button("Stop Ringing Phone") { conn.stopRingingPhone() }
+                        .foregroundStyle(LinkTheme.danger)
+                } else {
+                    Button("Ring My Android Phone") { conn.ringPhone() }
+                }
 
                 HairlineDivider()
                     .padding(.vertical, 2)

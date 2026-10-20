@@ -19,7 +19,7 @@ final class ConnectionManager: ObservableObject {
     @Published var listenPort: UInt16 = 54921
     @Published var pairingToken: String = ""
 
-    // Feature State
+    @Published var isRingingPhone: Bool = false
     @Published var notifications: [AndroidNotificationItem] = []
     @Published var mutedApps: Set<String> = []
     @Published var smsThreads: [SmsThreadItem] = []
@@ -53,6 +53,9 @@ final class ConnectionManager: ObservableObject {
 
     private init() {
         self.localIPAddress = Self.detectLocalIPAddress() ?? "127.0.0.1"
+        if let savedName = UserDefaults.standard.string(forKey: "LinkToMacLastDeviceName"), !savedName.isEmpty {
+            self.connectedDeviceName = savedName
+        }
         if let savedToken = UserDefaults.standard.string(forKey: "LinkToMacPairingToken"), !savedToken.isEmpty {
             self.pairingToken = savedToken
         } else {
@@ -70,7 +73,12 @@ final class ConnectionManager: ObservableObject {
     func startServer() {
         listener?.cancel()
         do {
-            let params = NWParameters.tcp
+            let tcpOptions = NWProtocolTCP.Options()
+            tcpOptions.enableKeepalive = true
+            tcpOptions.keepaliveIdle = 5
+            tcpOptions.keepaliveInterval = 5
+            tcpOptions.keepaliveCount = 3
+            let params = NWParameters(tls: nil, tcp: tcpOptions)
             params.allowLocalEndpointReuse = true
             let nwPort = NWEndpoint.Port(rawValue: listenPort)!
             let newListener = try NWListener(using: params, on: nwPort)
@@ -111,6 +119,7 @@ final class ConnectionManager: ObservableObject {
                 case .failed, .cancelled:
                     if self.activeConnection === connection {
                         self.isConnected = false
+                        self.isRingingPhone = false
                         self.connectionTransport = "Disconnected"
                     }
                 default:
@@ -173,7 +182,10 @@ final class ConnectionManager: ObservableObject {
 
         switch env.type {
         case "HELLO", "STATUS_UPDATE":
-            if let name = env.payload["deviceName"] { self.connectedDeviceName = name }
+            if let name = env.payload["deviceName"] {
+                self.connectedDeviceName = name
+                UserDefaults.standard.set(name, forKey: "LinkToMacLastDeviceName")
+            }
             if let batStr = env.payload["battery"], let bat = Int(batStr) { self.batteryLevel = bat }
             if let chg = env.payload["charging"] { self.isCharging = (chg == "true") }
             if let trans = env.payload["transport"] {
@@ -510,7 +522,22 @@ final class ConnectionManager: ObservableObject {
         }
     }
 
+    func ringPhone() {
+        isRingingPhone = true
+        sendMediaAction("RING_PHONE")
+    }
+
+    func stopRingingPhone() {
+        isRingingPhone = false
+        sendMediaAction("STOP_RING")
+    }
+
     func sendMediaAction(_ action: String) {
+        if action == "RING_PHONE" {
+            isRingingPhone = true
+        } else if action == "STOP_RING" || action == "STOP_RINGING" {
+            isRingingPhone = false
+        }
         sendEnvelope(LinkEnvelope(
             type: "MEDIA_ACTION",
             payload: ["action": action]

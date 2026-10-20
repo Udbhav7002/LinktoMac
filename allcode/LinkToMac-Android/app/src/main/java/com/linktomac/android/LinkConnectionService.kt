@@ -3,6 +3,7 @@ package com.linktomac.android
 import android.app.*
 import android.content.*
 import android.media.AudioManager
+import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
 import android.net.nsd.NsdManager
@@ -33,6 +34,9 @@ class LinkConnectionService : Service() {
     private var nsdManager: NsdManager? = null
     private var discoveryListener: NsdManager.DiscoveryListener? = null
     private val incomingFiles = mutableMapOf<String, FileOutputStream>()
+    private var reconnectJob: Job? = null
+    private var userRequestedDisconnect: Boolean = false
+    private var activeRingtone: Ringtone? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -41,28 +45,48 @@ class LinkConnectionService : Service() {
         startMdnsDiscovery()
         ClipboardManagerBridge.init(this)
         SmsContactsCallBridge.registerCallStateReceiver(this)
+
+        // Automatically connect to remembered device on startup
+        autoConnectRemembered()
+    }
+
+    private fun autoConnectRemembered() {
+        val prefs = getSharedPreferences("linktomac", MODE_PRIVATE)
+        val savedHost = prefs.getString("lastHost", null)
+        val savedPort = prefs.getInt("lastPort", 54921)
+        val savedToken = prefs.getString("lastToken", "") ?: ""
+        if (!savedHost.isNullOrBlank()) {
+            connectToMac(savedHost, savedPort, savedToken)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
         if (action == "CONNECT_HOST") {
+            userRequestedDisconnect = false
+            reconnectJob?.cancel()
             val host = intent.getStringExtra("host") ?: "127.0.0.1"
             val port = intent.getIntExtra("port", 54921)
             val token = intent.getStringExtra("token") ?: ""
             connectToMac(host, port, token)
         } else if (action == "DISCONNECT") {
+            userRequestedDisconnect = true
+            reconnectJob?.cancel()
             closeSocket()
         }
         return START_STICKY
     }
 
     fun connectToMac(host: String, port: Int, token: String) {
+        userRequestedDisconnect = false
+        reconnectJob?.cancel()
         serviceScope.launch {
-            closeSocket()
+            closeSocketInternal()
             try {
                 statusMessage = "Connecting to $host:$port..."
                 val s = Socket()
                 s.tcpNoDelay = true
+                s.keepAlive = true
                 s.connect(InetSocketAddress(host, port), 4000)
                 socket = s
                 outputStream = s.getOutputStream()
@@ -84,6 +108,9 @@ class LinkConnectionService : Service() {
             } catch (e: Exception) {
                 isConnectedState = false
                 statusMessage = "Connection failed: ${e.localizedMessage}"
+                if (!userRequestedDisconnect) {
+                    scheduleReconnect()
+                }
             }
         }
     }
@@ -256,16 +283,27 @@ class LinkConnectionService : Service() {
     private fun handleMediaAction(action: String) {
         val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
         when (action) {
-            "PLAY_PAUSE" -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
-            "NEXT"       -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_NEXT)
-            "PREV"       -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+            "PLAY_PAUSE" -> dispatchMediaKey(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+            "NEXT"       -> dispatchMediaKey(android.view.KeyEvent.KEYCODE_MEDIA_NEXT)
+            "PREV"       -> dispatchMediaKey(android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS)
             "VOL_UP"     -> audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
             "VOL_DOWN"   -> audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
             "RING_PHONE" -> {
-                val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                val ringtone = RingtoneManager.getRingtone(applicationContext, uri)
-                ringtone?.play()
+                val current = activeRingtone
+                if (current != null && current.isPlaying) {
+                    current.stop()
+                    activeRingtone = null
+                } else {
+                    val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                        ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                    val ringtone = RingtoneManager.getRingtone(applicationContext, uri)
+                    activeRingtone = ringtone
+                    ringtone?.play()
+                }
+            }
+            "STOP_RING", "STOP_RINGING" -> {
+                activeRingtone?.stop()
+                activeRingtone = null
             }
         }
     }
@@ -290,6 +328,11 @@ class LinkConnectionService : Service() {
                                 val host = resolved.host?.hostAddress ?: return
                                 discoveredMacHost = host
                                 discoveredMacPort = resolved.port
+                                if (!isConnectedState && !userRequestedDisconnect) {
+                                    val prefs = getSharedPreferences("linktomac", MODE_PRIVATE)
+                                    val token = prefs.getString("lastToken", "") ?: ""
+                                    connectToMac(host, resolved.port, token)
+                                }
                             }
                         })
                     }
@@ -304,13 +347,63 @@ class LinkConnectionService : Service() {
         } catch (_: Exception) {}
     }
 
-    private fun closeSocket() {
+    private fun closeSocketInternal() {
         isConnectedState = false
-        statusMessage = "Disconnected"
         try { outputStream?.close() } catch (_: Exception) {}
         try { socket?.close() } catch (_: Exception) {}
         outputStream = null
         socket = null
+    }
+
+    private fun closeSocket() {
+        closeSocketInternal()
+        statusMessage = "Disconnected"
+        if (!userRequestedDisconnect) {
+            scheduleReconnect()
+        }
+    }
+
+    private fun scheduleReconnect() {
+        if (reconnectJob?.isActive == true || userRequestedDisconnect) return
+        reconnectJob = serviceScope.launch {
+            var delayMs = 1500L
+            while (isActive && !isConnectedState && !userRequestedDisconnect) {
+                delay(delayMs)
+                if (isConnectedState || userRequestedDisconnect) break
+
+                val prefs = getSharedPreferences("linktomac", MODE_PRIVATE)
+                val targetHost = if (discoveredMacHost.isNotEmpty()) discoveredMacHost else prefs.getString("lastHost", null)
+                val targetPort = if (discoveredMacHost.isNotEmpty()) discoveredMacPort else prefs.getInt("lastPort", 54921)
+                val targetToken = prefs.getString("lastToken", "") ?: ""
+
+                if (!targetHost.isNullOrBlank()) {
+                    statusMessage = "Reconnecting to $targetHost:$targetPort..."
+                    try {
+                        val s = Socket()
+                        s.tcpNoDelay = true
+                        s.keepAlive = true
+                        s.connect(InetSocketAddress(targetHost, targetPort), 4000)
+                        socket = s
+                        outputStream = s.getOutputStream()
+                        isConnectedState = true
+                        val transport = if (targetHost == "127.0.0.1") "USB" else "Local Wi-Fi"
+                        statusMessage = "Connected ($transport • $targetHost)"
+                        startForegroundNotification("Connected to Mac ($transport)")
+
+                        sendHelloAndStatus(transport, targetToken)
+                        startStatusHeartbeat(transport)
+                        readLoop(DataInputStream(s.getInputStream()))
+                        break
+                    } catch (_: Exception) {
+                        isConnectedState = false
+                        statusMessage = "Waiting for Mac ($targetHost)..."
+                        delayMs = (delayMs * 1.5).toLong().coerceAtMost(10000L)
+                    }
+                } else {
+                    delay(3000L)
+                }
+            }
+        }
     }
 
     private fun startForegroundNotification(text: String) {
@@ -331,6 +424,14 @@ class LinkConnectionService : Service() {
         } else {
             startForeground(1001, notif)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        activeRingtone?.stop()
+        activeRingtone = null
+        reconnectJob?.cancel()
+        closeSocketInternal()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
