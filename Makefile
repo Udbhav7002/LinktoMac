@@ -1,4 +1,4 @@
-.PHONY: all app client clean run deploy export
+.PHONY: all app client clean run deploy export stitch sync
 
 all: app client
 
@@ -21,7 +21,13 @@ run: client
 
 clean:
 	cd android-app && ./gradlew clean
-	rm -rf native-client/build
+	rm -rf native-client/build build dist
 
 export:
-	python3 export_all_code.py
+	python3 scripts/export_all_code.py
+
+stitch:
+	python3 scripts/stitch_allcode.py
+
+sync:
+	python3 scripts/update_allcode_bundles.py

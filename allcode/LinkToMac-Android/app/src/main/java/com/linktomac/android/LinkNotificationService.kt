@@ -132,10 +132,3 @@ class LinkNotificationService : NotificationListenerService() {
 
     private fun guardSbn(sbn: StatusBarNotification?): StatusBarNotification? = sbn
 }
-
-
-
-
-
-
-

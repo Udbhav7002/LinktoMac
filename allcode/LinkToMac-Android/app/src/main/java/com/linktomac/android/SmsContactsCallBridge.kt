@@ -161,10 +161,3 @@ object SmsContactsCallBridge {
         }, filter)
     }
 }
-
-
-
-
-
-
-

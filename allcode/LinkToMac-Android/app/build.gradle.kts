@@ -41,10 +41,3 @@ dependencies {
     // ZXing QR Scanner for 1-tap QR code pairing
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }
-
-
-
-
-
-
-

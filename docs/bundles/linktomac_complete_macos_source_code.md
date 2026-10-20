@@ -1,6 +1,6 @@
 # LinkToMac — Complete macOS Source Code (`allcode/LinkToMac-macOS`)
 
-Every file below belongs inside the codebase. Run `python3 stitch_allcode.py` from `LINKTOMAC_MASTER_PLAN.md` to extract them automatically.
+Every file below belongs inside the codebase. Run `python3 scripts/stitch_allcode.py` to extract them automatically.
 
 ---
 
@@ -24,6 +24,8 @@ let package = Package(
         )
     ]
 )
+
+
 
 
 
@@ -78,6 +80,8 @@ let package = Package(
 
 
 
+
+
 ```
 
 ---
@@ -112,6 +116,8 @@ echo "=========================================="
 echo " SUCCESS: Built $APP_DIR"
 echo " Run with: open $APP_DIR"
 echo "=========================================="
+
+
 
 
 
@@ -255,6 +261,8 @@ enum WireFramer {
 
 
 
+
+
 ```
 
 ---
@@ -292,6 +300,8 @@ public struct LocalState<Value>: DynamicProperty {
         )
     }
 }
+
+
 
 
 
@@ -946,6 +956,8 @@ final class ConnectionManager: ObservableObject {
 
 
 
+
+
 ```
 
 ---
@@ -1127,6 +1139,8 @@ final class ADBBridge: ObservableObject {
 
 
 
+
+
 ```
 
 ---
@@ -1235,6 +1249,8 @@ final class ClipboardSyncManager: ObservableObject {
         }
     }
 }
+
+
 
 
 
@@ -1637,6 +1653,8 @@ struct PairingQRSetupView: View {
         return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
     }
 }
+
+
 
 
 
@@ -2420,6 +2438,8 @@ struct IncomingCallHUDView: View {
 
 
 
+
+
 ```
 
 ---
@@ -2484,6 +2504,8 @@ struct LinkToMacApp: App {
         }
     }
 }
+
+
 
 
 

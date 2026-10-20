@@ -1,6 +1,6 @@
 # LinkToMac — Complete Android Source Code (`allcode/LinkToMac-Android`)
 
-Every file below belongs inside the codebase. Run `python3 stitch_allcode.py` from `LINKTOMAC_MASTER_PLAN.md` to extract them automatically.
+Every file below belongs inside the codebase. Run `python3 scripts/stitch_allcode.py` to extract them automatically.
 
 ---
 
@@ -29,6 +29,8 @@ include(":app")
 
 
 
+
+
 ```
 
 ---
@@ -40,6 +42,8 @@ org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
 android.builtInKotlin=false
 android.newDsl=false
 kotlin.compiler.execution.strategy=in-process
+
+
 
 
 
@@ -66,6 +70,8 @@ zipStorePath=wrapper/dists
 
 
 
+
+
 ```
 
 ---
@@ -76,6 +82,8 @@ plugins {
     id("com.android.application") version "8.3.0" apply false
     id("org.jetbrains.kotlin.android") version "1.9.22" apply false
 }
+
+
 
 
 
@@ -132,6 +140,8 @@ dependencies {
     // ZXing QR Scanner for 1-tap QR code pairing
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }
+
+
 
 
 
@@ -244,6 +254,8 @@ dependencies {
 
 
 
+
+
 ```
 
 ---
@@ -255,6 +267,8 @@ dependencies {
     <string name="app_name">LinkToMac</string>
     <string name="accessibility_service_desc">Enables remote wireless touch input, navigation gestures, and screen capture streaming from your Mac.</string>
 </resources>
+
+
 
 
 
@@ -285,6 +299,8 @@ dependencies {
 
 
 
+
+
 ```
 
 ---
@@ -300,6 +316,8 @@ dependencies {
     android:canPerformGestures="true"
     android:canTakeScreenshot="true"
     android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows" />
+
+
 
 
 
@@ -346,6 +364,8 @@ object WireProtocol {
         return packFrame(FRAME_JSON, root.toString().toByteArray(Charsets.UTF_8))
     }
 }
+
+
 
 
 
@@ -501,6 +521,8 @@ class LinkTouchAccessibilityService : AccessibilityService() {
         Log.i(TAG, "LinkTouchAccessibilityService destroyed")
     }
 }
+
+
 
 
 
@@ -908,6 +930,8 @@ object ClipboardManagerBridge {
 
 
 
+
+
 ```
 
 ---
@@ -1048,6 +1072,8 @@ class LinkNotificationService : NotificationListenerService() {
 
     private fun guardSbn(sbn: StatusBarNotification?): StatusBarNotification? = sbn
 }
+
+
 
 
 
@@ -1224,6 +1250,8 @@ object SmsContactsCallBridge {
         }, filter)
     }
 }
+
+
 
 
 
@@ -1428,6 +1456,8 @@ object FilePhotosBridge {
         LinkConnectionService.instance?.sendRawFrame(endFrame)
     }
 }
+
+
 
 
 
@@ -1748,6 +1778,8 @@ object ScreenCameraStreamer {
         }
     }
 }
+
+
 
 
 
@@ -2179,6 +2211,8 @@ class MainActivity : ComponentActivity() {
         })
     }
 }
+
+
 
 
 

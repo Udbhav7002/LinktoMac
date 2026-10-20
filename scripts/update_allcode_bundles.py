@@ -2,12 +2,14 @@
 """
 update_allcode_bundles.py
 Syncs all source code files from allcode/ directly into
-linktomac_complete_android_source_code.md (ALLCODE_ANDROID_COMPLETE.md) and
-linktomac_complete_macos_source_code.md (ALLCODE_MACOS_COMPLETE.md).
+docs/bundles/linktomac_complete_android_source_code.md and
+docs/bundles/linktomac_complete_macos_source_code.md.
 """
 
 import os
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 EXT_TO_LANG = {
     ".kt": "kotlin",
@@ -57,13 +59,13 @@ def generate_markdown(title: str, file_list: list[str]) -> str:
     lines = [
         f"# {title}",
         "",
-        f"Every file below belongs inside the codebase. Run `python3 stitch_allcode.py` from `LINKTOMAC_MASTER_PLAN.md` to extract them automatically.",
+        f"Every file below belongs inside the codebase. Run `python3 scripts/stitch_allcode.py` to extract them automatically.",
         "",
         "---",
         ""
     ]
     for rel_path in file_list:
-        p = Path(rel_path)
+        p = REPO_ROOT / rel_path
         if not p.exists():
             print(f"[WARN] File not found: {rel_path}")
             continue
@@ -80,19 +82,24 @@ def generate_markdown(title: str, file_list: list[str]) -> str:
     return "\n".join(lines)
 
 def main():
+    bundles_dir = REPO_ROOT / "docs" / "bundles"
+    bundles_dir.mkdir(parents=True, exist_ok=True)
+
     android_md = generate_markdown(
         "LinkToMac — Complete Android Source Code (`allcode/LinkToMac-Android`)",
         ANDROID_FILES
     )
-    Path("linktomac_complete_android_source_code.md").write_text(android_md, encoding="utf-8")
-    print(f"[OK] Updated linktomac_complete_android_source_code.md ({len(ANDROID_FILES)} files)")
+    android_target = bundles_dir / "linktomac_complete_android_source_code.md"
+    android_target.write_text(android_md, encoding="utf-8")
+    print(f"[OK] Updated {android_target.relative_to(REPO_ROOT)} ({len(ANDROID_FILES)} files)")
 
     macos_md = generate_markdown(
         "LinkToMac — Complete macOS Source Code (`allcode/LinkToMac-macOS`)",
         MACOS_FILES
     )
-    Path("linktomac_complete_macos_source_code.md").write_text(macos_md, encoding="utf-8")
-    print(f"[OK] Updated linktomac_complete_macos_source_code.md ({len(MACOS_FILES)} files)")
+    macos_target = bundles_dir / "linktomac_complete_macos_source_code.md"
+    macos_target.write_text(macos_md, encoding="utf-8")
+    print(f"[OK] Updated {macos_target.relative_to(REPO_ROOT)} ({len(MACOS_FILES)} files)")
 
 if __name__ == "__main__":
     main()

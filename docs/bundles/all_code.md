@@ -1,6 +1,6 @@
 # LinktoMac — Complete Codebase
 
-This document consolidates all 176 source and configuration files of the LinktoMac project in a clean, structured format.
+This document consolidates all 169 source and configuration files of the LinktoMac project in a clean, structured format.
 
 ---
 
@@ -148,35 +148,28 @@ This document consolidates all 176 source and configuration files of the LinktoM
 - [`.github/workflows/build.yml`](#-github-workflows-build-yml)
 - [`.gitignore`](#-gitignore)
 - [`.vercelignore`](#-vercelignore)
-- [`ALLCODE_ANDROID_COMPLETE.md`](#ALLCODE-ANDROID-COMPLETE-md)
-- [`ALLCODE_MACOS_COMPLETE.md`](#ALLCODE-MACOS-COMPLETE-md)
-- [`LINKTOMAC_MASTER_PLAN.md`](#LINKTOMAC-MASTER-PLAN-md)
-- [`LinktoMac.spec`](#LinktoMac-spec)
 - [`Makefile`](#Makefile)
-- [`ORIGINAL_REQUEST.md`](#ORIGINAL-REQUEST-md)
-- [`OVERNIGHT_BUILD_REPORT.md`](#OVERNIGHT-BUILD-REPORT-md)
 - [`README.md`](#README-md)
 - [`build_mac_app.sh`](#build-mac-app-sh)
-- [`index.html`](#index-html)
-- [`linktomac_complete_android_source_code.md`](#linktomac-complete-android-source-code-md)
-- [`linktomac_complete_macos_source_code.md`](#linktomac-complete-macos-source-code-md)
-- [`linktomac_master_architecture_parallel_agent_plan.md`](#linktomac-master-architecture-parallel-agent-plan-md)
-- [`skills-lock.json`](#skills-lock-json)
-- [`stitch_allcode.py`](#stitch-allcode-py)
-- [`update_allcode_bundles.py`](#update-allcode-bundles-py)
 - [`vercel.json`](#vercel-json)
 
 ### Scripts, Tests & Documentation
 
+- [`docs/ARCHITECTURE_PLAN.md`](#docs-ARCHITECTURE-PLAN-md)
 - [`docs/IMPROVEMENT_PLAN.md`](#docs-IMPROVEMENT-PLAN-md)
 - [`docs/ORIGINAL_REQUEST.md`](#docs-ORIGINAL-REQUEST-md)
+- [`docs/OVERNIGHT_BUILD_REPORT.md`](#docs-OVERNIGHT-BUILD-REPORT-md)
 - [`docs/PROJECT.md`](#docs-PROJECT-md)
 - [`docs/PROJECT_CONTEXT.md`](#docs-PROJECT-CONTEXT-md)
 - [`docs/TEST_INFRA.md`](#docs-TEST-INFRA-md)
 - [`docs/android_flow_storyboard.md`](#docs-android-flow-storyboard-md)
 - [`docs/audit_report.md`](#docs-audit-report-md)
+- [`docs/bundles/linktomac_complete_android_source_code.md`](#docs-bundles-linktomac-complete-android-source-code-md)
+- [`docs/bundles/linktomac_complete_macos_source_code.md`](#docs-bundles-linktomac-complete-macos-source-code-md)
 - [`docs/mac_flow_storyboard.md`](#docs-mac-flow-storyboard-md)
 - [`scripts/download_adb.sh`](#scripts-download-adb-sh)
+- [`scripts/stitch_allcode.py`](#scripts-stitch-allcode-py)
+- [`scripts/update_allcode_bundles.py`](#scripts-update-allcode-bundles-py)
 - [`tests/adversarial_m1/test_firestore_schema_and_preauth.js`](#tests-adversarial-m1-test-firestore-schema-and-preauth-js)
 - [`tests/adversarial_m1/test_lan_ip_and_smart_connect_stress.py`](#tests-adversarial-m1-test-lan-ip-and-smart-connect-stress-py)
 - [`tests/adversarial_m1/test_m1_screen_capture_and_handshake.py`](#tests-adversarial-m1-test-m1-screen-capture-and-handshake-py)
@@ -21593,6 +21586,7 @@ env/
 venv/
 .venv/
 **/.build/
+.pytest_cache/
 
 # IDEs
 .idea/
@@ -21664,4966 +21658,11 @@ docs/
 scripts/
 ```
 
-<a id="ALLCODE-ANDROID-COMPLETE-md"></a>
-### `ALLCODE_ANDROID_COMPLETE.md`
-
-````markdown
-# LinkToMac — Complete Android Source Code (`allcode/LinkToMac-Android`)
-
-Every file below belongs inside the codebase. Run `python3 stitch_allcode.py` from `LINKTOMAC_MASTER_PLAN.md` to extract them automatically.
-
----
-
-### FILE: allcode/LinkToMac-Android/settings.gradle.kts
-```kotlin
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-rootProject.name = "LinkToMacAndroid"
-include(":app")
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/gradle.properties
-```properties
-android.useAndroidX=true
-org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-android.builtInKotlin=false
-android.newDsl=false
-kotlin.compiler.execution.strategy=in-process
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/gradle/wrapper/gradle-wrapper.properties
-```properties
-distributionBase=GRADLE_USER_HOME
-distributionPath=wrapper/dists
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
-networkTimeout=10000
-zipStoreBase=GRADLE_USER_HOME
-zipStorePath=wrapper/dists
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/build.gradle.kts
-```kotlin
-plugins {
-    id("com.android.application") version "8.3.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/build.gradle.kts
-```kotlin
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-}
-
-android {
-    namespace = "com.linktomac.android"
-    compileSdk = 34
-
-    defaultConfig {
-        applicationId = "com.linktomac.android"
-        minSdk = 29
-        targetSdk = 34
-        versionCode = 161
-        versionName = "1.61"
-    }
-
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
-
-dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
-    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    // ZXing QR Scanner for 1-tap QR code pairing
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/AndroidManifest.xml
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Local Wi-Fi & Foreground Service -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-    <!-- SMS, Contacts & Call Controls -->
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-
-    <!-- Files, Photos, Camera & Microphone -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <application
-        android:allowBackup="true"
-        android:label="LinkToMac"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
-
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <!-- Share Sheet Target: "Send to Mac (LinkToMac)" -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="*/*" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="*/*" />
-            </intent-filter>
-        </activity>
-
-        <service
-            android:name=".LinkConnectionService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="connectedDevice|camera|microphone|mediaProjection" />
-
-        <service
-            android:name=".LinkNotificationService"
-            android:label="LinkToMac Notification &amp; Media Bridge"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-
-        <service
-            android:name=".LinkTouchAccessibilityService"
-            android:label="LinkToMac Wireless Touch &amp; Mirror Bridge"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/link_accessibility_config" />
-        </service>
-    </application>
-</manifest>
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/res/values/strings.xml
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">LinkToMac</string>
-    <string name="accessibility_service_desc">Enables remote wireless touch input, navigation gestures, and screen capture streaming from your Mac.</string>
-</resources>
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/res/xml/accessibility_service_config.xml
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/accessibility_service_desc"
-    android:accessibilityEventTypes="typeAllMask"
-    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
-    android:accessibilityFeedbackType="feedbackGeneric"
-    android:notificationTimeout="50"
-    android:canPerformGestures="true"
-    android:canRetrieveWindowContent="true"
-    android:canTakeScreenshot="true" />
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/res/xml/link_accessibility_config.xml
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/accessibility_service_desc"
-    android:accessibilityEventTypes="typeAllMask"
-    android:accessibilityFeedbackType="feedbackGeneric"
-    android:notificationTimeout="100"
-    android:canPerformGestures="true"
-    android:canTakeScreenshot="true"
-    android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows" />
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ProtocolModels.kt
-```kotlin
-package com.linktomac.android
-
-import org.json.JSONArray
-import org.json.JSONObject
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-
-object WireProtocol {
-    const val FRAME_JSON: Byte       = 0x01
-    const val FRAME_FILE_CHUNK: Byte = 0x02
-    const val FRAME_VIDEO_JPEG: Byte = 0x03
-    const val FRAME_AUDIO_PCM: Byte  = 0x04
-
-    fun packFrame(frameType: Byte, payload: ByteArray): ByteArray {
-        val buffer = ByteBuffer.allocate(5 + payload.size).order(ByteOrder.BIG_ENDIAN)
-        buffer.putInt(payload.size)
-        buffer.put(frameType)
-        buffer.put(payload)
-        return buffer.array()
-    }
-
-    fun packJson(type: String, payloadMap: Map<String, String> = emptyMap(), extraBlock: (JSONObject.() -> Unit)? = null): ByteArray {
-        val root = JSONObject()
-        root.put("type", type)
-        root.put("timestamp", System.currentTimeMillis())
-        val payloadObj = JSONObject()
-        for ((k, v) in payloadMap) {
-            payloadObj.put(k, v)
-        }
-        root.put("payload", payloadObj)
-        extraBlock?.invoke(root)
-        return packFrame(FRAME_JSON, root.toString().toByteArray(Charsets.UTF_8))
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTouchAccessibilityService.kt
-```kotlin
-package com.linktomac.android
-
-import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityServiceInfo
-import android.accessibilityservice.GestureDescription
-import android.graphics.Bitmap
-import android.graphics.Path
-import android.os.Build
-import android.util.Log
-import android.view.Display
-import android.view.accessibility.AccessibilityEvent
-import java.io.ByteArrayOutputStream
-
-class LinkTouchAccessibilityService : AccessibilityService() {
-
-    companion object {
-        private const val TAG = "LinkTouchA11y"
-
-        @Volatile
-        var instance: LinkTouchAccessibilityService? = null
-
-        fun getRealScreenSize(context: android.content.Context): Pair<Int, Int> {
-            val metrics = context.resources.displayMetrics
-            return Pair(metrics.widthPixels, metrics.heightPixels)
-        }
-    }
-
-    override fun onServiceConnected() {
-        super.onServiceConnected()
-        instance = this
-        try {
-            val info = serviceInfo ?: AccessibilityServiceInfo()
-            info.flags = info.flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-            serviceInfo = info
-        } catch (_: Exception) {}
-        Log.i(TAG, "LinkTouchAccessibilityService connected")
-    }
-
-    fun performNormalizedTap(normX: Float, normY: Float): Boolean {
-        val width = resources.displayMetrics.widthPixels
-        val height = resources.displayMetrics.heightPixels
-        val px = (normX * width).coerceIn(0f, width.toFloat())
-        val py = (normY * height).coerceIn(0f, height.toFloat())
-
-        val path = Path().apply {
-            moveTo(px, py)
-        }
-        val stroke = GestureDescription.StrokeDescription(path, 0L, 50L)
-        val gesture = GestureDescription.Builder().addStroke(stroke).build()
-        return dispatchGesture(gesture, null, null)
-    }
-
-    fun performRemoteKey(keyCode: Int): Boolean {
-        return when (keyCode) {
-            3 -> performGlobalAction(GLOBAL_ACTION_HOME)
-            4 -> performGlobalAction(GLOBAL_ACTION_BACK)
-            187 -> performGlobalAction(GLOBAL_ACTION_RECENTS)
-            26 -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
-                } else false
-            }
-            83 -> performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
-            else -> false
-        }
-    }
-
-    fun captureScreenJpeg(callback: (ByteArray?) -> Unit) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            callback(null)
-            return
-        }
-        try {
-            takeScreenshot(Display.DEFAULT_DISPLAY, mainExecutor, object : TakeScreenshotCallback {
-                override fun onSuccess(result: ScreenshotResult) {
-                    val hwBuffer = result.hardwareBuffer
-                    val colorSpace = result.colorSpace
-                    try {
-                        val hwBmp = Bitmap.wrapHardwareBuffer(hwBuffer, colorSpace)
-                        if (hwBmp == null) {
-                            callback(null)
-                            return
-                        }
-                        val origW = hwBmp.width
-                        val origH = hwBmp.height
-                        val targetW = 540
-                        val targetH = ((origH.toFloat() / origW.toFloat()) * targetW).toInt().coerceAtLeast(1)
-
-                        val scaled = Bitmap.createScaledBitmap(hwBmp, targetW, targetH, true)
-                        val baos = ByteArrayOutputStream()
-                        scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos)
-                        scaled.recycle()
-                        hwBmp.recycle()
-                        callback(baos.toByteArray())
-                    } catch (e: Exception) {
-                        Log.w(TAG, "captureScreenJpeg processing failed: ${e.message}")
-                        callback(null)
-                    } finally {
-                        hwBuffer.close()
-                    }
-                }
-
-                override fun onFailure(errorCode: Int) {
-                    Log.w(TAG, "takeScreenshot failed with code: $errorCode")
-                    callback(null)
-                }
-            })
-        } catch (e: Exception) {
-            Log.w(TAG, "captureScreenJpeg invocation failed: ${e.message}")
-            callback(null)
-        }
-    }
-
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null) return
-        when (event.eventType) {
-            AccessibilityEvent.TYPE_VIEW_CLICKED,
-            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
-            AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED,
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                ClipboardManagerBridge.syncFromAccessibilityService(this)
-            }
-        }
-    }
-
-    override fun onInterrupt() {
-        Log.w(TAG, "LinkTouchAccessibilityService interrupted")
-    }
-
-    override fun onUnbind(intent: android.content.Intent?): Boolean {
-        instance = null
-        return super.onUnbind(intent)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (instance == this) {
-            instance = null
-        }
-        Log.i(TAG, "LinkTouchAccessibilityService destroyed")
-    }
-}
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkConnectionService.kt
-```kotlin
-package com.linktomac.android
-
-import android.app.*
-import android.content.*
-import android.media.AudioManager
-import android.media.RingtoneManager
-import android.net.Uri
-import android.net.nsd.NsdManager
-import android.net.nsd.NsdServiceInfo
-import android.os.*
-import kotlinx.coroutines.*
-import org.json.JSONObject
-import java.io.DataInputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
-import java.net.InetSocketAddress
-import java.net.Socket
-
-class LinkConnectionService : Service() {
-
-    companion object {
-        var instance: LinkConnectionService? = null
-        var isConnectedState: Boolean = false
-        var statusMessage: String = "Disconnected"
-        var discoveredMacHost: String = ""
-        var discoveredMacPort: Int = 54921
-    }
-
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var socket: Socket? = null
-    private var outputStream: OutputStream? = null
-    private var nsdManager: NsdManager? = null
-    private var discoveryListener: NsdManager.DiscoveryListener? = null
-    private val incomingFiles = mutableMapOf<String, FileOutputStream>()
-
-    override fun onCreate() {
-        super.onCreate()
-        instance = this
-        startForegroundNotification("LinkToMac Ready — Waiting for Mac")
-        startMdnsDiscovery()
-        ClipboardManagerBridge.init(this)
-        SmsContactsCallBridge.registerCallStateReceiver(this)
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val action = intent?.action
-        if (action == "CONNECT_HOST") {
-            val host = intent.getStringExtra("host") ?: "127.0.0.1"
-            val port = intent.getIntExtra("port", 54921)
-            val token = intent.getStringExtra("token") ?: ""
-            connectToMac(host, port, token)
-        } else if (action == "DISCONNECT") {
-            closeSocket()
-        }
-        return START_STICKY
-    }
-
-    fun connectToMac(host: String, port: Int, token: String) {
-        serviceScope.launch {
-            closeSocket()
-            try {
-                statusMessage = "Connecting to $host:$port..."
-                val s = Socket()
-                s.tcpNoDelay = true
-                s.connect(InetSocketAddress(host, port), 4000)
-                socket = s
-                outputStream = s.getOutputStream()
-                isConnectedState = true
-                val transport = if (host == "127.0.0.1") "USB" else "Local Wi-Fi"
-                statusMessage = "Connected ($transport • $host)"
-                startForegroundNotification("Connected to Mac ($transport)")
-
-                // Save last successful host
-                getSharedPreferences("linktomac", MODE_PRIVATE).edit()
-                    .putString("lastHost", host)
-                    .putInt("lastPort", port)
-                    .putString("lastToken", token)
-                    .apply()
-
-                sendHelloAndStatus(transport, token)
-                startStatusHeartbeat(transport)
-                readLoop(DataInputStream(s.getInputStream()))
-            } catch (e: Exception) {
-                isConnectedState = false
-                statusMessage = "Connection failed: ${e.localizedMessage}"
-            }
-        }
-    }
-
-    fun sendRawFrame(frameBytes: ByteArray) {
-        serviceScope.launch {
-            try {
-                synchronized(this@LinkConnectionService) {
-                    outputStream?.write(frameBytes)
-                    outputStream?.flush()
-                }
-            } catch (_: Exception) {
-                closeSocket()
-            }
-        }
-    }
-
-    private fun sendHelloAndStatus(transport: String, token: String) {
-        val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
-        val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-        val charging = bm.isCharging
-        val model = "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}"
-
-        val bytes = WireProtocol.packJson(
-            type = "HELLO",
-            payloadMap = mapOf(
-                "deviceName" to model,
-                "battery" to battery.toString(),
-                "charging" to charging.toString(),
-                "transport" to transport,
-                "pairToken" to token,
-                "mediaTitle" to LinkNotificationService.currentMediaTitle,
-                "mediaArtist" to LinkNotificationService.currentMediaArtist,
-                "screenWidth" to resources.displayMetrics.widthPixels.toString(),
-                "screenHeight" to resources.displayMetrics.heightPixels.toString()
-            )
-        )
-        sendRawFrame(bytes)
-    }
-
-    private fun startStatusHeartbeat(transport: String) {
-        serviceScope.launch {
-            while (isActive && isConnectedState) {
-                delay(8000)
-                val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
-                val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-                val charging = bm.isCharging
-                val bytes = WireProtocol.packJson(
-                    type = "STATUS_UPDATE",
-                    payloadMap = mapOf(
-                        "deviceName" to "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}",
-                        "battery" to battery.toString(),
-                        "charging" to charging.toString(),
-                        "transport" to transport,
-                        "mediaTitle" to LinkNotificationService.currentMediaTitle,
-                        "mediaArtist" to LinkNotificationService.currentMediaArtist,
-                        "screenWidth" to resources.displayMetrics.widthPixels.toString(),
-                        "screenHeight" to resources.displayMetrics.heightPixels.toString()
-                    )
-                )
-                sendRawFrame(bytes)
-            }
-        }
-    }
-
-    private fun readLoop(input: DataInputStream) {
-        try {
-            while (isConnectedState) {
-                val length = input.readInt()
-                val type = input.readByte()
-                if (length <= 0 || length > 30_000_000) continue
-                val payload = ByteArray(length)
-                input.readFully(payload)
-
-                when (type) {
-                    WireProtocol.FRAME_JSON -> handleIncomingJson(String(payload, Charsets.UTF_8))
-                    WireProtocol.FRAME_FILE_CHUNK -> handleIncomingFileChunk(payload)
-                }
-            }
-        } catch (_: Exception) {
-            closeSocket()
-        }
-    }
-
-    private fun handleIncomingJson(jsonStr: String) {
-        val obj = JSONObject(jsonStr)
-        val type = obj.optString("type")
-        val payload = obj.optJSONObject("payload") ?: JSONObject()
-
-        when (type) {
-            "NOTIFICATION_REPLY" -> {
-                val id = payload.optString("id")
-                val replyText = payload.optString("replyText")
-                LinkNotificationService.performInlineReply(this, id, replyText)
-            }
-            "NOTIFICATION_REMOVED" -> {
-                val id = payload.optString("id")
-                LinkNotificationService.dismissNotification(id)
-            }
-            "SMS_THREADS_REQ" -> {
-                SmsContactsCallBridge.syncSmsAndContactsToMac(this)
-            }
-            "SMS_SEND" -> {
-                val addr = payload.optString("address")
-                val body = payload.optString("body")
-                SmsContactsCallBridge.sendSms(this, addr, body)
-            }
-            "CALL_ACTION" -> {
-                val action = payload.optString("action")
-                val number = payload.optString("number")
-                val smsReply = payload.optString("smsReply")
-                SmsContactsCallBridge.handleCallAction(this, action, number, smsReply)
-            }
-            "CLIPBOARD_SYNC" -> {
-                val content = payload.optString("content")
-                ClipboardManagerBridge.applyFromMac(this, content)
-            }
-            "URL_HANDOFF" -> {
-                val url = payload.optString("url")
-                if (url.isNotEmpty()) {
-                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    startActivity(browserIntent)
-                }
-            }
-            "FILE_LIST_REQ" -> {
-                val path = payload.optString("path", "/sdcard/Download")
-                FilePhotosBridge.sendDirectoryListing(path)
-            }
-            "PHOTOS_LIST_REQ" -> {
-                FilePhotosBridge.sendPhotosList(this)
-            }
-            "FILE_PULL_REQ" -> {
-                val path = payload.optString("path")
-                val fileName = payload.optString("fileName")
-                val reveal = payload.optString("revealInFinder", "true")
-                FilePhotosBridge.streamFileToMac(path, fileName, reveal)
-            }
-            "FILE_TRANSFER_START" -> {
-                val tid = payload.optString("transferId")
-                val fileName = payload.optString("fileName")
-                val destFolder = payload.optString("destFolder", "/sdcard/Download/LinkToMac")
-                val dir = File(destFolder)
-                if (!dir.exists()) dir.mkdirs()
-                val outFile = File(dir, fileName)
-                incomingFiles[tid] = FileOutputStream(outFile)
-            }
-            "FILE_TRANSFER_END" -> {
-                val tid = payload.optString("transferId")
-                incomingFiles.remove(tid)?.close()
-            }
-            "MEDIA_ACTION" -> {
-                val action = payload.optString("action")
-                handleMediaAction(action)
-            }
-            "STREAM_CONTROL" -> {
-                ScreenCameraStreamer.handleStreamControl(this, payload)
-            }
-        }
-    }
-
-    private fun handleIncomingFileChunk(payload: ByteArray) {
-        if (payload.size <= 36) return
-        val tid = String(payload, 0, 36, Charsets.UTF_8).trim()
-        val fos = incomingFiles[tid] ?: return
-        fos.write(payload, 36, payload.size - 36)
-    }
-
-    private fun handleMediaAction(action: String) {
-        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
-        when (action) {
-            "PLAY_PAUSE" -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
-            "NEXT"       -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_NEXT)
-            "PREV"       -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS)
-            "VOL_UP"     -> audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-            "VOL_DOWN"   -> audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-            "RING_PHONE" -> {
-                val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                val ringtone = RingtoneManager.getRingtone(applicationContext, uri)
-                ringtone?.play()
-            }
-        }
-    }
-
-    private fun dispatchMediaKey(keyCode: Int) {
-        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
-        audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, keyCode))
-        audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, keyCode))
-    }
-
-    // MARK: - mDNS Automatic Discovery (_linktomac._tcp)
-    private fun startMdnsDiscovery() {
-        try {
-            nsdManager = getSystemService(NSD_SERVICE) as NsdManager
-            val listener = object : NsdManager.DiscoveryListener {
-                override fun onDiscoveryStarted(regType: String) {}
-                override fun onServiceFound(service: NsdServiceInfo) {
-                    if (service.serviceType.contains("_linktomac._tcp")) {
-                        nsdManager?.resolveService(service, object : NsdManager.ResolveListener {
-                            override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
-                            override fun onServiceResolved(resolved: NsdServiceInfo) {
-                                val host = resolved.host?.hostAddress ?: return
-                                discoveredMacHost = host
-                                discoveredMacPort = resolved.port
-                            }
-                        })
-                    }
-                }
-                override fun onServiceLost(service: NsdServiceInfo) {}
-                override fun onDiscoveryStopped(serviceType: String) {}
-                override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {}
-                override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {}
-            }
-            discoveryListener = listener
-            nsdManager?.discoverServices("_linktomac._tcp.", NsdManager.PROTOCOL_DNS_SD, listener)
-        } catch (_: Exception) {}
-    }
-
-    private fun closeSocket() {
-        isConnectedState = false
-        statusMessage = "Disconnected"
-        try { outputStream?.close() } catch (_: Exception) {}
-        try { socket?.close() } catch (_: Exception) {}
-        outputStream = null
-        socket = null
-    }
-
-    private fun startForegroundNotification(text: String) {
-        val channelId = "linktomac_channel"
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        val chan = NotificationChannel(channelId, "LinkToMac Connection", NotificationManager.IMPORTANCE_LOW)
-        nm.createNotificationChannel(chan)
-
-        val notif = Notification.Builder(this, channelId)
-            .setContentTitle("LinkToMac Companion")
-            .setContentText(text)
-            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
-            .setOngoing(true)
-            .build()
-
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(1001, notif, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
-        } else {
-            startForeground(1001, notif)
-        }
-    }
-
-    override fun onBind(intent: Intent?): IBinder? = null
-}
-
-// MARK: - Clipboard Bridge Helper
-object ClipboardManagerBridge {
-    private var lastClipboardText = ""
-
-    fun init(context: Context) {
-        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        cm.addPrimaryClipChangedListener {
-            val text = cm.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim() ?: return@addPrimaryClipChangedListener
-            if (text.isNotEmpty() && text != lastClipboardText) {
-                lastClipboardText = text
-                sendClipboardToMac(text)
-            }
-        }
-    }
-
-    fun sendCurrentClipboardToMac(context: Context) {
-        Handler(Looper.getMainLooper()).post {
-            try {
-                val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                val text = cm?.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim() ?: return@post
-                if (text.isNotEmpty() && text != lastClipboardText) {
-                    lastClipboardText = text
-                    sendClipboardToMac(text)
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    fun syncFromAccessibilityService(context: Context) {
-        sendCurrentClipboardToMac(context)
-    }
-
-    fun sendClipboardToMac(text: String) {
-        val isUrl = text.startsWith("http://") || text.startsWith("https://")
-        val bytes = WireProtocol.packJson(
-            type = "CLIPBOARD_SYNC",
-            payloadMap = mapOf("content" to text, "isUrl" to isUrl.toString())
-        )
-        LinkConnectionService.instance?.sendRawFrame(bytes)
-    }
-
-    fun applyFromMac(context: Context, text: String) {
-        if (text == lastClipboardText) return
-        lastClipboardText = text
-        Handler(Looper.getMainLooper()).post {
-            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("LinkToMac", text))
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkNotificationService.kt
-```kotlin
-package com.linktomac.android
-
-import android.app.Notification
-import android.app.PendingIntent
-import android.app.RemoteInput
-import android.content.Context
-import android.content.Intent
-import android.media.MediaMetadata
-import android.media.session.MediaSessionManager
-import android.os.Bundle
-import android.service.notification.NotificationListenerService
-import android.service.notification.StatusBarNotification
-import org.json.JSONArray
-import org.json.JSONObject
-import java.util.concurrent.ConcurrentHashMap
-
-class LinkNotificationService : NotificationListenerService() {
-
-    private data class ReplyActionHolder(
-        val pendingIntent: PendingIntent,
-        val remoteInputs: Array<RemoteInput>
-    )
-
-    companion object {
-        private var instance: LinkNotificationService? = null
-        private val replyActions = ConcurrentHashMap<String, ReplyActionHolder>()
-        var currentMediaTitle: String = "Nothing Playing"
-        var currentMediaArtist: String = "Android Media"
-
-        fun performInlineReply(context: Context, key: String, replyText: String) {
-            val holder = replyActions[key] ?: return
-            val intent = Intent()
-            val bundle = Bundle()
-            for (remoteInput in holder.remoteInputs) {
-                bundle.putCharSequence(remoteInput.resultKey, replyText)
-            }
-            RemoteInput.addResultsToIntent(holder.remoteInputs, intent, bundle)
-            try {
-                holder.pendingIntent.send(context, 0, intent)
-            } catch (_: Exception) {}
-        }
-
-        fun dismissNotification(key: String) {
-            try {
-                instance?.cancelNotification(key)
-            } catch (_: Exception) {}
-        }
-    }
-
-    override fun onListenerConnected() {
-        super.onListenerConnected()
-        instance = this
-        updateActiveMediaSession()
-    }
-
-    override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        guardSbn(sbn) ?: return
-        updateActiveMediaSession()
-
-        val notif = sbn!!.notification
-        if ((notif.flags and Notification.FLAG_ONGOING_EVENT) != 0) return
-        if (sbn.packageName == packageName || sbn.packageName == "com.android.systemui") return
-
-        val extras = notif.extras
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
-        val body = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-        if (title.isEmpty() && body.isEmpty()) return
-
-        // Check for inline RemoteInput reply actions
-        var canReply = false
-        notif.actions?.forEach { action ->
-            val inputs = action.remoteInputs
-            if (!inputs.isNullOrEmpty() && action.actionIntent != null) {
-                canReply = true
-                replyActions[sbn.key] = ReplyActionHolder(action.actionIntent, inputs)
-            }
-        }
-
-        // Detect 4-8 digit 2FA / OTP codes automatically
-        val otpRegex = Regex("\\b(\\d{4,8})\\b")
-        val otpMatch = otpRegex.find(body)?.value ?: ""
-
-        val pm = applicationContext.packageManager
-        val appName = try {
-            pm.getApplicationLabel(pm.getApplicationInfo(sbn.packageName, 0)).toString()
-        } catch (_: Exception) {
-            sbn.packageName
-        }
-
-        val itemJson = JSONObject().apply {
-            put("id", sbn.key)
-            put("packageName", sbn.packageName)
-            put("appName", appName)
-            put("title", title)
-            put("body", body)
-            put("timestamp", sbn.postTime)
-            put("canReply", canReply)
-            put("otpCode", otpMatch)
-        }
-
-        val arr = JSONArray().apply { put(itemJson) }
-        val bytes = WireProtocol.packJson("NOTIFICATION_POSTED") {
-            put("notifications", arr)
-        }
-        LinkConnectionService.instance?.sendRawFrame(bytes)
-    }
-
-    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
-        val key = sbn?.key ?: return
-        replyActions.remove(key)
-        val bytes = WireProtocol.packJson(
-            type = "NOTIFICATION_REMOVED",
-            payloadMap = mapOf("id" to key)
-        )
-        LinkConnectionService.instance?.sendRawFrame(bytes)
-    }
-
-    private fun updateActiveMediaSession() {
-        try {
-            val msm = getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
-            val controllers = msm.getActiveSessions(
-                android.content.ComponentName(this, LinkNotificationService::class.java)
-            )
-            val first = controllers.firstOrNull()
-            val meta = first?.metadata
-            if (meta != null) {
-                currentMediaTitle = meta.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "Playing Media"
-                currentMediaArtist = meta.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: ""
-            }
-        } catch (_: Exception) {}
-    }
-
-    private fun guardSbn(sbn: StatusBarNotification?): StatusBarNotification? = sbn
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/SmsContactsCallBridge.kt
-```kotlin
-package com.linktomac.android
-
-import android.annotation.SuppressLint
-import android.content.*
-import android.net.Uri
-import android.provider.ContactsContract
-import android.provider.Telephony
-import android.telecom.TelecomManager
-import android.telephony.SmsManager
-import android.telephony.TelephonyManager
-import org.json.JSONArray
-import org.json.JSONObject
-
-object SmsContactsCallBridge {
-
-    @SuppressLint("Range")
-    fun syncSmsAndContactsToMac(context: Context) {
-        val contactsMap = mutableMapOf<String, String>()
-        val contactsArray = JSONArray()
-
-        // 1. Load Contacts
-        try {
-            context.contentResolver.query(
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                arrayOf(
-                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                    ContactsContract.CommonDataKinds.Phone.NUMBER
-                ),
-                null, null,
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
-            )?.use { cursor ->
-                var count = 0
-                while (cursor.moveToNext() && count < 200) {
-                    val id = cursor.getString(0) ?: ""
-                    val name = cursor.getString(1) ?: ""
-                    val number = cursor.getString(2)?.replace(" ", "") ?: ""
-                    if (number.isNotEmpty()) {
-                        contactsMap[number] = name
-                        contactsArray.put(JSONObject().apply {
-                            put("id", "$id-$number")
-                            put("name", name)
-                            put("phoneNumber", number)
-                        })
-                        count++
-                    }
-                }
-            }
-        } catch (_: Exception) {}
-
-        // 2. Load Recent SMS Messages & Group by Address
-        val threadsMap = linkedMapOf<String, MutableList<JSONObject>>()
-        try {
-            context.contentResolver.query(
-                Telephony.Sms.CONTENT_URI,
-                arrayOf(
-                    Telephony.Sms._ID,
-                    Telephony.Sms.ADDRESS,
-                    Telephony.Sms.BODY,
-                    Telephony.Sms.DATE,
-                    Telephony.Sms.TYPE
-                ),
-                null, null,
-                Telephony.Sms.DATE + " DESC LIMIT 120"
-            )?.use { cursor ->
-                while (cursor.moveToNext()) {
-                    val id = cursor.getString(0) ?: ""
-                    val addr = cursor.getString(1) ?: "Unknown"
-                    val body = cursor.getString(2) ?: ""
-                    val date = cursor.getLong(3)
-                    val type = cursor.getInt(4)
-                    val isIncoming = (type == Telephony.Sms.MESSAGE_TYPE_INBOX)
-
-                    val msgJson = JSONObject().apply {
-                        put("id", id)
-                        put("address", addr)
-                        put("body", body)
-                        put("date", date)
-                        put("isIncoming", isIncoming)
-                    }
-                    threadsMap.getOrPut(addr) { mutableListOf() }.add(0, msgJson)
-                }
-            }
-        } catch (_: Exception) {}
-
-        val threadsArray = JSONArray()
-        for ((addr, messages) in threadsMap) {
-            val lastMsg = messages.lastOrNull()
-            val contactName = contactsMap[addr] ?: addr
-            threadsArray.put(JSONObject().apply {
-                put("id", addr)
-                put("contactName", contactName)
-                put("address", addr)
-                put("lastMessage", lastMsg?.optString("body") ?: "")
-                put("timestamp", lastMsg?.optLong("date") ?: System.currentTimeMillis())
-                put("messages", JSONArray(messages))
-            })
-        }
-
-        val frame = WireProtocol.packJson("SMS_THREADS_SYNC") {
-            put("smsThreads", threadsArray)
-            put("contacts", contactsArray)
-        }
-        LinkConnectionService.instance?.sendRawFrame(frame)
-    }
-
-    fun sendSms(context: Context, address: String, body: String) {
-        try {
-            val smsManager = context.getSystemService(SmsManager::class.java)
-            smsManager.sendTextMessage(address, null, body, null, null)
-        } catch (_: Exception) {}
-    }
-
-    // MARK: - Call Controls (Cellular Audio Remains on Phone)
-    @SuppressLint("MissingPermission")
-    fun handleCallAction(context: Context, action: String, number: String, smsReply: String) {
-        val tm = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
-        try {
-            when (action) {
-                "ANSWER" -> tm.acceptRingingCall()
-                "DECLINE", "END" -> tm.endCall()
-                "DECLINE_WITH_SMS" -> {
-                    tm.endCall()
-                    if (number.isNotEmpty() && smsReply.isNotEmpty()) {
-                        sendSms(context, number, smsReply)
-                    }
-                }
-                "DIAL" -> {
-                    if (number.isNotEmpty()) {
-                        val callIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(callIntent)
-                    }
-                }
-            }
-        } catch (_: Exception) {}
-    }
-
-    fun registerCallStateReceiver(context: Context) {
-        val filter = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
-        context.registerReceiver(object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context?, intent: Intent?) {
-                val stateStr = intent?.getStringExtra(TelephonyManager.EXTRA_STATE) ?: return
-                val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: "Cellular Call"
-                val mappedState = when (stateStr) {
-                    TelephonyManager.EXTRA_STATE_RINGING -> "RINGING"
-                    TelephonyManager.EXTRA_STATE_OFFHOOK -> "OFFHOOK"
-                    else -> "IDLE"
-                }
-                val frame = WireProtocol.packJson(
-                    type = "CALL_STATE",
-                    payloadMap = mapOf(
-                        "state" to mappedState,
-                        "number" to incomingNumber,
-                        "contactName" to incomingNumber
-                    )
-                )
-                LinkConnectionService.instance?.sendRawFrame(frame)
-            }
-        }, filter)
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/FilePhotosBridge.kt
-```kotlin
-package com.linktomac.android
-
-import android.content.Context
-import android.graphics.Bitmap
-import android.provider.MediaStore
-import android.util.Base64
-import android.util.Size
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileInputStream
-import java.util.UUID
-
-object FilePhotosBridge {
-
-    fun sendDirectoryListing(path: String) {
-        val dir = File(path)
-        val arr = JSONArray()
-        dir.listFiles()?.forEach { f ->
-            arr.put(JSONObject().apply {
-                put("name", f.name)
-                put("path", f.absolutePath)
-                put("sizeBytes", if (f.isDirectory) 0L else f.length())
-                put("isDirectory", f.isDirectory)
-                put("lastModified", f.lastModified())
-            })
-        }
-        val frame = WireProtocol.packJson(
-            type = "FILE_LIST_RES",
-            payloadMap = mapOf("path" to path)
-        ) {
-            put("files", arr)
-        }
-        LinkConnectionService.instance?.sendRawFrame(frame)
-    }
-
-    fun sendPhotosList(context: Context) {
-        val arr = JSONArray()
-        try {
-            val projection = arrayOf(
-                MediaStore.Images.Media._ID,
-                MediaStore.Images.Media.DISPLAY_NAME,
-                MediaStore.Images.Media.DATA,
-                MediaStore.Images.Media.DATE_TAKEN,
-                MediaStore.Images.Media.SIZE
-            )
-            context.contentResolver.query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                null, null,
-                MediaStore.Images.Media.DATE_TAKEN + " DESC"
-            )?.use { cursor ->
-                var count = 0
-                while (cursor.moveToNext() && count < 40) {
-                    val id = cursor.getLong(0)
-                    val name = cursor.getString(1) ?: "photo.jpg"
-                    val path = cursor.getString(2) ?: ""
-                    val date = cursor.getLong(3)
-                    val size = cursor.getLong(4)
-
-                    var thumbB64 = ""
-                    try {
-                        val contentUri = android.content.ContentUris.withAppendedId(
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id
-                        )
-                        val bmp = context.contentResolver.loadThumbnail(contentUri, Size(180, 180), null)
-                        val baos = ByteArrayOutputStream()
-                        bmp.compress(Bitmap.CompressFormat.JPEG, 65, baos)
-                        thumbB64 = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP)
-                    } catch (_: Exception) {}
-
-                    arr.put(JSONObject().apply {
-                        put("id", id.toString())
-                        put("name", name)
-                        put("path", path)
-                        put("dateTaken", date)
-                        put("sizeBytes", size)
-                        put("isVideo", false)
-                        put("thumbnailBase64", thumbB64)
-                    })
-                    count++
-                }
-            }
-        } catch (_: Exception) {}
-
-        val frame = WireProtocol.packJson("PHOTOS_LIST_RES") {
-            put("photos", arr)
-        }
-        LinkConnectionService.instance?.sendRawFrame(frame)
-    }
-
-    fun streamFileToMac(path: String, fileName: String, revealInFinder: String = "true") {
-        val file = File(path)
-        if (!file.exists() || !file.isFile) return
-        val tid = UUID.randomUUID().toString() // 36 chars
-
-        val startFrame = WireProtocol.packJson(
-            type = "FILE_TRANSFER_START",
-            payloadMap = mapOf(
-                "transferId" to tid,
-                "fileName" to fileName,
-                "totalBytes" to file.length().toString()
-            )
-        )
-        LinkConnectionService.instance?.sendRawFrame(startFrame)
-
-        val tidBytes = tid.padEnd(36, ' ').toByteArray(Charsets.UTF_8)
-        FileInputStream(file).use { fis ->
-            val buf = ByteArray(65536)
-            while (true) {
-                val read = fis.read(buf)
-                if (read <= 0) break
-                val chunkPayload = ByteArray(36 + read)
-                System.arraycopy(tidBytes, 0, chunkPayload, 0, 36)
-                System.arraycopy(buf, 0, chunkPayload, 36, read)
-                val packed = WireProtocol.packFrame(WireProtocol.FRAME_FILE_CHUNK, chunkPayload)
-                LinkConnectionService.instance?.sendRawFrame(packed)
-                Thread.sleep(2)
-            }
-        }
-
-        val endFrame = WireProtocol.packJson(
-            type = "FILE_TRANSFER_END",
-            payloadMap = mapOf(
-                "transferId" to tid,
-                "fileName" to fileName,
-                "revealInFinder" to revealInFinder
-            )
-        )
-        LinkConnectionService.instance?.sendRawFrame(endFrame)
-    }
-
-    fun streamUriToMac(context: Context, uri: android.net.Uri, fileName: String, revealInFinder: String = "true") {
-        var size = -1L
-        try {
-            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
-                if (sizeIndex != -1 && cursor.moveToFirst()) {
-                    size = cursor.getLong(sizeIndex)
-                }
-            }
-        } catch (_: Exception) {}
-        if (size <= 0) {
-            try {
-                context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
-                    size = pfd.statSize
-                }
-            } catch (_: Exception) {}
-        }
-        if (size < 0) size = 0L
-
-        val tid = UUID.randomUUID().toString()
-        val startFrame = WireProtocol.packJson(
-            type = "FILE_TRANSFER_START",
-            payloadMap = mapOf(
-                "transferId" to tid,
-                "fileName" to fileName,
-                "totalBytes" to size.toString()
-            )
-        )
-        LinkConnectionService.instance?.sendRawFrame(startFrame)
-
-        val tidBytes = tid.padEnd(36, ' ').toByteArray(Charsets.UTF_8)
-        try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                val buf = ByteArray(65536)
-                while (true) {
-                    val read = inputStream.read(buf)
-                    if (read <= 0) break
-                    val chunkPayload = ByteArray(36 + read)
-                    System.arraycopy(tidBytes, 0, chunkPayload, 0, 36)
-                    System.arraycopy(buf, 0, chunkPayload, 36, read)
-                    val packed = WireProtocol.packFrame(WireProtocol.FRAME_FILE_CHUNK, chunkPayload)
-                    LinkConnectionService.instance?.sendRawFrame(packed)
-                    Thread.sleep(2)
-                }
-            }
-        } catch (_: Exception) {}
-
-        val endFrame = WireProtocol.packJson(
-            type = "FILE_TRANSFER_END",
-            payloadMap = mapOf(
-                "transferId" to tid,
-                "fileName" to fileName,
-                "revealInFinder" to revealInFinder
-            )
-        )
-        LinkConnectionService.instance?.sendRawFrame(endFrame)
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ScreenCameraStreamer.kt
-```kotlin
-package com.linktomac.android
-
-import android.accessibilityservice.AccessibilityService
-import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.*
-import android.hardware.camera2.*
-import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.ImageReader
-import android.media.MediaRecorder
-import android.media.projection.MediaProjection
-import android.os.Build
-import android.os.Handler
-import android.os.HandlerThread
-import android.util.Log
-import android.view.Display
-import kotlinx.coroutines.*
-import java.io.ByteArrayOutputStream
-import java.util.concurrent.Executors
-
-object ScreenCameraStreamer {
-    private const val TAG = "ScreenCamStreamer"
-
-    private var streamJob: Job? = null
-    private var cameraDevice: CameraDevice? = null
-    private var imageReader: ImageReader? = null
-    private var workerThread: HandlerThread? = null
-    private var virtualDisplay: VirtualDisplay? = null
-
-    @Volatile
-    var activeMediaProjection: MediaProjection? = null
-
-    fun handleStreamControl(context: Context, mode: String) {
-        handleStreamControl(context, org.json.JSONObject().put("mode", mode))
-    }
-
-    fun handleStreamControl(context: Context, payload: org.json.JSONObject) {
-        val mode = payload.optString("mode")
-        when (mode) {
-            "REMOTE_TAP" -> {
-                val normX = payload.optString("x").toFloatOrNull() ?: return
-                val normY = payload.optString("y").toFloatOrNull() ?: return
-                LinkTouchAccessibilityService.instance?.performNormalizedTap(normX, normY)
-            }
-            "REMOTE_KEY" -> {
-                val keyCode = payload.optString("keyCode").toIntOrNull() ?: return
-                LinkTouchAccessibilityService.instance?.performRemoteKey(keyCode)
-            }
-            "WEBCAM_BACK" -> {
-                stopAllStreams()
-                startCameraStream(context, CameraCharacteristics.LENS_FACING_BACK)
-            }
-            "WEBCAM_FRONT" -> {
-                stopAllStreams()
-                startCameraStream(context, CameraCharacteristics.LENS_FACING_FRONT)
-            }
-            "MIC_STREAM" -> {
-                stopAllStreams()
-                startMicrophoneStream()
-            }
-            "MIRROR" -> {
-                stopAllStreams()
-                startMirrorStatusPreview(context)
-            }
-            "NONE" -> {
-                stopAllStreams()
-            }
-            else -> {
-                // Do NOT call stopAllStreams() for unknown or action commands!
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startCameraStream(context: Context, lensFacing: Int) {
-        val cm = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        val cameraId = cm.cameraIdList.firstOrNull { id ->
-            cm.getCameraCharacteristics(id).get(CameraCharacteristics.LENS_FACING) == lensFacing
-        } ?: cm.cameraIdList.firstOrNull() ?: return
-
-        val ht = HandlerThread("LinkToMacCam").apply { start() }
-        workerThread = ht
-        val handler = Handler(ht.looper)
-
-        val reader = ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2)
-        imageReader = reader
-        var lastSent = 0L
-
-        reader.setOnImageAvailableListener({ ir ->
-            val img = ir.acquireLatestImage() ?: return@setOnImageAvailableListener
-            val now = System.currentTimeMillis()
-            if (now - lastSent >= 65) { // ~15 fps over universal socket
-                lastSent = now
-                val jpeg = yuv420ToJpeg(img)
-                if (jpeg != null) {
-                    val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, jpeg)
-                    LinkConnectionService.instance?.sendRawFrame(frame)
-                }
-            }
-            img.close()
-        }, handler)
-
-        try {
-            cm.openCamera(cameraId, object : CameraDevice.StateCallback() {
-                override fun onOpened(camera: CameraDevice) {
-                    cameraDevice = camera
-                    val req = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                        addTarget(reader.surface)
-                    }
-                    camera.createCaptureSession(
-                        listOf(reader.surface),
-                        object : CameraCaptureSession.StateCallback() {
-                            override fun onConfigured(session: CameraCaptureSession) {
-                                session.setRepeatingRequest(req.build(), null, handler)
-                            }
-                            override fun onConfigureFailed(session: CameraCaptureSession) {}
-                        },
-                        handler
-                    )
-                }
-                override fun onDisconnected(camera: CameraDevice) { camera.close() }
-                override fun onError(camera: CameraDevice, error: Int) { camera.close() }
-            }, handler)
-        } catch (_: Exception) {}
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startMicrophoneStream() {
-        streamJob = CoroutineScope(Dispatchers.IO).launch {
-            val sampleRate = 16000
-            val minBuf = AudioRecord.getMinBufferSize(
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            val recorder = AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                minBuf * 2
-            )
-            val buf = ByteArray(2048)
-            recorder.startRecording()
-            try {
-                while (isActive) {
-                    val read = recorder.read(buf, 0, buf.size)
-                    if (read > 0) {
-                        val chunk = buf.copyOf(read)
-                        val frame = WireProtocol.packFrame(WireProtocol.FRAME_AUDIO_PCM, chunk)
-                        LinkConnectionService.instance?.sendRawFrame(frame)
-                    }
-                }
-            } finally {
-                recorder.stop()
-                recorder.release()
-            }
-        }
-    }
-
-    fun startMirrorStatusPreview(context: Context) {
-        val proj = activeMediaProjection
-        if (proj != null) {
-            startMediaProjectionMirror(context, proj)
-            return
-        }
-
-        val width = context.resources.displayMetrics.widthPixels
-        val height = context.resources.displayMetrics.heightPixels
-        val targetW = 540
-        val targetH = ((height.toFloat() / width.toFloat()) * targetW).toInt().coerceAtLeast(960)
-
-        var inFlight = false
-        streamJob = CoroutineScope(Dispatchers.IO).launch {
-            while (isActive) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && LinkTouchAccessibilityService.instance != null) {
-                    if (!inFlight) {
-                        inFlight = true
-                        LinkTouchAccessibilityService.instance?.captureScreenJpeg { jpegBytes ->
-                            try {
-                                if (jpegBytes != null) {
-                                    val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, jpegBytes)
-                                    LinkConnectionService.instance?.sendRawFrame(frame)
-                                }
-                            } finally {
-                                inFlight = false
-                            }
-                        }
-                    }
-                    delay(55) // ~18 fps
-                } else {
-                    // Fall back to drawing status canvas if LinkTouchAccessibilityService.instance == null
-                    val bmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
-                    val canvas = Canvas(bmp)
-                    canvas.drawColor(Color.rgb(18, 22, 28))
-                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = Color.rgb(74, 222, 128)
-                        textSize = 28f
-                    }
-                    canvas.drawText("LinkToMac Screen Mirroring", 50f, (targetH / 2 - 40).toFloat(), paint)
-                    paint.color = Color.WHITE
-                    paint.textSize = 20f
-                    canvas.drawText("Enable LinkToMac Accessibility Service", 50f, (targetH / 2 + 10).toFloat(), paint)
-                    canvas.drawText("on phone for Live Wireless Mirror", 50f, (targetH / 2 + 45).toFloat(), paint)
-
-                    val baos = ByteArrayOutputStream()
-                    bmp.compress(Bitmap.CompressFormat.JPEG, 70, baos)
-                    bmp.recycle()
-                    val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, baos.toByteArray())
-                    LinkConnectionService.instance?.sendRawFrame(frame)
-                    delay(600)
-                }
-            }
-        }
-    }
-
-    private fun startMediaProjectionMirror(context: Context, projection: MediaProjection) {
-        val realW = context.resources.displayMetrics.widthPixels
-        val realH = context.resources.displayMetrics.heightPixels
-        val targetW = 540
-        val targetH = ((realH.toFloat() / realW.toFloat()) * targetW).toInt().coerceAtLeast(960)
-
-        val ht = HandlerThread("LinkToMacProj").apply { start() }
-        workerThread = ht
-        val handler = Handler(ht.looper)
-
-        val reader = ImageReader.newInstance(targetW, targetH, PixelFormat.RGBA_8888, 2)
-        imageReader = reader
-
-        val metrics = context.resources.displayMetrics
-        val vd = projection.createVirtualDisplay(
-            "LinkToMacMirror",
-            targetW, targetH, metrics.densityDpi,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            reader.surface, null, handler
-        )
-        virtualDisplay = vd
-
-        var lastSent = 0L
-        reader.setOnImageAvailableListener({ ir ->
-            val img = ir.acquireLatestImage() ?: return@setOnImageAvailableListener
-            val now = System.currentTimeMillis()
-            if (now - lastSent >= 50) { // ~20 fps
-                lastSent = now
-                val planes = img.planes
-                val buffer = planes[0].buffer
-                val pixelStride = planes[0].pixelStride
-                val rowStride = planes[0].rowStride
-                val rowPadding = rowStride - pixelStride * targetW
-
-                val bmp = Bitmap.createBitmap(targetW + rowPadding / pixelStride, targetH, Bitmap.Config.ARGB_8888)
-                bmp.copyPixelsFromBuffer(buffer)
-                val finalBmp = if (rowPadding > 0) Bitmap.createBitmap(bmp, 0, 0, targetW, targetH) else bmp
-
-                val baos = ByteArrayOutputStream()
-                finalBmp.compress(Bitmap.CompressFormat.JPEG, 65, baos)
-                if (rowPadding > 0) finalBmp.recycle()
-                bmp.recycle()
-
-                val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, baos.toByteArray())
-                LinkConnectionService.instance?.sendRawFrame(frame)
-            }
-            img.close()
-        }, handler)
-    }
-
-    fun stopAllStreams() {
-        streamJob?.cancel()
-        streamJob = null
-
-        try { virtualDisplay?.release() } catch (_: Exception) {}
-        virtualDisplay = null
-
-        try { cameraDevice?.close() } catch (_: Exception) {}
-        cameraDevice = null
-
-        try { imageReader?.close() } catch (_: Exception) {}
-        imageReader = null
-
-        try { workerThread?.quitSafely() } catch (_: Exception) {}
-        workerThread = null
-    }
-
-    private fun yuv420ToJpeg(image: android.media.Image): ByteArray? {
-        return try {
-            val yBuffer = image.planes[0].buffer
-            val uBuffer = image.planes[1].buffer
-            val vBuffer = image.planes[2].buffer
-            val ySize = yBuffer.remaining()
-            val uSize = uBuffer.remaining()
-            val vSize = vBuffer.remaining()
-            val nv21 = ByteArray(ySize + uSize + vSize)
-            yBuffer.get(nv21, 0, ySize)
-            vBuffer.get(nv21, ySize, vSize)
-            uBuffer.get(nv21, ySize + vSize, uSize)
-            val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
-            val out = ByteArrayOutputStream()
-            yuvImage.compressToJpeg(Rect(0, 0, image.width, image.height), 65, out)
-            out.toByteArray()
-        } catch (_: Exception) {
-            null
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/MainActivity.kt
-```kotlin
-package com.linktomac.android
-
-import android.Manifest
-import android.content.Intent
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.PowerManager
-import android.provider.Settings
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
-import kotlinx.coroutines.delay
-import org.json.JSONObject
-
-class MainActivity : ComponentActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // Start foreground companion service immediately
-        startForegroundService(Intent(this, LinkConnectionService::class.java))
-
-        handleIncomingShareIntent(intent)
-
-        setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
-                LinkToMacAndroidScreen()
-            }
-        }
-    }
-
-    @Composable
-    fun LinkToMacAndroidScreen() {
-        val prefs = getSharedPreferences("linktomac", MODE_PRIVATE)
-        var hostInput by remember { mutableStateOf(prefs.getString("lastHost", "192.168.1.100") ?: "") }
-        var portInput by remember { mutableStateOf(prefs.getInt("lastPort", 54921).toString()) }
-        var tokenInput by remember { mutableStateOf(prefs.getString("lastToken", "") ?: "") }
-        var statusText by remember { mutableStateOf(LinkConnectionService.statusMessage) }
-        var discoveredHost by remember { mutableStateOf(LinkConnectionService.discoveredMacHost) }
-
-        // Poll connection status every second for UI
-        LaunchedEffect(Unit) {
-            while (true) {
-                statusText = LinkConnectionService.statusMessage
-                discoveredHost = LinkConnectionService.discoveredMacHost
-                delay(1000)
-            }
-        }
-
-        // Runtime Permissions Launcher
-        val permLauncher = rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { _ -> }
-
-        // QR Code Scanner Launcher
-        val qrLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
-            val contents = result.contents ?: return@rememberLauncherForActivityResult
-            try {
-                val json = JSONObject(contents)
-                val h = json.optString("host")
-                val p = json.optInt("port", 54921)
-                val t = json.optString("token")
-                if (h.isNotEmpty()) {
-                    hostInput = h
-                    portInput = p.toString()
-                    tokenInput = t
-                    triggerConnect(h, p, t)
-                }
-            } catch (_: Exception) {}
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF0E1116))
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "LinkToMac",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF4ADE80)
-            )
-            Text(
-                text = "Make Android feel at home on your Mac • v1.61",
-                fontSize = 14.sp,
-                color = Color.LightGray
-            )
-
-            // Status Banner
-            Surface(
-                color = Color(0xFF1A202C),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = if (LinkConnectionService.isConnectedState) "● Connected to Mac" else "○ Not Connected",
-                        color = if (LinkConnectionService.isConnectedState) Color(0xFF4ADE80) else Color(0xFFFBBF24),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                    Text(text = statusText, color = Color.White, fontSize = 13.sp)
-
-                    if (discoveredHost.isNotEmpty() && !LinkConnectionService.isConnectedState) {
-                        Button(
-                            onClick = {
-                                hostInput = discoveredHost
-                                triggerConnect(discoveredHost, LinkConnectionService.discoveredMacPort, tokenInput)
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4ADE80))
-                        ) {
-                            Text("Auto-Connect Discovered Mac ($discoveredHost)", color = Color.Black)
-                        }
-                    }
-                }
-            }
-
-            // Step 1: Connect via QR, USB, or Wi-Fi
-            Surface(
-                color = Color(0xFF1A202C),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("01 • Pair or Connect", fontWeight = FontWeight.Bold, color = Color.White)
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
-                            onClick = {
-                                val options = ScanOptions().apply {
-                                    setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                                    setPrompt("Scan the LinkToMac QR Code on your Mac")
-                                    setBeepEnabled(false)
-                                }
-                                qrLauncher.launch(options)
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4ADE80)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Scan Mac QR Code", color = Color.Black, fontWeight = FontWeight.Bold)
-                        }
-
-                        Button(
-                            onClick = {
-                                // USB ADB reverse maps Mac port 54921 to phone's 127.0.0.1:54921
-                                triggerConnect("127.0.0.1", 54921, tokenInput)
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Connect via USB")
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = hostInput,
-                        onValueChange = { hostInput = it },
-                        label = { Text("Mac Local Wi-Fi IP") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = portInput,
-                            onValueChange = { portInput = it },
-                            label = { Text("Port") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = tokenInput,
-                            onValueChange = { tokenInput = it },
-                            label = { Text("6-Digit Token") },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
-                            onClick = {
-                                triggerConnect(hostInput.trim(), portInput.toIntOrNull() ?: 54921, tokenInput.trim())
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Connect Wi-Fi")
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                startService(Intent(this@MainActivity, LinkConnectionService::class.java).apply {
-                                    action = "DISCONNECT"
-                                })
-                            }
-                        ) {
-                            Text("Disconnect")
-                        }
-                    }
-                }
-            }
-
-            // Step 2: Quick Actions (Send Clipboard & Sync)
-            Surface(
-                color = Color(0xFF1A202C),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("02 • Instant Desk Actions", fontWeight = FontWeight.Bold, color = Color.White)
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
-                            onClick = { ClipboardManagerBridge.sendCurrentClipboardToMac(this@MainActivity) },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Push Clipboard to Mac")
-                        }
-                        Button(
-                            onClick = { SmsContactsCallBridge.syncSmsAndContactsToMac(this@MainActivity) },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Sync SMS & Contacts")
-                        }
-                    }
-                }
-            }
-
-            // Step 3: 1-Tap Permission Checklist
-            Surface(
-                color = Color(0xFF1A202C),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("03 • One-Time Companion Permissions", fontWeight = FontWeight.Bold, color = Color.White)
-
-                    Button(
-                        onClick = {
-                            val perms = mutableListOf(
-                                Manifest.permission.READ_SMS,
-                                Manifest.permission.SEND_SMS,
-                                Manifest.permission.RECEIVE_SMS,
-                                Manifest.permission.READ_CONTACTS,
-                                Manifest.permission.READ_PHONE_STATE,
-                                Manifest.permission.READ_CALL_LOG,
-                                Manifest.permission.ANSWER_PHONE_CALLS,
-                                Manifest.permission.CALL_PHONE,
-                                Manifest.permission.CAMERA,
-                                Manifest.permission.RECORD_AUDIO
-                            )
-                            if (Build.VERSION.SDK_INT >= 33) {
-                                perms.add(Manifest.permission.POST_NOTIFICATIONS)
-                                perms.add(Manifest.permission.READ_MEDIA_IMAGES)
-                                perms.add(Manifest.permission.READ_MEDIA_VIDEO)
-                            } else {
-                                perms.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-                            }
-                            permLauncher.launch(perms.toTypedArray())
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("1. Grant SMS, Call, Contacts, Camera & Mic")
-                    }
-
-                    Button(
-                        onClick = {
-                            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("2. Enable Notification Mirroring & Replies")
-                    }
-
-                    Button(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-                                val intent = Intent(
-                                    Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                                    android.net.Uri.parse("package:$packageName")
-                                )
-                                startActivity(intent)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("3. Enable Full Storage Access (Files Transfer)")
-                    }
-
-                    Button(
-                        onClick = {
-                            val pm = getSystemService(POWER_SERVICE) as PowerManager
-                            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                                val intent = Intent(
-                                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                    android.net.Uri.parse("package:$packageName")
-                                )
-                                startActivity(intent)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("4. Allow Unrestricted Battery (Stay Connected)")
-                    }
-
-                    Button(
-                        onClick = {
-                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("5. Enable Accessibility (Wireless Touch, Mirror & Background Clipboard)")
-                    }
-                }
-            }
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        handleIncomingShareIntent(intent)
-    }
-
-    private fun handleIncomingShareIntent(intent: Intent?) {
-        if (intent == null) return
-        val action = intent.action ?: return
-
-        when (action) {
-            Intent.ACTION_SEND -> {
-                val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-                if (!sharedText.isNullOrBlank()) {
-                    ClipboardManagerBridge.sendClipboardToMac(sharedText)
-                    val trimmed = sharedText.trim()
-                    if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
-                        val frame = WireProtocol.packJson(
-                            type = "URL_HANDOFF",
-                            payloadMap = mapOf("url" to trimmed)
-                        )
-                        LinkConnectionService.instance?.sendRawFrame(frame)
-                    }
-                }
-
-                val streamUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
-                }
-
-                if (streamUri != null) {
-                    shareUriToMac(streamUri)
-                }
-            }
-
-            Intent.ACTION_SEND_MULTIPLE -> {
-                val streamUris = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableArrayListExtra<android.net.Uri>(Intent.EXTRA_STREAM)
-                }
-
-                if (!streamUris.isNullOrEmpty()) {
-                    for (uri in streamUris) {
-                        shareUriToMac(uri)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun shareUriToMac(uri: android.net.Uri) {
-        Thread {
-            try {
-                var fileName = "shared_${System.currentTimeMillis()}"
-                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                    val nameIdx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (nameIdx != -1 && cursor.moveToFirst()) {
-                        cursor.getString(nameIdx)?.let { fileName = it }
-                    }
-                }
-                val tempFile = java.io.File(cacheDir, fileName)
-                contentResolver.openInputStream(uri)?.use { input ->
-                    java.io.FileOutputStream(tempFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                FilePhotosBridge.streamFileToMac(tempFile.absolutePath, fileName, "true")
-            } catch (e: Exception) {
-                android.util.Log.w("MainActivity", "Failed to share URI to Mac: ${e.message}")
-            }
-        }.start()
-    }
-
-    private fun triggerConnect(host: String, port: Int, token: String) {
-        startService(Intent(this, LinkConnectionService::class.java).apply {
-            action = "CONNECT_HOST"
-            putExtra("host", host)
-            putExtra("port", port)
-            putExtra("token", token)
-        })
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-````
-
-<a id="ALLCODE-MACOS-COMPLETE-md"></a>
-### `ALLCODE_MACOS_COMPLETE.md`
-
-````markdown
-# LinkToMac — Complete macOS Source Code (`allcode/LinkToMac-macOS`)
-
-Every file below belongs inside the codebase. Run `python3 stitch_allcode.py` from `LINKTOMAC_MASTER_PLAN.md` to extract them automatically.
-
----
-
-### FILE: allcode/LinkToMac-macOS/Package.swift
-```swift
-// swift-tools-version: 5.9
-import PackageDescription
-
-let package = Package(
-    name: "LinkToMac",
-    platforms: [
-        .macOS(.v13)
-    ],
-    products: [
-        .executable(name: "LinkToMac", targets: ["LinkToMac"])
-    ],
-    targets: [
-        .executableTarget(
-            name: "LinkToMac",
-            path: "Sources/LinkToMac"
-        )
-    ]
-)
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Info.plist
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
-    <key>CFBundleExecutable</key>
-    <string>LinkToMac</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.linktomac.mac</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>LinkToMac</string>
-    <key>CFBundleDisplayName</key>
-    <string>LinkToMac</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.61</string>
-    <key>CFBundleVersion</key>
-    <string>161</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>13.0</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSLocalNetworkUsageDescription</key>
-    <string>LinkToMac connects directly to your Android phone over local Wi-Fi and USB without cloud servers.</string>
-    <key>NSBonjourServices</key>
-    <array>
-        <string>_linktomac._tcp</string>
-    </array>
-</dict>
-</plist>
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/build_mac_app.sh
-```bash
-#!/usr/bin/env bash
-set -e
-
-echo "=========================================="
-echo " Building LinkToMac for macOS (v1.61)..."
-echo "=========================================="
-
-swift build -c release
-
-APP_DIR="build/LinkToMac.app"
-CONTENTS_DIR="$APP_DIR/Contents"
-MACOS_DIR="$CONTENTS_DIR/MacOS"
-RESOURCES_DIR="$CONTENTS_DIR/Resources"
-
-rm -rf "$APP_DIR"
-mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
-
-cp ".build/release/LinkToMac" "$MACOS_DIR/LinkToMac"
-cp "Info.plist" "$CONTENTS_DIR/Info.plist"
-chmod +x "$MACOS_DIR/LinkToMac"
-
-# Ad-hoc sign so macOS Local Network & Notification permissions work smoothly
-codesign --force --deep --sign - "$APP_DIR"
-
-echo "=========================================="
-echo " SUCCESS: Built $APP_DIR"
-echo " Run with: open $APP_DIR"
-echo "=========================================="
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift
-```swift
-import Foundation
-
-// MARK: - Binary Wire Frame Constants
-enum WireFrameType: UInt8 {
-    case jsonControl = 0x01
-    case fileChunk   = 0x02
-    case videoFrame  = 0x03
-    case audioFrame  = 0x04
-}
-
-// MARK: - Top-Level JSON Envelope
-struct LinkEnvelope: Codable {
-    var type: String
-    var timestamp: Int64 = Int64(Date().timeIntervalSince1970 * 1000)
-    var payload: [String: String] = [:]
-    var notifications: [AndroidNotificationItem]? = nil
-    var smsThreads: [SmsThreadItem]? = nil
-    var contacts: [AndroidContactItem]? = nil
-    var files: [RemoteFileItem]? = nil
-    var photos: [RemotePhotoItem]? = nil
-}
-
-// MARK: - Feature Models
-struct AndroidNotificationItem: Identifiable, Codable, Hashable {
-    var id: String
-    var packageName: String
-    var appName: String
-    var title: String
-    var body: String
-    var timestamp: Int64
-    var canReply: Bool
-    var otpCode: String?
-    var replySentText: String?
-}
-
-struct SmsMessageItem: Identifiable, Codable, Hashable {
-    var id: String
-    var address: String
-    var body: String
-    var date: Int64
-    var isIncoming: Bool
-}
-
-struct SmsThreadItem: Identifiable, Codable, Hashable {
-    var id: String // phone number / address
-    var contactName: String
-    var address: String
-    var lastMessage: String
-    var timestamp: Int64
-    var messages: [SmsMessageItem]
-}
-
-struct AndroidContactItem: Identifiable, Codable, Hashable {
-    var id: String
-    var name: String
-    var phoneNumber: String
-}
-
-struct RemoteFileItem: Identifiable, Codable, Hashable {
-    var id: String { path }
-    var name: String
-    var path: String
-    var sizeBytes: Int64
-    var isDirectory: Bool
-    var lastModified: Int64
-}
-
-struct RemotePhotoItem: Identifiable, Codable, Hashable {
-    var id: String
-    var name: String
-    var path: String
-    var dateTaken: Int64
-    var sizeBytes: Int64
-    var isVideo: Bool
-    var thumbnailBase64: String?
-}
-
-struct ClipboardHistoryItem: Identifiable, Hashable {
-    let id = UUID()
-    let content: String
-    let isUrl: Bool
-    let source: String // "Android" or "This Mac"
-    let timestamp: Date
-}
-
-struct ActiveTransferItem: Identifiable {
-    let id: String
-    var fileName: String
-    var direction: String // "Sending to Android" or "Receiving from Android"
-    var totalBytes: Int64
-    var transferredBytes: Int64
-    var transport: String
-    var isCompleted: Bool = false
-
-    var progress: Double {
-        guard totalBytes > 0 else { return 0 }
-        return min(1.0, Double(transferredBytes) / Double(totalBytes))
-    }
-}
-
-struct IncomingCallState: Equatable {
-    var isActive: Bool = false
-    var state: String = "IDLE" // "RINGING", "OFFHOOK", "IDLE"
-    var phoneNumber: String = ""
-    var contactName: String = ""
-    var isMuted: Bool = false
-}
-
-// MARK: - Wire Framing Helper
-enum WireFramer {
-    static func packJSON(_ envelope: LinkEnvelope) -> Data? {
-        guard let jsonData = try? JSONEncoder().encode(envelope) else { return nil }
-        return packFrame(type: .jsonControl, payload: jsonData)
-    }
-
-    static func packFrame(type: WireFrameType, payload: Data) -> Data {
-        var lengthBE = UInt32(payload.count).bigEndian
-        var header = Data(bytes: &lengthBE, count: 4)
-        header.append(type.rawValue)
-        header.append(payload)
-        return header
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift
-```swift
-import SwiftUI
-
-@propertyWrapper
-public struct LocalState<Value>: DynamicProperty {
-    @StateObject private var container: Container
-
-    final class Container: ObservableObject {
-        @Published var value: Value
-        init(_ value: Value) { self.value = value }
-    }
-
-    public init(wrappedValue: Value) {
-        _container = StateObject(wrappedValue: Container(wrappedValue))
-    }
-
-    public init() where Value: ExpressibleByNilLiteral {
-        self.init(wrappedValue: nil)
-    }
-
-    public var wrappedValue: Value {
-        get { container.value }
-        nonmutating set { container.value = newValue }
-    }
-
-    public var projectedValue: Binding<Value> {
-        Binding(
-            get: { self.container.value },
-            set: { self.container.value = $0 }
-        )
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ConnectionManager.swift
-```swift
-import Foundation
-import Network
-import AppKit
-import UserNotifications
-import AVFoundation
-
-@MainActor
-final class ConnectionManager: ObservableObject {
-    static let shared = ConnectionManager()
-
-    // Connection State
-    @Published var isConnected: Bool = false
-    @Published var connectedDeviceName: String = "No Android Connected"
-    @Published var connectionTransport: String = "Waiting..." // "USB" or "Local Wi-Fi"
-    @Published var batteryLevel: Int = 0
-    @Published var isCharging: Bool = false
-    @Published var ringerMode: String = "Normal"
-    @Published var localIPAddress: String = "127.0.0.1"
-    @Published var listenPort: UInt16 = 54921
-    @Published var pairingToken: String = ""
-
-    // Feature State
-    @Published var notifications: [AndroidNotificationItem] = []
-    @Published var mutedApps: Set<String> = []
-    @Published var smsThreads: [SmsThreadItem] = []
-    @Published var contacts: [AndroidContactItem] = []
-    @Published var currentDirectoryPath: String = "/sdcard/Download"
-    @Published var remoteFiles: [RemoteFileItem] = []
-    @Published var remotePhotos: [RemotePhotoItem] = []
-    @Published var transfers: [ActiveTransferItem] = []
-    @Published var callState: IncomingCallState = IncomingCallState()
-
-    // Media & Live Stream State
-    @Published var nowPlayingTitle: String = "Nothing Playing"
-    @Published var nowPlayingArtist: String = "Android Media Remote"
-    @Published var liveVideoFrame: NSImage? = nil
-    @Published var activeStreamMode: String = "NONE" // "NONE", "MIRROR", "WEBCAM_BACK", "WEBCAM_FRONT"
-    @Published var isScreenOffMirror: Bool = false
-    @Published var androidScreenWidth: Double = 1080.0
-    @Published var androidScreenHeight: Double = 2400.0
-    @Published var deviceScreenWidth: Int = 1080
-    @Published var deviceScreenHeight: Int = 2400
-
-    private var listener: NWListener?
-    private var activeConnection: NWConnection?
-    private var receiveBuffer = Data()
-    private var incomingFileHandles: [String: (url: URL, handle: FileHandle, expectedBytes: Int64)] = [:]
-
-    // Audio player for live microphone/cast PCM frames
-    private let audioEngine = AVAudioEngine()
-    private let playerNode = AVAudioPlayerNode()
-    private var audioConfigured = false
-
-    private init() {
-        self.localIPAddress = Self.detectLocalIPAddress() ?? "127.0.0.1"
-        if let savedToken = UserDefaults.standard.string(forKey: "LinkToMacPairingToken"), !savedToken.isEmpty {
-            self.pairingToken = savedToken
-        } else {
-            let newToken = String(format: "%06d", Int.random(in: 100000...999999))
-            UserDefaults.standard.set(newToken, forKey: "LinkToMacPairingToken")
-            self.pairingToken = newToken
-        }
-
-        requestMacNotificationPermission()
-        startServer()
-        observeMacWake()
-    }
-
-    // MARK: - Server & Bonjour mDNS
-    func startServer() {
-        listener?.cancel()
-        do {
-            let params = NWParameters.tcp
-            params.allowLocalEndpointReuse = true
-            let nwPort = NWEndpoint.Port(rawValue: listenPort)!
-            let newListener = try NWListener(using: params, on: nwPort)
-
-            // Advertise Bonjour _linktomac._tcp so Android discovers Mac automatically
-            let hostName = Host.current().localizedName ?? "Mac"
-            newListener.service = NWListener.Service(
-                name: "LinkToMac-\(hostName)",
-                type: "_linktomac._tcp"
-            )
-
-            newListener.newConnectionHandler = { [weak self] connection in
-                Task { @MainActor in
-                    self?.acceptConnection(connection)
-                }
-            }
-
-            newListener.start(queue: .main)
-            self.listener = newListener
-        } catch {
-            print("[LinkToMac] Failed to start listener: \(error)")
-        }
-    }
-
-    private func acceptConnection(_ connection: NWConnection) {
-        activeConnection?.cancel()
-        activeConnection = connection
-        receiveBuffer.removeAll()
-
-        connection.stateUpdateHandler = { [weak self] state in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch state {
-                case .ready:
-                    self.isConnected = true
-                    self.sendHello()
-                    self.readNextChunk(from: connection)
-                case .failed, .cancelled:
-                    if self.activeConnection === connection {
-                        self.isConnected = false
-                        self.connectionTransport = "Disconnected"
-                    }
-                default:
-                    break
-                }
-            }
-        }
-        connection.start(queue: .main)
-    }
-
-    private func readNextChunk(from connection: NWConnection) {
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 131072) { [weak self] data, _, isComplete, error in
-            Task { @MainActor in
-                guard let self = self else { return }
-                if let data = data, !data.isEmpty {
-                    self.receiveBuffer.append(data)
-                    self.processReceiveBuffer()
-                }
-                if isComplete || error != nil {
-                    if self.activeConnection === connection {
-                        self.isConnected = false
-                    }
-                    return
-                }
-                self.readNextChunk(from: connection)
-            }
-        }
-    }
-
-    private func processReceiveBuffer() {
-        while receiveBuffer.count >= 5 {
-            let lengthBytes = receiveBuffer.subdata(in: 0..<4)
-            let length = lengthBytes.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
-            let frameTypeByte = receiveBuffer[4]
-            let totalFrameSize = 5 + Int(length)
-
-            guard receiveBuffer.count >= totalFrameSize else { break }
-            let payload = receiveBuffer.subdata(in: 5..<totalFrameSize)
-            receiveBuffer.removeSubrange(0..<totalFrameSize)
-
-            guard let frameType = WireFrameType(rawValue: frameTypeByte) else { continue }
-            switch frameType {
-            case .jsonControl:
-                handleJSONPayload(payload)
-            case .fileChunk:
-                handleBinaryFileChunk(payload)
-            case .videoFrame:
-                if let img = NSImage(data: payload) {
-                    self.liveVideoFrame = img
-                }
-            case .audioFrame:
-                playPCMFrame(payload)
-            }
-        }
-    }
-
-    // MARK: - Handle Incoming JSON Commands
-    private func handleJSONPayload(_ data: Data) {
-        guard let env = try? JSONDecoder().decode(LinkEnvelope.self, from: data) else { return }
-
-        switch env.type {
-        case "HELLO", "STATUS_UPDATE":
-            if let name = env.payload["deviceName"] { self.connectedDeviceName = name }
-            if let batStr = env.payload["battery"], let bat = Int(batStr) { self.batteryLevel = bat }
-            if let chg = env.payload["charging"] { self.isCharging = (chg == "true") }
-            if let trans = env.payload["transport"] {
-                self.connectionTransport = ADBBridge.shared.isUSBDeviceConnected ? "USB" : trans
-            }
-            if let ringer = env.payload["ringerMode"] { self.ringerMode = ringer }
-            if let track = env.payload["mediaTitle"], !track.isEmpty {
-                self.nowPlayingTitle = track
-                self.nowPlayingArtist = env.payload["mediaArtist"] ?? "Android Media"
-            }
-            if let wStr = env.payload["screenWidth"], let w = Double(wStr), w > 0 {
-                self.androidScreenWidth = w
-                self.deviceScreenWidth = Int(w)
-                ADBBridge.shared.deviceScreenWidth = Int(w)
-            }
-            if let hStr = env.payload["screenHeight"], let h = Double(hStr), h > 0 {
-                self.androidScreenHeight = h
-                self.deviceScreenHeight = Int(h)
-                ADBBridge.shared.deviceScreenHeight = Int(h)
-            }
-            if env.type == "HELLO" {
-                requestDirectoryListing(path: currentDirectoryPath)
-                requestPhotosList()
-                requestSmsAndContacts()
-            }
-
-        case "NOTIFICATION_POSTED":
-            if let items = env.notifications {
-                for item in items {
-                    guard !mutedApps.contains(item.packageName) else { continue }
-                    notifications.removeAll { $0.id == item.id }
-                    notifications.insert(item, at: 0)
-                    postNativeMacNotification(item)
-                }
-            }
-
-        case "NOTIFICATION_REMOVED":
-            if let id = env.payload["id"] {
-                notifications.removeAll { $0.id == id }
-            }
-
-        case "SMS_THREADS_SYNC":
-            if let threads = env.smsThreads {
-                self.smsThreads = threads
-            }
-            if let contactList = env.contacts {
-                self.contacts = contactList
-            }
-
-        case "CALL_STATE":
-            let state = env.payload["state"] ?? "IDLE"
-            let number = env.payload["number"] ?? "Unknown"
-            let name = env.payload["contactName"] ?? number
-            self.callState = IncomingCallState(
-                isActive: state != "IDLE",
-                state: state,
-                phoneNumber: number,
-                contactName: name,
-                isMuted: env.payload["isMuted"] == "true"
-            )
-
-        case "CLIPBOARD_SYNC":
-            if let text = env.payload["content"], !text.isEmpty {
-                ClipboardSyncManager.shared.applyIncomingFromAndroid(text: text)
-            }
-
-        case "URL_HANDOFF":
-            if let urlStr = env.payload["url"], let url = URL(string: urlStr) {
-                NSWorkspace.shared.open(url)
-            }
-
-        case "FILE_LIST_RES":
-            if let path = env.payload["path"] {
-                self.currentDirectoryPath = path
-            }
-            if let files = env.files {
-                self.remoteFiles = files.sorted {
-                    if $0.isDirectory != $1.isDirectory { return $0.isDirectory && !$1.isDirectory }
-                    return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-                }
-            }
-
-        case "PHOTOS_LIST_RES":
-            if let photos = env.photos {
-                self.remotePhotos = photos
-            }
-
-        case "FILE_TRANSFER_START":
-            guard let tid = env.payload["transferId"],
-                  let fileName = env.payload["fileName"],
-                  let sizeStr = env.payload["totalBytes"],
-                  let totalBytes = Int64(sizeStr) else { return }
-
-            let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
-                .appendingPathComponent("LinkToMac", isDirectory: true)
-            try? FileManager.default.createDirectory(at: downloadsDir, withIntermediateDirectories: true)
-            let destURL = downloadsDir.appendingPathComponent(fileName)
-            FileManager.default.createFile(atPath: destURL.path, contents: nil)
-            if let handle = try? FileHandle(forWritingTo: destURL) {
-                incomingFileHandles[tid] = (destURL, handle, totalBytes)
-                transfers.insert(ActiveTransferItem(
-                    id: tid,
-                    fileName: fileName,
-                    direction: "Receiving from Android",
-                    totalBytes: totalBytes,
-                    transferredBytes: 0,
-                    transport: connectionTransport
-                ), at: 0)
-            }
-
-        case "FILE_TRANSFER_END":
-            guard let tid = env.payload["transferId"] else { return }
-            if let entry = incomingFileHandles.removeValue(forKey: tid) {
-                try? entry.handle.close()
-                if let idx = transfers.firstIndex(where: { $0.id == tid }) {
-                    transfers[idx].transferredBytes = transfers[idx].totalBytes
-                    transfers[idx].isCompleted = true
-                }
-                // Reveal in Finder if requested
-                if env.payload["revealInFinder"] == "true" {
-                    NSWorkspace.shared.activateFileViewerSelecting([entry.url])
-                }
-            }
-
-        default:
-            break
-        }
-    }
-
-    // MARK: - Handle Incoming Binary File Chunks
-    private func handleBinaryFileChunk(_ payload: Data) {
-        guard payload.count > 36 else { return }
-        let tidData = payload.subdata(in: 0..<36)
-        guard let tid = String(data: tidData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
-        let chunkData = payload.subdata(in: 36..<payload.count)
-
-        if let entry = incomingFileHandles[tid] {
-            try? entry.handle.write(contentsOf: chunkData)
-            if let idx = transfers.firstIndex(where: { $0.id == tid }) {
-                transfers[idx].transferredBytes += Int64(chunkData.count)
-            }
-        }
-    }
-
-    // MARK: - Outgoing Commands
-    func sendEnvelope(_ env: LinkEnvelope) {
-        guard let connection = activeConnection,
-              let data = WireFramer.packJSON(env) else { return }
-        connection.send(content: data, completion: .contentProcessed { _ in })
-    }
-
-    func sendHello() {
-        let hostName = Host.current().localizedName ?? "Mac"
-        sendEnvelope(LinkEnvelope(
-            type: "HELLO",
-            payload: [
-                "deviceName": hostName,
-                "pairToken": pairingToken
-            ]
-        ))
-    }
-
-    func sendNotificationReply(notificationId: String, replyText: String) {
-        guard !replyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        sendEnvelope(LinkEnvelope(
-            type: "NOTIFICATION_REPLY",
-            payload: [
-                "id": notificationId,
-                "replyText": replyText
-            ]
-        ))
-        if let idx = notifications.firstIndex(where: { $0.id == notificationId }) {
-            notifications[idx].replySentText = replyText
-        }
-    }
-
-    func dismissNotification(notificationId: String) {
-        notifications.removeAll { $0.id == notificationId }
-        sendEnvelope(LinkEnvelope(
-            type: "NOTIFICATION_REMOVED",
-            payload: ["id": notificationId]
-        ))
-    }
-
-    func sendSms(address: String, body: String) {
-        guard !body.isEmpty else { return }
-        sendEnvelope(LinkEnvelope(
-            type: "SMS_SEND",
-            payload: [
-                "address": address,
-                "body": body
-            ]
-        ))
-        // Optimistically append to local thread
-        let newMsg = SmsMessageItem(
-            id: UUID().uuidString,
-            address: address,
-            body: body,
-            date: Int64(Date().timeIntervalSince1970 * 1000),
-            isIncoming: false
-        )
-        if let idx = smsThreads.firstIndex(where: { $0.address == address }) {
-            smsThreads[idx].messages.append(newMsg)
-            smsThreads[idx].lastMessage = body
-        } else {
-            smsThreads.insert(SmsThreadItem(
-                id: address,
-                contactName: address,
-                address: address,
-                lastMessage: body,
-                timestamp: newMsg.date,
-                messages: [newMsg]
-            ), at: 0)
-        }
-    }
-
-    func sendCallAction(_ action: String, smsReply: String? = nil) {
-        var payload = ["action": action]
-        if let smsReply = smsReply {
-            payload["smsReply"] = smsReply
-            payload["number"] = callState.phoneNumber
-        }
-        sendEnvelope(LinkEnvelope(type: "CALL_ACTION", payload: payload))
-        if action == "DECLINE" || action == "END" || action == "DECLINE_WITH_SMS" {
-            callState.isActive = false
-            callState.state = "IDLE"
-        } else if action == "MUTE" {
-            callState.isMuted.toggle()
-        }
-    }
-
-    func dialPhoneNumber(_ number: String) {
-        sendEnvelope(LinkEnvelope(
-            type: "CALL_ACTION",
-            payload: ["action": "DIAL", "number": number]
-        ))
-    }
-
-    func requestDirectoryListing(path: String) {
-        sendEnvelope(LinkEnvelope(
-            type: "FILE_LIST_REQ",
-            payload: ["path": path]
-        ))
-    }
-
-    func requestPhotosList() {
-        sendEnvelope(LinkEnvelope(type: "PHOTOS_LIST_REQ"))
-    }
-
-    func requestSmsAndContacts() {
-        sendEnvelope(LinkEnvelope(type: "SMS_THREADS_REQ"))
-    }
-
-    func pullRemoteFileToMac(remotePath: String, fileName: String, revealInFinder: Bool = true) {
-        sendEnvelope(LinkEnvelope(
-            type: "FILE_PULL_REQ",
-            payload: [
-                "path": remotePath,
-                "fileName": fileName,
-                "revealInFinder": revealInFinder ? "true" : "false"
-            ]
-        ))
-    }
-
-    // MARK: - Send File from Mac Finder to Android (Chunked High-Speed Stream)
-    func sendFileToAndroid(fileURL: URL, destinationFolder: String = "/sdcard/Download/LinkToMac") {
-        guard let connection = activeConnection else { return }
-        let fileName = fileURL.lastPathComponent
-        guard let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-              let fileSize = attrs[.size] as? Int64 else { return }
-
-        let transferId = UUID().uuidString // 36 chars
-        let transportLabel = connectionTransport
-
-        transfers.insert(ActiveTransferItem(
-            id: transferId,
-            fileName: fileName,
-            direction: "Sending to Android",
-            totalBytes: fileSize,
-            transferredBytes: 0,
-            transport: transportLabel
-        ), at: 0)
-
-        sendEnvelope(LinkEnvelope(
-            type: "FILE_TRANSFER_START",
-            payload: [
-                "transferId": transferId,
-                "fileName": fileName,
-                "totalBytes": "\(fileSize)",
-                "destFolder": destinationFolder
-            ]
-        ))
-
-        Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self = self else { return }
-            guard let handle = try? FileHandle(forReadingFrom: fileURL) else { return }
-            defer { try? handle.close() }
-
-            let tidBytes = transferId.padding(toLength: 36, withPad: " ", startingAt: 0).data(using: .utf8)!
-            var sent: Int64 = 0
-            let chunkSize = 65536
-
-            while true {
-                let chunk = (try? handle.read(upToCount: chunkSize)) ?? Data()
-                if chunk.isEmpty { break }
-
-                var framePayload = Data(tidBytes)
-                framePayload.append(chunk)
-                let packed = WireFramer.packFrame(type: .fileChunk, payload: framePayload)
-                connection.send(content: packed, completion: .contentProcessed { _ in })
-
-                sent += Int64(chunk.count)
-                let currentSent = sent
-                await MainActor.run {
-                    if let idx = self.transfers.firstIndex(where: { $0.id == transferId }) {
-                        self.transfers[idx].transferredBytes = currentSent
-                    }
-                }
-                try? await Task.sleep(nanoseconds: 1_500_000) // Smooth socket pacing
-            }
-
-            await MainActor.run {
-                self.sendEnvelope(LinkEnvelope(
-                    type: "FILE_TRANSFER_END",
-                    payload: ["transferId": transferId, "fileName": fileName]
-                ))
-                if let idx = self.transfers.firstIndex(where: { $0.id == transferId }) {
-                    self.transfers[idx].isCompleted = true
-                }
-                if !self.currentDirectoryPath.isEmpty {
-                    self.requestDirectoryListing(path: self.currentDirectoryPath)
-                }
-            }
-        }
-    }
-
-    func sendMediaAction(_ action: String) {
-        sendEnvelope(LinkEnvelope(
-            type: "MEDIA_ACTION",
-            payload: ["action": action]
-        ))
-    }
-
-    func setStreamMode(_ mode: String) {
-        self.activeStreamMode = mode
-        if mode == "NONE" {
-            self.liveVideoFrame = nil
-        }
-        sendEnvelope(LinkEnvelope(
-            type: "STREAM_CONTROL",
-            payload: ["mode": mode]
-        ))
-    }
-
-    func sendRemoteTap(normalizedX: Double, normalizedY: Double) {
-        // If USB ADB is available, ADBBridge injects zero-latency tap; also send over socket
-        sendEnvelope(LinkEnvelope(
-            type: "STREAM_CONTROL",
-            payload: [
-                "mode": "REMOTE_TAP",
-                "x": String(format: "%.4f", normalizedX),
-                "y": String(format: "%.4f", normalizedY)
-            ]
-        ))
-        ADBBridge.shared.injectTapNormalized(x: normalizedX, y: normalizedY)
-    }
-
-    func sendRemoteKeyEvent(_ keyCode: Int) {
-        sendEnvelope(LinkEnvelope(
-            type: "STREAM_CONTROL",
-            payload: ["mode": "REMOTE_KEY", "keyCode": "\(keyCode)"]
-        ))
-        ADBBridge.shared.injectKeyEvent(keyCode)
-    }
-
-    // MARK: - Live Audio Playback (Android Mic / Cast)
-    private func playPCMFrame(_ pcmData: Data) {
-        if !audioConfigured {
-            let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16000, channels: 1, interleaved: false)!
-            audioEngine.attach(playerNode)
-            audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: format)
-            try? audioEngine.start()
-            playerNode.play()
-            audioConfigured = true
-        }
-        let sampleCount = pcmData.count / 2
-        guard sampleCount > 0,
-              let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16000, channels: 1, interleaved: false),
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(sampleCount)) else { return }
-
-        buffer.frameLength = AVAudioFrameCount(sampleCount)
-        if let floatChannel = buffer.floatChannelData?[0] {
-            pcmData.withUnsafeBytes { rawBuf in
-                let int16Ptr = rawBuf.bindMemory(to: Int16.self)
-                for i in 0..<sampleCount {
-                    floatChannel[i] = Float(int16Ptr[i]) / 32768.0
-                }
-            }
-            playerNode.scheduleBuffer(buffer, completionHandler: nil)
-        }
-    }
-
-    // MARK: - Native macOS Notification Dispatch
-    private func requestMacNotificationPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
-    }
-
-    private func postNativeMacNotification(_ item: AndroidNotificationItem) {
-        let content = UNMutableNotificationContent()
-        content.title = "\(item.appName) • \(item.title)"
-        content.body = item.body
-        content.sound = .default
-        let req = UNNotificationRequest(identifier: item.id, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(req)
-    }
-
-    // MARK: - Wake Reconnect & Local IP
-    private func observeMacWake() {
-        NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.didWakeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.localIPAddress = Self.detectLocalIPAddress() ?? "127.0.0.1"
-                self?.startServer()
-                ADBBridge.shared.pollUSBDevices()
-            }
-        }
-    }
-
-    static func detectLocalIPAddress() -> String? {
-        var address: String?
-        var ifaddr: UnsafeMutablePointer<ifaddrs>?
-        if getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr {
-            for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
-                let interface = ptr.pointee
-                let addrFamily = interface.ifa_addr.pointee.sa_family
-                if addrFamily == UInt8(AF_INET) {
-                    let name = String(cString: interface.ifa_name)
-                    if name == "en0" || name == "en1" || name.hasPrefix("bridge") {
-                        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                        getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
-                                    &hostname, socklen_t(hostname.count),
-                                    nil, socklen_t(0), NI_NUMERICHOST)
-                        let candidate = String(cString: hostname)
-                        if !candidate.hasPrefix("127.") {
-                            address = candidate
-                            break
-                        }
-                    }
-                }
-            }
-            freeifaddrs(ifaddr)
-        }
-        return address
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift
-```swift
-import Foundation
-
-@MainActor
-final class ADBBridge: ObservableObject {
-    static let shared = ADBBridge()
-
-    @Published var isUSBDeviceConnected: Bool = false
-    @Published var usbSerial: String = ""
-    @Published var isScrcpyAvailable: Bool = false
-    @Published var deviceScreenWidth: Int = 1080
-    @Published var deviceScreenHeight: Int = 2400
-
-    private var timer: Timer?
-
-    private init() {
-        checkScrcpyInstalled()
-        startPolling()
-    }
-
-    func startPolling() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.pollUSBDevices()
-            }
-        }
-        pollUSBDevices()
-    }
-
-    private func findBinary(_ name: String) -> String? {
-        let candidates = [
-            "/opt/homebrew/bin/\(name)",
-            "/usr/local/bin/\(name)",
-            "\(NSHomeDirectory())/Library/Android/sdk/platform-tools/\(name)",
-            "/usr/bin/\(name)"
-        ]
-        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
-    }
-
-    func checkScrcpyInstalled() {
-        isScrcpyAvailable = (findBinary("scrcpy") != nil)
-    }
-
-    func pollUSBDevices() {
-        guard let adbPath = findBinary("adb") else { return }
-        Task.detached {
-            let output = Self.runCommand(adbPath, args: ["devices"])
-            let lines = output.components(separatedBy: .newlines)
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty && !$0.hasPrefix("List of devices") && $0.hasSuffix("\tdevice") }
-
-            if let firstLine = lines.first,
-               let serial = firstLine.components(separatedBy: "\t").first {
-                // Ensure port 54921 is reversed so the Android app can connect over USB via 127.0.0.1:54921
-                _ = Self.runCommand(adbPath, args: ["-s", serial, "reverse", "tcp:54921", "tcp:54921"])
-
-                // Query actual screen width/height via adb shell wm size
-                let wmOutput = Self.runCommand(adbPath, args: ["-s", serial, "shell", "wm", "size"])
-                var detectedW = 0
-                var detectedH = 0
-                for line in wmOutput.components(separatedBy: .newlines) {
-                    let trimmed = line.trimmingCharacters(in: .whitespaces)
-                    if trimmed.contains("size:") {
-                        let parts = trimmed.components(separatedBy: "size:")
-                        if parts.count > 1 {
-                            let dims = parts[1].trimmingCharacters(in: .whitespaces).components(separatedBy: "x")
-                            if dims.count == 2, let w = Int(dims[0]), let h = Int(dims[1]) {
-                                detectedW = w
-                                detectedH = h
-                            }
-                        }
-                    }
-                }
-
-                let finalW = detectedW
-                let finalH = detectedH
-
-                await MainActor.run {
-                    let wasConnected = ADBBridge.shared.isUSBDeviceConnected
-                    ADBBridge.shared.isUSBDeviceConnected = true
-                    ADBBridge.shared.usbSerial = serial
-                    if !wasConnected {
-                        ADBBridge.shared.unlockBackgroundClipboardViaADB()
-                    }
-                    if finalW > 0 && finalH > 0 {
-                        ADBBridge.shared.deviceScreenWidth = finalW
-                        ADBBridge.shared.deviceScreenHeight = finalH
-                        ConnectionManager.shared.androidScreenWidth = Double(finalW)
-                        ConnectionManager.shared.androidScreenHeight = Double(finalH)
-                        ConnectionManager.shared.deviceScreenWidth = finalW
-                        ConnectionManager.shared.deviceScreenHeight = finalH
-                    }
-                    if ConnectionManager.shared.isConnected {
-                        ConnectionManager.shared.connectionTransport = "USB"
-                    }
-                }
-            } else {
-                await MainActor.run {
-                    ADBBridge.shared.isUSBDeviceConnected = false
-                    ADBBridge.shared.usbSerial = ""
-                    if ConnectionManager.shared.isConnected && ConnectionManager.shared.connectionTransport == "USB" {
-                        ConnectionManager.shared.connectionTransport = "Local Wi-Fi"
-                    }
-                }
-            }
-        }
-    }
-
-    func launchNativeScrcpy(screenOff: Bool, stayAwake: Bool) {
-        guard let scrcpyPath = findBinary("scrcpy") else { return }
-        var args = ["--window-title", "LinkToMac — \(ConnectionManager.shared.connectedDeviceName)"]
-        if screenOff {
-            args.append("--turn-screen-off")
-        }
-        if stayAwake {
-            args.append("--stay-awake")
-        }
-        Task.detached {
-            let proc = Process()
-            proc.executableURL = URL(fileURLWithPath: scrcpyPath)
-            proc.arguments = args
-            try? proc.run()
-        }
-    }
-
-    func injectTapNormalized(x: Double, y: Double) {
-        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
-        let w = ConnectionManager.shared.androidScreenWidth > 0 ? ConnectionManager.shared.androidScreenWidth : 1080.0
-        let h = ConnectionManager.shared.androidScreenHeight > 0 ? ConnectionManager.shared.androidScreenHeight : 2400.0
-        let px = Int(x * w)
-        let py = Int(y * h)
-        Task.detached {
-            _ = Self.runCommand(adbPath, args: ["shell", "input", "tap", "\(px)", "\(py)"])
-        }
-    }
-
-    func injectKeyEvent(_ keyCode: Int) {
-        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
-        Task.detached {
-            _ = Self.runCommand(adbPath, args: ["shell", "input", "keyevent", "\(keyCode)"])
-        }
-    }
-
-    func unlockBackgroundClipboardViaADB() {
-        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
-        Task.detached {
-            _ = Self.runCommand(adbPath, args: ["shell", "cmd", "appops", "set", "com.linktomac.android", "SYSTEM_ALERT_WINDOW", "allow"])
-            _ = Self.runCommand(adbPath, args: ["shell", "pm", "grant", "com.linktomac.android", "android.permission.READ_LOGS"])
-        }
-    }
-
-    nonisolated private static func runCommand(_ executable: String, args: [String]) -> String {
-        let process = Process()
-        let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = args
-        process.standardOutput = pipe
-        process.standardError = pipe
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            return String(data: data, encoding: .utf8) ?? ""
-        } catch {
-            return ""
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift
-```swift
-import Foundation
-import AppKit
-
-@MainActor
-final class ClipboardSyncManager: ObservableObject {
-    static let shared = ClipboardSyncManager()
-
-    @Published var isSyncEnabled: Bool = true
-    @Published var ignoreConcealedPasswords: Bool = true
-    @Published var history: [ClipboardHistoryItem] = []
-
-    private var lastChangeCount: Int = NSPasteboard.general.changeCount
-    private var lastSyncedString: String = ""
-    private var pollTimer: Timer?
-
-    private init() {
-        startMonitoring()
-    }
-
-    func startMonitoring() {
-        pollTimer?.invalidate()
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.65, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.checkMacPasteboard()
-            }
-        }
-    }
-
-    private func checkMacPasteboard() {
-        guard isSyncEnabled else { return }
-        let pb = NSPasteboard.general
-        guard pb.changeCount != lastChangeCount else { return }
-        lastChangeCount = pb.changeCount
-
-        // Respect password managers (1Password, Bitwarden, Keychain)
-        if ignoreConcealedPasswords {
-            let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
-            if pb.types?.contains(concealedType) == true {
-                return
-            }
-        }
-
-        guard let copied = pb.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !copied.isEmpty,
-              copied != lastSyncedString else { return }
-
-        lastSyncedString = copied
-        let isUrl = copied.hasPrefix("http://") || copied.hasPrefix("https://")
-        recordHistory(content: copied, isUrl: isUrl, source: "This Mac")
-
-        if ConnectionManager.shared.isConnected {
-            ConnectionManager.shared.sendEnvelope(LinkEnvelope(
-                type: "CLIPBOARD_SYNC",
-                payload: [
-                    "content": copied,
-                    "isUrl": isUrl ? "true" : "false"
-                ]
-            ))
-        }
-    }
-
-    func applyIncomingFromAndroid(text: String) {
-        guard isSyncEnabled, text != lastSyncedString else { return }
-        lastSyncedString = text
-
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(text, forType: .string)
-        lastChangeCount = pb.changeCount
-
-        let isUrl = text.hasPrefix("http://") || text.hasPrefix("https://")
-        recordHistory(content: text, isUrl: isUrl, source: "Android")
-    }
-
-    func copyItemToMac(_ item: ClipboardHistoryItem) {
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(item.content, forType: .string)
-        lastChangeCount = pb.changeCount
-        lastSyncedString = item.content
-    }
-
-    func handoffURLToAndroid(_ urlString: String) {
-        ConnectionManager.shared.sendEnvelope(LinkEnvelope(
-            type: "URL_HANDOFF",
-            payload: ["url": urlString]
-        ))
-    }
-
-    private func recordHistory(content: String, isUrl: Bool, source: String) {
-        history.removeAll { $0.content == content }
-        history.insert(ClipboardHistoryItem(
-            content: content,
-            isUrl: isUrl,
-            source: source,
-            timestamp: Date()
-        ), at: 0)
-        if history.count > 40 {
-            history.removeLast()
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift
-```swift
-import SwiftUI
-import CoreImage.CIFilterBuiltins
-
-enum DashboardSection: String, CaseIterable, Identifiable {
-    case overview      = "Dashboard"
-    case messages      = "Messages"
-    case notifications = "Notifications"
-    case files         = "Files"
-    case photos        = "Photos"
-    case clipboard     = "Clipboard"
-    case mirrorCamera  = "Mirror & Camera"
-    case pairSetup     = "Pair Device (QR)"
-
-    var id: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .overview:      return "laptopcomputer.and.iphone"
-        case .messages:      return "message.fill"
-        case .notifications: return "bell.badge.fill"
-        case .files:         return "folder.fill"
-        case .photos:        return "photo.on.rectangle.angled"
-        case .clipboard:     return "doc.on.clipboard.fill"
-        case .mirrorCamera:  return "rectangle.inset.filled.and.person.filled"
-        case .pairSetup:     return "qrcode.viewfinder"
-        }
-    }
-}
-
-struct MainDashboardView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var adb = ADBBridge.shared
-    @ObservedObject var clip = ClipboardSyncManager.shared
-    @LocalState private var selectedSection: DashboardSection = .overview
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            NavigationSplitView {
-                VStack(alignment: .leading, spacing: 12) {
-                    // Brand Header
-                    HStack(spacing: 10) {
-                        Image(systemName: "link.circle.fill")
-                            .font(.system(size: 26))
-                            .foregroundStyle(.green)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("LinkToMac")
-                                .font(.headline.bold())
-                            Text("v1.61 • Local & Private")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-
-                    // Live Connection Pill
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Circle()
-                                .fill(conn.isConnected ? Color.green : Color.orange)
-                                .frame(width: 9, height: 9)
-                            Text(conn.isConnected ? conn.connectedDeviceName : "Waiting for Android")
-                                .font(.subheadline.weight(.semibold))
-                                .lineLimit(1)
-                        }
-                        HStack(spacing: 8) {
-                            Label(conn.isConnected ? conn.connectionTransport : "Port \(conn.listenPort)", systemImage: conn.connectionTransport == "USB" ? "cable.connector" : "wifi")
-                            if conn.isConnected {
-                                Text("•")
-                                Label("\(conn.batteryLevel)%\(conn.isCharging ? " ⚡" : "")", systemImage: "battery.75")
-                            }
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .padding(.horizontal, 10)
-
-                    List(DashboardSection.allCases, id: \.self, selection: $selectedSection) { section in
-                        NavigationLink(value: section) {
-                            HStack {
-                                Label(section.rawValue, systemImage: section.icon)
-                                Spacer()
-                                if section == .notifications && !conn.notifications.isEmpty {
-                                    Text("\(conn.notifications.count)")
-                                        .font(.caption2.bold())
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.green.opacity(0.25))
-                                        .clipShape(Capsule())
-                                }
-                            }
-                        }
-                    }
-                    .listStyle(.sidebar)
-                }
-                .frame(minWidth: 220)
-            } detail: {
-                Group {
-                    switch selectedSection {
-                    case .overview:
-                        OverviewWorkflowView(selectedSection: $selectedSection)
-                    case .messages:
-                        MessagesWorkspaceView()
-                    case .notifications:
-                        NotificationsWorkspaceView()
-                    case .files:
-                        FilesWorkspaceView()
-                    case .photos:
-                        PhotosWorkspaceView()
-                    case .clipboard:
-                        ClipboardWorkspaceView()
-                    case .mirrorCamera:
-                        MirrorAndCameraWorkspaceView()
-                    case .pairSetup:
-                        PairingQRSetupView()
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-
-            // Floating Incoming Call HUD Overlay (Appears automatically when phone rings)
-            if conn.callState.isActive {
-                IncomingCallHUDView()
-                    .padding(20)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(response: 0.3), value: conn.callState.isActive)
-    }
-}
-
-// MARK: - Overview Morning Workflow Dashboard
-struct OverviewWorkflowView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var clip = ClipboardSyncManager.shared
-    @Binding var selectedSection: DashboardSection
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Hero Status Banner
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(conn.isConnected ? "\(conn.connectedDeviceName) is ready." : "Make Android feel at home on your Mac.")
-                            .font(.title.bold())
-                        Text("Messages, notifications, files, photos, clipboard, call controls, camera, and mirroring over USB or private local Wi-Fi. Cellular call audio and the microphone remain on your Android phone.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button {
-                        selectedSection = .pairSetup
-                    } label: {
-                        Label(conn.isConnected ? "Connection Details" : "Scan Pairing QR", systemImage: "qrcode")
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                }
-                .padding(20)
-                .background(Color.primary.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-
-                // 3 Core Workflows Grid
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    WorkflowCard(
-                        number: "01",
-                        title: "Stay in the conversation",
-                        subtitle: "\(conn.notifications.count) active notifications • \(conn.smsThreads.count) SMS threads",
-                        icon: "bubble.left.and.bubble.right.fill",
-                        buttonTitle: "Open Messages & Alerts"
-                    ) {
-                        selectedSection = .messages
-                    }
-
-                    WorkflowCard(
-                        number: "02",
-                        title: "Move the thing you need",
-                        subtitle: "Drag & drop files, browse \(conn.remotePhotos.count) photos, sync clipboard",
-                        icon: "folder.fill.badge.plus",
-                        buttonTitle: "Browse Files & Photos"
-                    ) {
-                        selectedSection = .files
-                    }
-
-                    WorkflowCard(
-                        number: "03",
-                        title: "Use the phone from your desk",
-                        subtitle: "Screen mirroring, screen-off mode, webcam & media remote",
-                        icon: "iphone.smartbatterycase.gen2",
-                        buttonTitle: "Open Mirror & Camera"
-                    ) {
-                        selectedSection = .mirrorCamera
-                    }
-                }
-
-                // Quick Media Remote & Quick Actions Row
-                HStack(spacing: 16) {
-                    // Media Remote Card
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("Android Media Remote", systemImage: "music.note.list")
-                            .font(.headline)
-                        Text(conn.nowPlayingTitle)
-                            .font(.title3.bold())
-                            .lineLimit(1)
-                        Text(conn.nowPlayingArtist)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        HStack(spacing: 12) {
-                            Button { conn.sendMediaAction("PREV") } label: { Image(systemName: "backward.fill") }
-                            Button { conn.sendMediaAction("PLAY_PAUSE") } label: { Image(systemName: "playpause.fill") }
-                            Button { conn.sendMediaAction("NEXT") } label: { Image(systemName: "forward.fill") }
-                            Divider().frame(height: 18)
-                            Button { conn.sendMediaAction("VOL_DOWN") } label: { Image(systemName: "speaker.minus.fill") }
-                            Button { conn.sendMediaAction("VOL_UP") } label: { Image(systemName: "speaker.plus.fill") }
-                            Spacer()
-                            Button("Ring Phone") {
-                                conn.sendMediaAction("RING_PHONE")
-                            }
-                            .tint(.orange)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                    // Latest Clipboard Card
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Label("Universal Clipboard", systemImage: "doc.on.clipboard")
-                                .font(.headline)
-                            Spacer()
-                            Toggle("Sync On", isOn: $clip.isSyncEnabled)
-                                .toggleStyle(.switch)
-                                .controlSize(.small)
-                        }
-                        if let latest = clip.history.first {
-                            Text(latest.content)
-                                .font(.subheadline.monospaced())
-                                .lineLimit(2)
-                            Text("Copied on \(latest.source) • Ready to paste ⌘V")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text("Copy text or links on Android or Mac to sync instantly.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-            }
-            .padding(24)
-        }
-    }
-}
-
-struct WorkflowCard: View {
-    let number: String
-    let title: String
-    let subtitle: String
-    let icon: String
-    let buttonTitle: String
-    let action: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(number)
-                    .font(.caption.monospaced().bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.green.opacity(0.2))
-                    .clipShape(Capsule())
-                Spacer()
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(.green)
-            }
-            Text(title)
-                .font(.headline)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(minHeight: 34, alignment: .topLeading)
-            Button(buttonTitle, action: action)
-                .buttonStyle(.bordered)
-        }
-        .padding(16)
-        .background(Color.primary.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-// MARK: - Pairing QR Code & Guided Setup View
-struct PairingQRSetupView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var adb = ADBBridge.shared
-
-    var qrPayloadString: String {
-        "{\"host\":\"\(conn.localIPAddress)\",\"port\":\(conn.listenPort),\"token\":\"\(conn.pairingToken)\",\"macName\":\"\(Host.current().localizedName ?? "Mac")\"}"
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                Text("Pair once. Then your Android feels nearby.")
-                    .font(.title.bold())
-                Text("Scan this QR code inside the LinkToMac Android companion app, or plug in a USB cable.")
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 32) {
-                    // Generated QR Code
-                    if let qrImg = generateQRCode(from: qrPayloadString) {
-                        Image(nsImage: qrImg)
-                            .interpolation(.none)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 210, height: 210)
-                            .padding(16)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-
-                    // Manual & USB Status Details
-                    VStack(alignment: .leading, spacing: 14) {
-                        GroupBox("01 • Local Wi-Fi Pairing Details") {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Mac IP Address:  \(conn.localIPAddress)")
-                                    .font(.system(.body, design: .monospaced))
-                                Text("Port:            \(conn.listenPort)")
-                                    .font(.system(.body, design: .monospaced))
-                                Text("6-Digit Token:   \(conn.pairingToken)")
-                                    .font(.system(.body, design: .monospaced).bold())
-                                    .foregroundStyle(.green)
-                            }
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-
-                        GroupBox("02 • High-Speed USB (ADB) Bridge") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Circle()
-                                        .fill(adb.isUSBDeviceConnected ? Color.green : Color.secondary)
-                                        .frame(width: 10, height: 10)
-                                    Text(adb.isUSBDeviceConnected ? "USB Phone Detected (\(adb.usbSerial))" : "No USB Android Detected")
-                                        .font(.subheadline.bold())
-                                }
-                                Text("When connected via USB with USB Debugging enabled, port 54921 is automatically bridged for zero-latency transfers and screen-off mirroring.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Button("Refresh USB & Local Network") {
-                                    conn.localIPAddress = ConnectionManager.detectLocalIPAddress() ?? "127.0.0.1"
-                                    conn.startServer()
-                                    adb.pollUSBDevices()
-                                }
-                            }
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .frame(maxWidth: 420)
-                }
-            }
-            .padding(32)
-        }
-    }
-
-    private func generateQRCode(from string: String) -> NSImage? {
-        let context = CIContext()
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(string.utf8)
-        filter.correctionLevel = "M"
-        guard let outputImage = filter.outputImage else { return nil }
-        let transformed = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
-        guard let cgImg = context.createCGImage(transformed, from: transformed.extent) else { return nil }
-        return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift
-```swift
-import SwiftUI
-import UniformTypeIdentifiers
-
-// MARK: - 01 Messages (SMS/MMS + Contacts) Workspace
-struct MessagesWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @LocalState private var selectedThreadId: String?
-    @LocalState private var draftMessage: String = ""
-    @LocalState private var newRecipientNumber: String = ""
-    @LocalState private var searchContactText: String = ""
-
-    var body: some View {
-        HSplitView {
-            // Left Column: SMS Threads & Contacts Search
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Messages & Contacts")
-                        .font(.headline)
-                    Spacer()
-                    Button {
-                        conn.requestSmsAndContacts()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .help("Sync SMS & Contacts from Android")
-                }
-                .padding(.horizontal, 12)
-                .padding(.top, 12)
-
-                HStack {
-                    TextField("Dial or New SMS #...", text: $newRecipientNumber)
-                        .textFieldStyle(.roundedBorder)
-                    Button("Chat") {
-                        let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
-                        guard !trimmed.isEmpty else { return }
-                        if !conn.smsThreads.contains(where: { $0.address == trimmed }) {
-                            conn.smsThreads.insert(SmsThreadItem(
-                                id: trimmed,
-                                contactName: trimmed,
-                                address: trimmed,
-                                lastMessage: "New conversation",
-                                timestamp: Int64(Date().timeIntervalSince1970 * 1000),
-                                messages: []
-                            ), at: 0)
-                        }
-                        selectedThreadId = trimmed
-                        newRecipientNumber = ""
-                    }
-                    Button {
-                        let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
-                        if !trimmed.isEmpty { conn.dialPhoneNumber(trimmed) }
-                    } label: {
-                        Image(systemName: "phone.fill")
-                    }
-                }
-                .padding(.horizontal, 12)
-
-                List(conn.smsThreads, selection: $selectedThreadId) { thread in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(thread.contactName)
-                                .font(.subheadline.bold())
-                            Spacer()
-                            Text(thread.address)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text(thread.lastMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    .padding(.vertical, 4)
-                    .tag(thread.id)
-                }
-            }
-            .frame(minWidth: 250, maxWidth: 320)
-
-            // Right Column: Active Conversation
-            VStack(spacing: 0) {
-                if let threadId = selectedThreadId,
-                   let thread = conn.smsThreads.first(where: { $0.id == threadId }) {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(thread.contactName)
-                                .font(.headline)
-                            Text(thread.address)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button {
-                            conn.dialPhoneNumber(thread.address)
-                        } label: {
-                            Label("Call on Phone", systemImage: "phone.arrow.up.right.fill")
-                        }
-                    }
-                    .padding(14)
-                    .background(Color.primary.opacity(0.05))
-
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 10) {
-                            ForEach(thread.messages) { msg in
-                                HStack {
-                                    if !msg.isIncoming { Spacer() }
-                                    Text(msg.body)
-                                        .padding(10)
-                                        .background(msg.isIncoming ? Color.primary.opacity(0.1) : Color.green.opacity(0.85))
-                                        .foregroundStyle(msg.isIncoming ? Color.primary : Color.black)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    if msg.isIncoming { Spacer() }
-                                }
-                            }
-                        }
-                        .padding(16)
-                    }
-
-                    Divider()
-                    HStack(spacing: 10) {
-                        TextField("Reply via Android SMS...", text: $draftMessage)
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit {
-                                sendCurrentDraft(to: thread.address)
-                            }
-                        Button("Send ↵") {
-                            sendCurrentDraft(to: thread.address)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                    }
-                    .padding(12)
-                } else {
-                    VStack(spacing: 10) {
-                        Image(systemName: "message.and.waveform.fill")
-                            .font(.system(size: 42))
-                            .foregroundStyle(.secondary)
-                        Text("Select a conversation or start a new SMS")
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-        }
-    }
-
-    private func sendCurrentDraft(to address: String) {
-        let text = draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        conn.sendSms(address: address, body: text)
-        draftMessage = ""
-    }
-}
-
-// MARK: - 01 Notifications Mirror & Inline Reply Workspace
-struct NotificationsWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @LocalState private var replyDrafts: [String: String] = [:]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Android Notification Mirroring")
-                    .font(.title2.bold())
-                Spacer()
-                if !conn.mutedApps.isEmpty {
-                    Button("Unmute All Apps (\(conn.mutedApps.count))") {
-                        conn.mutedApps.removeAll()
-                    }
-                }
-                Button("Clear All") {
-                    conn.notifications.removeAll()
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-
-            if conn.notifications.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "bell.slash")
-                        .font(.system(size: 42))
-                        .foregroundStyle(.secondary)
-                    Text("No recent Android notifications")
-                        .font(.headline)
-                    Text("Incoming messages and alerts from your phone will appear here with inline keyboard reply.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List {
-                    ForEach(conn.notifications) { item in
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text(item.appName.uppercased())
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.green)
-                                Text("•")
-                                    .foregroundStyle(.secondary)
-                                Text(item.title)
-                                    .font(.headline)
-                                Spacer()
-                                if let otp = item.otpCode, !otp.isEmpty {
-                                    Button("Copy 2FA: \(otp)") {
-                                        NSPasteboard.general.clearContents()
-                                        NSPasteboard.general.setString(otp, forType: .string)
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.blue)
-                                    .controlSize(.small)
-                                }
-                                Button("Mute App") {
-                                    conn.mutedApps.insert(item.packageName)
-                                    conn.notifications.removeAll { $0.packageName == item.packageName }
-                                }
-                                .controlSize(.small)
-                                Button {
-                                    conn.dismissNotification(notificationId: item.id)
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                }
-                                .buttonStyle(.plain)
-                            }
-
-                            Text(item.body)
-                                .font(.body)
-
-                            if let sent = item.replySentText {
-                                Label("Reply sent: \"\(sent)\"", systemImage: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                            } else if item.canReply {
-                                HStack {
-                                    TextField("Reply from keyboard...", text: Binding(
-                                        get: { replyDrafts[item.id] ?? "" },
-                                        set: { replyDrafts[item.id] = $0 }
-                                    ))
-                                    .textFieldStyle(.roundedBorder)
-                                    .onSubmit {
-                                        let txt = replyDrafts[item.id] ?? ""
-                                        conn.sendNotificationReply(notificationId: item.id, replyText: txt)
-                                        replyDrafts[item.id] = ""
-                                    }
-                                    Button("Reply ↵") {
-                                        let txt = replyDrafts[item.id] ?? ""
-                                        conn.sendNotificationReply(notificationId: item.id, replyText: txt)
-                                        replyDrafts[item.id] = ""
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.green)
-                                }
-                            }
-                        }
-                        .padding(10)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 02 File Browser & Drag-and-Drop Transfer Workspace
-struct FilesWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @LocalState private var isDropTargeted: Bool = false
-
-    let quickBookmarks = [
-        ("Downloads", "/sdcard/Download"),
-        ("Camera (DCIM)", "/sdcard/DCIM/Camera"),
-        ("Pictures", "/sdcard/Pictures"),
-        ("Movies", "/sdcard/Movies"),
-        ("Documents", "/sdcard/Documents"),
-        ("Root /sdcard", "/sdcard")
-    ]
-
-    var body: some View {
-        HSplitView {
-            // Left Pane: Android Storage Browser
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Android Storage")
-                        .font(.title3.bold())
-                    Spacer()
-                    Button("Send File from Mac...") {
-                        pickMacFilesToSend()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                    Button {
-                        conn.requestDirectoryListing(path: conn.currentDirectoryPath)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
-
-                // Quick Folder Bookmarks
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(quickBookmarks, id: \.1) { name, path in
-                            Button(name) {
-                                conn.requestDirectoryListing(path: path)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-
-                // Current Path Bar
-                HStack {
-                    Button {
-                        let parent = (conn.currentDirectoryPath as NSString).deletingLastPathComponent
-                        if !parent.isEmpty {
-                            conn.requestDirectoryListing(path: parent)
-                        }
-                    } label: {
-                        Image(systemName: "chevron.left")
-                    }
-                    Text(conn.currentDirectoryPath)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-
-                List(conn.remoteFiles) { file in
-                    HStack {
-                        Image(systemName: file.isDirectory ? "folder.fill" : "doc.fill")
-                            .foregroundStyle(file.isDirectory ? .yellow : .blue)
-                        VStack(alignment: .leading) {
-                            Text(file.name)
-                                .font(.body)
-                            if !file.isDirectory {
-                                Text(ByteCountFormatter.string(fromByteCount: file.sizeBytes, countStyle: .file))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        Spacer()
-                        if file.isDirectory {
-                            Button("Open") {
-                                conn.requestDirectoryListing(path: file.path)
-                            }
-                            .controlSize(.small)
-                        } else {
-                            Button("Download to Finder") {
-                                conn.pullRemoteFileToMac(remotePath: file.path, fileName: file.name, revealInFinder: true)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                }
-            }
-            .frame(minWidth: 420)
-            .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
-                handleDroppedMacFiles(providers: providers)
-                return true
-            }
-            .overlay {
-                if isDropTargeted {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.green, lineWidth: 3)
-                        .background(Color.green.opacity(0.12))
-                        .overlay {
-                            Label("Drop files to send to \(conn.currentDirectoryPath)", systemImage: "arrow.down.doc.fill")
-                                .font(.title2.bold())
-                        }
-                }
-            }
-
-            // Right Pane: Active & Recent Transfers Queue
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Transfers Queue")
-                    .font(.headline)
-                    .padding(.top, 14)
-                    .padding(.horizontal, 14)
-
-                if conn.transfers.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "arrow.left.arrow.right.square")
-                            .font(.system(size: 34))
-                            .foregroundStyle(.secondary)
-                        Text("Drag files from Finder here to send to Android")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List(conn.transfers) { item in
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(item.fileName)
-                                    .font(.subheadline.bold())
-                                    .lineLimit(1)
-                                Spacer()
-                                Text(item.transport)
-                                    .font(.caption2.bold())
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.green.opacity(0.2))
-                                    .clipShape(Capsule())
-                            }
-                            ProgressView(value: item.progress)
-                                .tint(.green)
-                            HStack {
-                                Text(item.direction)
-                                Spacer()
-                                Text(item.isCompleted ? "Completed ✓" : "\(Int(item.progress * 100))%")
-                            }
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-            .frame(minWidth: 260, maxWidth: 320)
-        }
-    }
-
-    private func pickMacFilesToSend() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        if panel.runModal() == .OK {
-            for url in panel.urls {
-                conn.sendFileToAndroid(fileURL: url, destinationFolder: conn.currentDirectoryPath)
-            }
-        }
-    }
-
-    private func handleDroppedMacFiles(providers: [NSItemProvider]) {
-        for provider in providers {
-            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                if let data = item as? Data,
-                   let url = URL(dataRepresentation: data, relativeTo: nil) {
-                    Task { @MainActor in
-                        ConnectionManager.shared.sendFileToAndroid(
-                            fileURL: url,
-                            destinationFolder: ConnectionManager.shared.currentDirectoryPath
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 02 Photos Browser Workspace
-struct PhotosWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Android Photos & Gallery")
-                    .font(.title2.bold())
-                Spacer()
-                Button {
-                    conn.requestPhotosList()
-                } label: {
-                    Label("Refresh Gallery", systemImage: "arrow.clockwise")
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-
-            if conn.remotePhotos.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "photo.stack")
-                        .font(.system(size: 42))
-                        .foregroundStyle(.secondary)
-                    Text("No photos loaded yet")
-                    Button("Load Recent Android Photos") {
-                        conn.requestPhotosList()
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 14)], spacing: 14) {
-                        ForEach(conn.remotePhotos) { photo in
-                            VStack(alignment: .leading, spacing: 6) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color.primary.opacity(0.08))
-                                        .frame(height: 120)
-
-                                    if let b64 = photo.thumbnailBase64,
-                                       let data = Data(base64Encoded: b64),
-                                       let img = NSImage(data: data) {
-                                        Image(nsImage: img)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(height: 120)
-                                            .clipped()
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    } else {
-                                        Image(systemName: photo.isVideo ? "video.fill" : "photo.fill")
-                                            .font(.largeTitle)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                Text(photo.name)
-                                    .font(.caption.bold())
-                                    .lineLimit(1)
-                                Button("Save to Finder") {
-                                    conn.pullRemoteFileToMac(remotePath: photo.path, fileName: photo.name, revealInFinder: true)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                            }
-                            .padding(8)
-                            .background(Color.primary.opacity(0.04))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                        }
-                    }
-                    .padding(20)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 02 Universal Clipboard & URL Handoff Workspace
-struct ClipboardWorkspaceView: View {
-    @ObservedObject var clip = ClipboardSyncManager.shared
-    @LocalState private var handoffURLInput: String = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Universal Clipboard & URL Handoff")
-                        .font(.title2.bold())
-                    Text("Copy on Android, paste on Mac (⌘V) — and vice versa.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Toggle("Clipboard Sync", isOn: $clip.isSyncEnabled)
-                    .toggleStyle(.switch)
-                Toggle("Ignore Password Managers", isOn: $clip.ignoreConcealedPasswords)
-                    .toggleStyle(.checkbox)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-
-            // URL Handoff Bar
-            HStack {
-                TextField("https://example.com — Open URL directly on Android phone...", text: $handoffURLInput)
-                    .textFieldStyle(.roundedBorder)
-                Button("Send URL to Phone ↗") {
-                    guard !handoffURLInput.isEmpty else { return }
-                    clip.handoffURLToAndroid(handoffURLInput)
-                    handoffURLInput = ""
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
-            }
-            .padding(.horizontal, 20)
-
-            List(clip.history) { item in
-                HStack {
-                    Image(systemName: item.isUrl ? "link.circle.fill" : "doc.on.clipboard")
-                        .foregroundStyle(item.isUrl ? .blue : .green)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.content)
-                            .font(.body.monospaced())
-                            .lineLimit(2)
-                        Text("Copied on \(item.source) • \(item.timestamp.formatted(date: .omitted, time: .standard))")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    if item.isUrl, let url = URL(string: item.content) {
-                        Button("Open on Mac") {
-                            NSWorkspace.shared.open(url)
-                        }
-                        Button("Open on Phone") {
-                            clip.handoffURLToAndroid(item.content)
-                        }
-                    }
-                    Button("Copy ⌘C") {
-                        clip.copyItemToMac(item)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-        }
-    }
-}
-
-// MARK: - 03 Screen Mirroring, Virtual Webcam & Microphone Workspace
-struct MirrorAndCameraWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var adb = ADBBridge.shared
-
-    var body: some View {
-        HSplitView {
-            // Left Control Panel
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Desk Controls")
-                    .font(.title2.bold())
-
-                GroupBox("Screen Mirroring") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Toggle("Turn Android Screen Off while Mirroring", isOn: $conn.isScreenOffMirror)
-                        HStack {
-                            Button("Start Wireless/Socket Mirror") {
-                                conn.setStreamMode("MIRROR")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.green)
-
-                            if adb.isScrcpyAvailable && adb.isUSBDeviceConnected {
-                                Button("Launch Pro USB Mirror (scrcpy)") {
-                                    adb.launchNativeScrcpy(screenOff: conn.isScreenOffMirror, stayAwake: true)
-                                }
-                            }
-                        }
-                        HStack(spacing: 8) {
-                            Button("Home") { conn.sendRemoteKeyEvent(3) }
-                            Button("Back") { conn.sendRemoteKeyEvent(4) }
-                            Button("App Switcher") { conn.sendRemoteKeyEvent(187) }
-                            Button("Lock/Wake") { conn.sendRemoteKeyEvent(26) }
-                        }
-                        .controlSize(.small)
-                    }
-                    .padding(8)
-                }
-
-                GroupBox("Android Camera & Microphone Stream") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Use your Android phone's high-res camera and microphone right from your desk.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        HStack {
-                            Button("Rear Camera") {
-                                conn.setStreamMode("WEBCAM_BACK")
-                            }
-                            Button("Front Camera") {
-                                conn.setStreamMode("WEBCAM_FRONT")
-                            }
-                            Button("Stream Mic Audio") {
-                                conn.setStreamMode("MIC_STREAM")
-                            }
-                        }
-                        Button("Stop All Streams") {
-                            conn.setStreamMode("NONE")
-                        }
-                        .tint(.red)
-                    }
-                    .padding(8)
-                }
-
-                Spacer()
-            }
-            .padding(20)
-            .frame(minWidth: 320, maxWidth: 360)
-
-            // Right Live Video Canvas (Interactive click-to-tap on phone!)
-            VStack {
-                if let frame = conn.liveVideoFrame {
-                    GeometryReader { geo in
-                        Image(nsImage: frame)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .gesture(
-                                SpatialTapGesture()
-                                    .onEnded { event in
-                                        let normX = max(0, min(1, event.location.x / max(1, geo.size.width)))
-                                        let normY = max(0, min(1, event.location.y / max(1, geo.size.height)))
-                                        conn.sendRemoteTap(normalizedX: normX, normalizedY: normY)
-                                    }
-                            )
-                    }
-                    .padding(12)
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "iphone.gen3.radiowaves.left.and.right")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-                        Text("Live Screen Mirror / Camera Feed")
-                            .font(.headline)
-                        Text("Click 'Start Wireless/Socket Mirror' or 'Rear Camera' on the left to stream live video.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .background(Color.black.opacity(0.85))
-        }
-    }
-}
-
-// MARK: - Floating Incoming Call HUD Overlay
-struct IncomingCallHUDView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Image(systemName: "phone.down.waves.left.and.right")
-                    .font(.title)
-                    .foregroundStyle(.green)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(conn.callState.state == "RINGING" ? "Incoming Android Call" : "Active Cellular Call (Audio on Phone)")
-                        .font(.caption.bold())
-                        .foregroundStyle(.green)
-                    Text(conn.callState.contactName)
-                        .font(.headline)
-                    Text(conn.callState.phoneNumber)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            HStack(spacing: 10) {
-                if conn.callState.state == "RINGING" {
-                    Button("Answer") {
-                        conn.sendCallAction("ANSWER")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-
-                    Button("Decline") {
-                        conn.sendCallAction("DECLINE")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-
-                    Button("SMS: In a meeting") {
-                        conn.sendCallAction("DECLINE_WITH_SMS", smsReply: "I'm at my desk right now — I'll call you back shortly.")
-                    }
-                    .buttonStyle(.bordered)
-                } else {
-                    Button(conn.callState.isMuted ? "Unmute" : "Mute") {
-                        conn.sendCallAction("MUTE")
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("End Call") {
-                        conn.sendCallAction("END")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                }
-            }
-        }
-        .padding(16)
-        .background(.ultraThickMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(radius: 16)
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LinkToMacApp.swift
-```swift
-import SwiftUI
-
-@main
-struct LinkToMacApp: App {
-    @ObservedObject private var conn = ConnectionManager.shared
-    @ObservedObject private var clip = ClipboardSyncManager.shared
-
-    var body: some Scene {
-        WindowGroup("LinkToMac") {
-            MainDashboardView()
-                .frame(minWidth: 980, minHeight: 640)
-                .preferredColorScheme(.dark)
-        }
-
-        // Native macOS Menu Bar Companion Popover
-        MenuBarExtra {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Circle()
-                        .fill(conn.isConnected ? Color.green : Color.orange)
-                        .frame(width: 8, height: 8)
-                    Text(conn.isConnected ? "\(conn.connectedDeviceName) (\(conn.connectionTransport))" : "LinkToMac: Waiting for Phone")
-                        .font(.headline)
-                }
-
-                if conn.isConnected {
-                    Text("Battery: \(conn.batteryLevel)% • Notifications: \(conn.notifications.count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Divider()
-
-                Toggle("Universal Clipboard Sync", isOn: $clip.isSyncEnabled)
-
-                Button("Play / Pause Android Media") {
-                    conn.sendMediaAction("PLAY_PAUSE")
-                }
-                Button("Ring My Android Phone") {
-                    conn.sendMediaAction("RING_PHONE")
-                }
-
-                Divider()
-                Button("Quit LinkToMac") {
-                    NSApplication.shared.terminate(nil)
-                }
-            }
-            .padding(12)
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: conn.isConnected ? "iphone.radiowaves.left.and.right" : "iphone.slash")
-                if conn.isConnected {
-                    Text("\(conn.batteryLevel)%")
-                }
-            }
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-````
-
-<a id="LINKTOMAC-MASTER-PLAN-md"></a>
-### `LINKTOMAC_MASTER_PLAN.md`
-
-````markdown
-# LinkToMac — Zero-Ambiguity Agent Playbook & Stitching Guide (`allcode/`)
-
-> **INSTRUCTIONS FOR AI AGENTS:**
-> Do **NOT** invent your own protocol, do **NOT** rename JSON keys, and do **NOT** change port numbers.
-> Everything you need to build **LinkToMac** for **macOS** and **Android** is already written for you in `ALLCODE_MACOS_COMPLETE.md` and `ALLCODE_ANDROID_COMPLETE.md`. Follow the exact steps below to extract the files into the `allcode/` directory and compile both apps.
-
----
-
-## 1. Exact Directory Structure (`allcode/`)
-
-Your agents must create the following exact folder hierarchy inside `allcode/`:
-
-```text
-allcode/
-├── stitch_allcode.py                           # Automated extractor script (below)
-├── LinkToMac-macOS/
-│   ├── Package.swift                           # Swift Package Manager manifest (no .xcodeproj hassle!)
-│   ├── Info.plist                              # macOS App Bundle metadata & Local Network permissions
-│   ├── build_mac_app.sh                        # 1-click script that builds LinkToMac.app
-│   └── Sources/
-│       └── LinkToMac/
-│           ├── LinkToMacApp.swift              # Main @main entry point, WindowGroup, MenuBarExtra & Call HUD
-│           ├── ProtocolModels.swift            # Shared wire protocol models & frame encoder/decoder
-│           ├── ConnectionManager.swift         # TCP Server (port 54921), Bonjour (_linktomac._tcp), File/Media receiver
-│           ├── ADBBridge.swift                 # USB detection, auto `adb reverse`, scrcpy & screen-off controller
-│           ├── ClipboardSyncManager.swift      # NSPasteboard monitor, password filter, URL Handoff
-│           ├── MainDashboardView.swift         # Full Mac Command Center UI (All 7 tabs + QR Pairing + Menu Bar)
-│           └── FeatureViews.swift              # Messages, Notifications, Files, Photos, Mirroring, Camera & Call HUD views
-│
-└── LinkToMac-Android/
-    ├── settings.gradle.kts
-    ├── build.gradle.kts
-    └── app/
-        ├── build.gradle.kts
-        └── src/main/
-            ├── AndroidManifest.xml             # All permissions & service declarations
-            └── java/com/linktomac/android/
-                ├── ProtocolModels.kt           # Exact matching wire protocol & binary framer
-                ├── LinkConnectionService.kt    # Foreground socket client, mDNS discovery, USB 127.0.0.1 fallback, Heartbeat
-                ├── LinkNotificationService.kt  # NotificationListenerService + RemoteInput inline reply execution
-                ├── SmsContactsCallBridge.kt    # SMS read/send, Contacts sync, Telecom Call Answer/Decline/End, Media Remote
-                ├── FilePhotosBridge.kt         # Storage directory browser, MediaStore thumbnails, 64KB chunked transfers
-                ├── ScreenCameraStreamer.kt     # MediaProjection screen mirror, Camera2 webcam stream & Mic audio stream
-                └── MainActivity.kt             # Material 3 UI, Permission checklist wizard, QR/IP Pairing & Quick Controls
-```
-
----
-
-## 2. The Shared Wire Protocol Specification (Locked Contract)
-
-Both the macOS Swift code and the Android Kotlin code communicate over a persistent TCP socket on port **`54921`** (either over Local Wi-Fi IP discovered via mDNS `_linktomac._tcp.` or over USB via `adb reverse tcp:54921 tcp:54921` where Android connects to `127.0.0.1:54921`).
-
-### Binary Frame Header ($5\text{ bytes}$)
-Every packet sent in either direction has an identical $5\text{-byte}$ header:
-$$
-\underbrace{\text{Payload Length (UInt32 Big-Endian)}}_{4\text{ bytes}} + \underbrace{\text{Frame Type (UInt8)}}_{1\text{ byte}} + \underbrace{\text{Payload Bytes}}_{N\text{ bytes}}
-$$
-
-* **`0x01` (`FRAME_JSON`)**: UTF-8 JSON command or event message (`LinkEnvelope`).
-* **`0x02` (`FRAME_FILE_CHUNK`)**: Raw binary file chunk: first $36\text{ bytes}$ = ASCII `transferId` (padded/UUID), remaining bytes = raw file chunk data.
-* **`0x03` (`FRAME_VIDEO_JPEG`)**: Live Mirroring or Virtual Webcam compressed frame (JPEG/H.264 NAL unit).
-* **`0x04` (`FRAME_AUDIO_PCM`)**: Live Microphone or Cast 16-bit PCM audio frame ($16000\text{ Hz}$, mono).
-
-### Supported JSON `type` Values in `0x01` (`FRAME_JSON`)
-
-| `type` String | Direction | Purpose |
-| :--- | :--- | :--- |
-| `"HELLO"` | Both | Initial pairing handshake (`deviceId`, `deviceName`, `pairToken`, `battery`, `transport`) |
-| `"STATUS_UPDATE"` | Android $\to$ Mac | Battery %, charging state, transport type (`USB` / `Wi-Fi`), active media track info |
-| `"NOTIFICATION_POSTED"` | Android $\to$ Mac | Real-time Android notification (`id`, `packageName`, `appName`, `title`, `body`, `canReply`) |
-| `"NOTIFICATION_REMOVED"` | Both | Dismisses notification on Mac or Android (`id`) |
-| `"NOTIFICATION_REPLY"` | Mac $\to$ Android | Triggers Android `RemoteInput` inline reply (`id`, `replyText`) |
-| `"SMS_THREADS_SYNC"` | Android $\to$ Mac | Sends recent SMS conversations and Contacts directory |
-| `"SMS_SEND"` | Mac $\to$ Android | Sends an SMS message from the Android phone (`address`, `body`) |
-| `"CALL_STATE"` | Android $\to$ Mac | Incoming/Active/Ended cellular call (`state`, `number`, `contactName`) |
-| `"CALL_ACTION"` | Mac $\to$ Android | `ANSWER`, `DECLINE`, `END`, `MUTE`, or `DECLINE_WITH_SMS` |
-| `"CLIPBOARD_SYNC"` | Both | Bi-directional clipboard text/URL sync (`content`, `isUrl`, `hash`) |
-| `"URL_HANDOFF"` | Both | Immediately opens a URL in the target device's default browser |
-| `"FILE_LIST_REQ"` / `"FILE_LIST_RES"` | Both | Browses Android `/sdcard` folders and `MediaStore` photos with thumbnails |
-| `"FILE_TRANSFER_START"` | Both | Announces incoming file (`transferId`, `fileName`, `totalBytes`, `destPath`) |
-| `"FILE_TRANSFER_END"` | Both | Completes file write and verifies size |
-| `"FILE_PULL_REQ"` | Mac $\to$ Android | Requests Android to stream a specific file or photo to the Mac |
-| `"MEDIA_ACTION"` | Mac $\to$ Android | Controls Android media (`PLAY_PAUSE`, `NEXT`, `PREV`, `VOL_UP`, `VOL_DOWN`, `RING_PHONE`) |
-| `"STREAM_CONTROL"` | Mac $\to$ Android | Starts/stops `MIRROR`, `WEBCAM_BACK`, `WEBCAM_FRONT`, `MIC_STREAM`, or `REMOTE_TAP` |
-
----
-
-## 3. Automated Extractor Script (`stitch_allcode.py`)
-
-Give your agents this Python script. When placed in the same directory as `ALLCODE_MACOS_COMPLETE.md` and `ALLCODE_ANDROID_COMPLETE.md`, it automatically parses every `### FILE: <path>` section and writes the exact files to disk!
-
-```python
-#!/usr/bin/env python3
-"""
-stitch_allcode.py
-Automatically extracts all source files from ALLCODE_MACOS_COMPLETE.md and
-ALLCODE_ANDROID_COMPLETE.md into the ./allcode/ directory.
-"""
-import os
-import re
-import stat
-
-MARKDOWN_FILES = [
-    "ALLCODE_MACOS_COMPLETE.md",
-    "ALLCODE_ANDROID_COMPLETE.md",
-]
-
-FILE_PATTERN = re.compile(
-    r"### FILE:\s*([^\n\r]+)\r?\n```[a-zA-Z0-9_-]*\r?\n(.*?)\r?\n```",
-    re.DOTALL
-)
-
-def extract_from_markdown(md_path: str):
-    if not os.path.exists(md_path):
-        print(f"[WARN] {md_path} not found in current directory.")
-        return 0
-    with open(md_path, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    matches = FILE_PATTERN.findall(content)
-    count = 0
-    for rel_path, code in matches:
-        rel_path = rel_path.strip()
-        full_path = os.path.join(".", rel_path)
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        with open(full_path, "w", encoding="utf-8") as out:
-            out.write(code + "\n")
-        if full_path.endswith(".sh"):
-            st = os.stat(full_path)
-            os.chmod(full_path, st.st_mode | stat.S_IEXEC)
-        print(f"[OK] Created: {full_path}")
-        count += 1
-    return count
-
-def main():
-    total = 0
-    for md in MARKDOWN_FILES:
-        total += extract_from_markdown(md)
-    print(f"\nDone! Extracted {total} files into ./allcode/")
-    print("Next steps:")
-    print("  1. Build & Run macOS App: cd allcode/LinkToMac-macOS && ./build_mac_app.sh")
-    print("  2. Build Android App:     Open allcode/LinkToMac-Android in Android Studio and click Run")
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 4. Step-by-Step Instructions for Your Agents to Stitch & Run
-
-### Step 1: Unpack All Code Files
-Run in terminal:
-```bash
-python3 stitch_allcode.py
-```
-
-### Step 2: Build and Launch the macOS Application (`LinkToMac.app`)
-Your agents do **not** even need to create an Xcode `.xcodeproj` manually! We use Swift Package Manager plus an automated bundle script:
-```bash
-cd allcode/LinkToMac-macOS
-chmod +x build_mac_app.sh
-./build_mac_app.sh
-open build/LinkToMac.app
-```
-What `build_mac_app.sh` does:
-1. Runs `swift build -c release` to compile the native macOS binary.
-2. Creates the `build/LinkToMac.app/Contents/MacOS` and `Resources` bundle folders.
-3. Copies the compiled binary and `Info.plist` (which includes `NSLocalNetworkUsageDescription` and `NSBonjourServices` for `_linktomac._tcp`).
-4. Ad-hoc codesigns `build/LinkToMac.app` with `codesign --force --deep --sign - build/LinkToMac.app` so macOS allows local network & notification permissions immediately.
-
-### Step 3: Build and Install the Android Companion App (`LinkToMac-Android`)
-1. Open Android Studio $\to$ **Open** $\to$ select `allcode/LinkToMac-Android`.
-2. Let Gradle sync (it uses standard AndroidX, Jetpack Compose, and CameraX/ZXing QR scanning—zero exotic repositories).
-3. Plug in your Android phone via USB or use Wireless Debugging and click **Run (`Shift+F10`)** (or run `./gradlew assembleDebug` from `allcode/LinkToMac-Android`).
-
-### Step 4: How to Pair & Test Every Feature in 60 Seconds
-1. **Launch `LinkToMac.app` on your Mac**:
-   - The app opens its dark-mode Command Center AND puts a LinkToMac icon in the macOS Menu Bar.
-   - Click **"Pair Device (QR)"** in the sidebar or top bar. You will see your Mac's Local Wi-Fi IP, Port `54921`, 6-digit Pairing Token, and a live **QR Code**.
-2. **Launch `LinkToMac` on your Android Phone**:
-   - Tap the **Permission Setup Cards** at the top of the Android app:
-     1. *Grant Notification Access* (opens Android Notification Listener settings—toggle LinkToMac ON).
-     2. *Grant SMS, Contacts, Call & Storage Permissions* (taps system runtime dialog).
-     3. *Disable Battery Optimization* (1-tap system prompt so Wi-Fi stays alive in your pocket).
-   - **To connect over USB (Fastest)**: Simply plug in your USB cable with USB Debugging enabled! The Mac app's `ADBBridge` automatically detects your phone, sets up `adb reverse tcp:54921 tcp:54921`, and tap **"Connect via USB (ADB)"** on Android (connects to `127.0.0.1:54921`).
-   - **To connect over Local Wi-Fi**: Tap **"Scan QR Code"** on Android (or tap the auto-discovered Mac name from mDNS `_linktomac._tcp`)!
-3. **Verify All 6 Core Workflows**:
-   - **01 Messages & Notifications**: Send your phone a WhatsApp/Telegram message or SMS—watch it appear on your Mac instantly, type a reply in the inline text box, and press `Enter ↵`.
-   - **02 Photos & Files**: Click **Photos** or **Files** on Mac $\to$ browse your Android phone's real folders and camera roll thumbnails $\to$ click **Download to Mac** or drag files from Mac Finder into the window to send them to `/sdcard/Download/LinkToMac/`.
-   - **03 Clipboard & URL Handoff**: Copy any text or URL on Mac (`Cmd+C`)—it immediately syncs to your Android clipboard (and vice versa).
-   - **04 Screen Mirroring & App Control**: Click **Mirror & Control** $\to$ choose either **Wireless Live Stream** (built-in MediaProjection + remote tap/swipe controls) or **High-Speed USB Mirror (`scrcpy`)** with **Screen-Off Mode**.
-   - **05 Call Controls**: Call your Android phone $\to$ a floating **Incoming Call HUD** pops up on your Mac with **Answer**, **Decline**, **Decline with SMS**, and **End Call** while cellular audio stays on your phone.
-   - **06 Webcam, Mic & Media Remote**: Click **Camera & Media** on Mac $\to$ stream your Android Rear/Front camera and microphone live to the Mac, or control Spotify/YouTube Music playback and ring your lost phone.
-````
-
-<a id="LinktoMac-spec"></a>
-### `LinktoMac.spec`
-
-```python
-# -*- mode: python ; coding: utf-8 -*-
-
-
-a = Analysis(
-    ['orchestrator/ui_app.py'],
-    pathex=[],
-    binaries=[('native-client/build/mirror_client', '.'), ('bundled/platform-tools/adb', 'platform-tools'), ('/opt/homebrew/lib/libSDL2-2.0.0.dylib', '.')],
-    datas=[('orchestrator/ui', 'orchestrator/ui')],
-    hiddenimports=['zeroconf', 'webview', 'cryptography', 'rumps'],
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=[],
-    noarchive=False,
-    optimize=0,
-)
-pyz = PYZ(a.pure)
-
-exe = EXE(
-    pyz,
-    a.scripts,
-    [],
-    exclude_binaries=True,
-    name='LinktoMac',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-)
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='LinktoMac',
-)
-app = BUNDLE(
-    coll,
-    name='LinktoMac.app',
-    icon=None,
-    bundle_identifier=None,
-)
-```
-
 <a id="Makefile"></a>
 ### `Makefile`
 
 ```makefile
-.PHONY: all app client clean run deploy export
+.PHONY: all app client clean run deploy export stitch sync
 
 all: app client
 
@@ -26646,340 +21685,17 @@ run: client
 
 clean:
 	cd android-app && ./gradlew clean
-	rm -rf native-client/build
+	rm -rf native-client/build build dist
 
 export:
-	python3 export_all_code.py
+	python3 scripts/export_all_code.py
+
+stitch:
+	python3 scripts/stitch_allcode.py
+
+sync:
+	python3 scripts/update_allcode_bundles.py
 ```
-
-<a id="ORIGINAL-REQUEST-md"></a>
-### `ORIGINAL_REQUEST.md`
-
-```markdown
-# Original User Request
-
-## 2026-10-14T03:12:07Z
-
-Execute a comprehensive end-to-end stabilization, security hardening, and performance remediation of the LinktoMac application across all three architectural layers: macOS Native Client (C++/Objective-C++/Metal), macOS Orchestrator & Web UI (Python/Pywebview/JavaScript), and Android Companion App (Kotlin).
-
-Working directory: /Users/sanagariudbhav/Udbhav/Projects/LinktoMac
-Integrity mode: development
-
-## Requirements
-
-### R1. Connection Stability & Ghost Connection Elimination
-- **Eliminate TCP Port Probe Race Condition (`orchestrator/linktomac/backend.py` & `MirrorService.kt`)**: Remove the raw TCP `connect_ex` probe on port 27189 that consumes the single-client socket in `MirrorService.runServerMode()`. Direct local subnet/mDNS connections must launch `mirror_client` directly without burning the server socket, eliminating initial handshake contention and dropped keyframes.
-- **Fix Remote Relay Session Recovery (`orchestrator/ui/script.js`)**: Ensure `attemptSessionRecovery()` updates Firestore (`users/{uid}/sessions/current`) with the newly negotiated Pinggy tunnel host and port when `res.mode === "remote"`, preventing Android from infinitely reconnecting to stale ports.
-- **Eliminate Premature Firestore Writes (`orchestrator/ui/script.js`)**: Remove the eager write of `{ active: true, mode: "local" }` before `smart_connect` completes network probing, preventing conflicting state transitions and socket churn on Android.
-- **Enforce Handshake Integrity (`native-client/src/mirror_client.cpp`)**: Require the standard 20-byte v2 handshake header (`HANDSHAKE_SIZE = 20`) and remove the corrupted 16-byte fallback partial-read path.
-
-### R2. Video Pipeline Performance & Adaptive Bitrate (ABR)
-- **Dual-Mode Video Capture (`android-app/.../ScreenEncoder.kt` & `MirrorService.kt`)**: Support hardware `MediaProjection` + `VirtualDisplay` as the primary 60 FPS capture pipeline, while maintaining the accessibility screenshot GPU `HardwareBuffer` rendering as an on-demand fallback when zero-permission mode is selected.
-- **Wire Up ABR Feedback (`native-client/src/mirror_client.cpp` & `ScreenEncoder.kt`)**: Emit `EVENT_TYPE_NETWORK_FEEDBACK` (0x07) periodically from `MirrorClient::decode_thread_func()` based on dropped frame stats and jitter, allowing Android's `ScreenEncoder.onNetworkFeedback()` to dynamically throttle bitrates between 2 Mbps and 8+ Mbps during network congestion.
-- **Auto-Resize Window on Device Rotation (`native-client/src/renderer.mm`)**: Dynamically invoke `SDL_SetWindowSize` inside `Renderer::reallocate_texture()` when the stream aspect ratio flips between portrait and landscape.
-
-### R3. Input Control & Gesture Smoothness
-- **Continuous Drag & Swipe Watchdog (`LinktoMacAccessibilityService.kt`)**: Marshal touch event mutation to the main thread looper, buffer `ACTION_MOVE` coordinates, and chain `continueStroke` executions on `GestureResultCallback.onCompleted()` to prevent gesture cancellation mid-drag.
-- **Trackpad Scroll Delta Coalescing (`native-client/src/input_handler.cpp` & `LinktoMacAccessibilityService.kt`)**: Coalesce high-frequency macOS trackpad `SDL_MOUSEWHEEL` events in `InputHandler` (throttled to 80-100ms intervals) and avoid cancelling in-flight scroll gestures on Android.
-
-### R4. Security Hardening & Multi-Tenant Cloud Isolation
-- **Eradicate Global Account Collisions (`orchestrator/ui/script.js` & `MainActivity.kt`)**: Completely remove reads and writes to global `accounts/latest`. Android authentication must strictly route through loopback web auth (`launchLoopbackWebSignIn()`) or user-scoped documents.
-- **Enforce Client Authorization on Port 27189 (`android-app/.../MirrorService.kt`)**: Remove unconditional `ApprovedClientsStore.approveClient()` auto-approvals on incoming raw sockets. Require valid authorization handshake or paired tokens before streaming.
-
-## Acceptance Criteria
-
-### Automated Build & Test Integrity
-- [ ] `python3 -m unittest discover -s orchestrator -p "test_*.py"` passes 100% of test cases.
-- [ ] `make client` compiles `mirror_client` with zero compilation errors or warnings.
-- [ ] `./gradlew assembleDebug` in `android-app/` builds cleanly.
-
-### Functional & Stability Verification
-- [ ] Direct local connection establishes on the first attempt without ghost probe socket teardown, dropped initial keyframes, or UI flicker.
-- [ ] Remote relay session drops trigger `attemptSessionRecovery()`, which publishes the updated Pinggy host/port to Firestore and successfully reconnects the Android client.
-- [ ] Device rotation immediately updates the native macOS window size to match the new aspect ratio.
-- [ ] Continuous mouse/trackpad drags and scrolling operate smoothly without dropped gestures or stutter.
-- [ ] Multiple users signing in never collide on a shared `accounts/latest` Firestore document.
-
-## 2026-10-14T13:28:36Z
-
-Resolve all remaining real-world runtime bugs, dead/stubbed code, and state-machine traps in LinktoMac across the macOS Native Client (C++/Metal), macOS Orchestrator & Web UI (Python/JS), and Android Companion App (Kotlin) to achieve true 100% production readiness across all user flows.
-
-Working directory: /Users/sanagariudbhav/Udbhav/Projects/LinktoMac
-Integrity mode: development
-
-## Requirements
-
-### R1. Android Capture Flow & Frictionless LAN Auto-Authorization
-- **Eliminate 10 FPS Accessibility Trap (`MainActivity.kt` & `ScreenEncoder.kt`)**: Prevent `MainActivity` from falling back to `accessibilityCaptureLoop()` without user awareness. When starting a stream or receiving remote session triggers, prompt for `MediaProjection` permissions via `requestStreamingPermissionsAndStart()`. If running without projection, ensure the UI exposes an immediate "Upgrade to 60 FPS Capture" action rather than hiding stream controls. Never enter a tight sleep spin when the accessibility service is disabled.
-- **Frictionless Same-Account LAN Auto-Authorization (`MirrorService.kt`, `MainActivity.kt`, `backend.py`, `script.js`)**: Eliminate silent connection drops on first-time local Wi-Fi pairing. When the Mac initiates a connection, write the Mac's local LAN IP to Firestore (`users/{uid}/sessions/current`). `MainActivity`'s session listener will pre-authorize the Mac's IP in `ApprovedClientsStore` before the incoming socket arrives, enabling `MirrorService.isClientAuthorized()` to approve paired devices automatically without blocking or timing out on a foreground `AlertDialog`.
-
-### R2. Mid-Stream Screen Rotation & VideoToolbox Hardware Frame Pool Resilience
-- **Dynamic Resolution & Hardware Frame Pool Reallocation (`native-client/src/decoder.cpp`, `protocol.h`, `MirrorService.kt`)**: Ensure mid-stream orientation flips (portrait <-> landscape) never freeze or stall the VideoToolbox hardware decoding pipeline. In `Decoder::decode()`, detect dimension flips or format change signals before frame submission to prevent `avcodec_receive_frame()` from stalling on a fixed-dimension `hw_frames_ctx`. Reallocate the hardware frame pool cleanly with updated dimensions, maintaining continuous 60 FPS rendering in Metal/SDL2.
-
-### R3. Hardware HEVC Selection & Wire Protocol Alignment
-- **Enable Hardware HEVC (`android-app/.../ScreenEncoder.kt`)**: Update `selectSupportedMimeType()` to query `MediaCodecList` for hardware-accelerated `MIMETYPE_VIDEO_HEVC` encoders before defaulting to AVC. Correctly set `FLAG_CODEC_HEVC` in the 20-byte handshake when HEVC is selected.
-- **Strict Network Feedback Wire Protocol Alignment (`StreamProtocol.kt`)**: Ensure `StreamProtocol.createNetworkFeedbackPacket()` serializes exactly 9 bytes (`0x07` opcode + float32 `loss_rate` + float32 `rtt_ms`), matching the wire format in `MirrorService.readControlEvents()` and `network.cpp`. Eradicate the obsolete 8-byte `timestampUs` field.
-
-### R4. Codebase Sanitization, Menu Bar Modernization & Dead Stub Removal
-- **Prune Cosmetic / Dead QUIC & 0-RTT Stubs (`native-client/src/network.h`, `network.cpp`)**: Remove non-functional QUIC packet header structs and incomplete 0-RTT file reading that transmit nothing over the wire. Keep the networking layer clean, transparent, and focused on robust TCP transport.
-- **Modernize Menu Bar Application (`orchestrator/menubar_app.py`, `linktomac/menubar_app.py`)**: Fix broken method invocations (`pair_device`, `_find_adb_path`), replace missing third-party dependencies (`rumps`, `pyperclip`) with standard macOS utilities (`pbcopy`/`osascript`) or consolidate cleanly into the main orchestrator CLI/app.
-- **Permanently Remove Obsolete Java Modules**: Permanently delete legacy directories `android-server/` and `android-client/` that use outdated 8-byte protocols and cause workspace clutter.
-
-## Acceptance Criteria
-
-### Automated Build & Test Integrity
-- [ ] `python3 -m unittest discover -s orchestrator -p "test_*.py"` passes 100% of test cases.
-- [ ] `make client` and `cmake --build native-client/build --clean-first` compile cleanly with 0 errors and 0 warnings.
-- [ ] `./gradlew clean testDebugUnitTest assembleDebug` in `android-app/` builds cleanly and passes 100% of unit tests.
-
-### Functional & Stability Verification
-- [ ] First-time local Wi-Fi connection succeeds seamlessly when `MainActivity` is in the background without timeout or dropped handshake.
-- [ ] Rotating the Android device mid-stream flips aspect ratio smoothly without VideoToolbox hardware frame pool stalls or Metal rendering corruption.
-- [ ] Devices supporting hardware HEVC stream via H.265 with `FLAG_CODEC_HEVC` properly negotiated in the 20-byte handshake.
-- [ ] `createNetworkFeedbackPacket()` wire serialization is exactly 9 bytes and passes automated fuzzing/validation tests.
-- [ ] Obsolete Java subprojects `android-server/` and `android-client/` are completely removed, and `all_code.md` is refreshed with the clean codebase.
-
-
-## 2026-10-16T09:11:10Z
-
-Comprehensive stabilization, bug resolution, and end-to-end reliability overhaul across the LinktoMac macOS orchestrator, native C++ video/input client, and Android companion to achieve 100% stable mirroring over Wi-Fi, USB ADB, and remote tunnels.
-
-Working directory: /Users/sanagariudbhav/Udbhav/Projects/LinktoMac
-Integrity mode: demo
-
-## Requirements
-
-### R1. macOS Orchestrator & UI Resiliency
-Eliminate all runtime crashes, thread deadlocks, and resource leaks across the macOS Python orchestrator, Web UI, and menu bar application. Pairing, authentication, discovery listener restarts, and process monitors must handle failures gracefully without freezing the UI or leaving orphaned background threads.
-
-### R2. Native C++ Streaming Pipeline & Transport Integrity
-Ensure the native mirroring client (`native-client`) correctly processes video frames, multiplexed stream packets, and touch/keyboard input without memory safety violations, socket file descriptor races, or color space inversions (e.g. UV channel swaps). The client must build reliably, cleanly accept arguments, and shut down deterministically.
-
-### R3. Android Companion & Protocol Concurrency
-Ensure the Android companion and server components reliably capture, encode, and transmit the screen buffer while handling device rotation, network interface selection, and input injection without unhandled exceptions or connection dropouts.
-
-### R4. Comprehensive Automated Test Validation
-All existing and newly created adversarial and regression test suites across Python orchestrator, native client, and Android must execute and pass cleanly under non-interactive automated test runners.
-
-## Acceptance Criteria
-
-### Stability & Error Handling
-- [ ] No unhandled exceptions or thread lockups when starting, switching, or cancelling pairing and remote sessions.
-- [ ] The menu bar app, web dashboard, and CLI mirror processes shut down cleanly with 0 zombie subprocesses and 0 leaked socket descriptors.
-- [ ] TLS certificate generation and pairing handshakes complete successfully without `TypeError` or missing backend method errors.
-
-### Media & Input Streaming Correctness
-- [ ] The C++ native client compiles with zero build errors and handles stream frames and packet demultiplexing without data corruption or memory leaks.
-- [ ] Screen projection renders accurately with correct color channel mapping (no red/blue inversions) and responds to touch and keyboard input across display orientations.
-- [ ] Reconnecting or restarting discovery after a network interruption recovers automatically without requiring an application restart.
-
-### Verification Suite
-- [ ] All unit and adversarial tests under `orchestrator/` pass: `python3 -m unittest discover -s orchestrator`.
-- [ ] All adversarial stress tests under `tests/` pass without timeouts or assertion failures.
-- [ ] Native C++ test harnesses in `tests/adversarial_native/` compile and pass.
-
-## 2026-10-19T14:44:13Z
-
-Fix critical platform bugs, broken packaging, Android 12–15 display capture incompatibilities, and architectural contradictions in LinktoMac to make it a reliable, production-ready, open-source wireless and USB screen mirroring solution for Android and macOS.
-
-Working directory: /Users/sanagariudbhav/Udbhav/Projects/LinktoMac
-Integrity mode: development
-
-## Requirements
-
-### R1. USB ADB Mode & Android 12–15 Display Capture Modernization
-Modernize the ADB headless server (`android-server`) to support Android 12, 13, 14, and 15 without referencing removed reflection APIs (`SurfaceControl.openTransaction`). Ensure the build system automatically resolves the host Android SDK platform, compiles with 0 errors, and runs Dalvik/D8 dexing so that `server.jar` contains a valid `classes.dex` executable via `app_process`.
-
-### R2. Local-First Zero-Config Connection Architecture
-Refactor the connection and UI flow so that local-first mirroring (Wi-Fi mDNS auto-discovery and direct USB cable) is the primary, zero-config default experience. The desktop and mobile apps must launch directly into the local Connection Hub without blocking on Google Sign-In, cloud Firestore, or external internet access. Retain Google/Firebase authentication solely as an optional secondary tab for remote internet relay.
-
-### R3. macOS Application Packaging & Dynamic Linker Hardening
-Fix `build_mac_app.sh` and `backend.py` binary search paths so that `mirror_client` is packaged and located reliably inside the macOS `.app` bundle, preventing `FileNotFoundError` upon launch. Ensure SDL2 dependency resolution is dynamic (supporting both Apple Silicon `/opt/homebrew` and Intel `/usr/local`), and produce a clean `.dmg` installer.
-
-### R4. Video Pipeline & Codec Negotiation Integrity
-Enable genuine dynamic codec negotiation in the Android video encoder (`ScreenEncoder.kt` and `android-server`), selecting hardware HEVC (H.265) when supported by the device and falling back cleanly to AVC (H.264). Eliminate hardcoded single-codec restrictions and remove low-framerate fallback capture loops.
-
-### R5. Codebase Cleanup
-Completely remove the obsolete, legacy `android-client/` directory to eliminate contributor confusion and reduce repo bloat.
-
-### R6. Automated Verification & Regression Guardrails
-Ensure all subprojects (`android-server`, `android-app`, `native-client`, `orchestrator`) compile and pass their automated test suites cleanly, with zero regressions.
-
----
-
-## Acceptance Criteria
-
-### 1. Android Server (`android-server`)
-- [ ] `./gradlew build` (or `./gradlew jar`) succeeds with 0 compiler errors on modern Android SDK platforms (API 34/35).
-- [ ] Output `server.jar` contains valid Dalvik `classes.dex` verified via `jar tf`.
-- [ ] `ScreenCapture.java` does not call `SurfaceControl.openTransaction()` or `SurfaceControl.closeTransaction()`.
-
-### 2. macOS Packaging (`build_mac_app.sh`)
-- [ ] `./build_mac_app.sh` completes cleanly and produces `dist/LinktoMac.app` and `dist/LinktoMac.dmg`.
-- [ ] `mirror_client` is bundled in the `.app` bundle and matches the path resolved by `LinktoMacBackend`.
-- [ ] Script dynamically resolves `sdl2` without hardcoded `/opt/homebrew` paths and without referencing `sdl3`.
-
-### 3. Connection & UX Architecture
-- [ ] Mac Desktop app (`ui_app.py`) opens directly into the Connection Hub without requiring Google Sign-In or external internet connectivity.
-- [ ] Discovered devices list populates via local mDNS/Zeroconf when phone is on the same Wi-Fi network.
-- [ ] USB mode triggers ADB port forwarding and connects reliably.
-- [ ] Obsolete directory `android-client/` is completely removed from the filesystem.
-
-### 4. Video Pipeline & Codecs
-- [ ] `ScreenEncoder.kt` dynamically inspects encoder capabilities and selects HEVC when available, with AVC fallback.
-- [ ] Native `mirror_client` continues to decode both H.264 and HEVC streams via VideoToolbox/FFmpeg without assertion failures.
-
-### 5. Test Suite & Verification Integrity
-- [ ] All unit tests in `orchestrator` pass: `python3 -m unittest discover -s orchestrator`.
-- [ ] Android companion app builds cleanly: `cd android-app && ./gradlew :app:assembleDebug`.
-- [ ] Native client builds cleanly: `cd native-client && cmake -B build && cmake --build build`.
-```
-
-<a id="OVERNIGHT-BUILD-REPORT-md"></a>
-### `OVERNIGHT_BUILD_REPORT.md`
-
-````markdown
-# LinkToMac — Overnight Build & Verification Report
-
-**Generated:** 2026-10-20  
-**Status:** ✅ ALL CHECKS PASSED (Zero Errors across macOS and Android)
-
----
-
-## 1. Executive Summary
-
-This report documents the autonomous overnight audit, unpack, fix, and verification cycle for **LinkToMac** (`v1.61`). Both the macOS native application (`allcode/LinkToMac-macOS`) and the Android companion application (`allcode/LinkToMac-Android`) were unpacked via `stitch_allcode.py`, audited for full feature parity against `LINKTOMAC_MASTER_PLAN.md`, repaired for platform-specific compiler and build toolchain constraints, and compiled with **0 errors**.
-
-### Key Deliverables Produced & Verified
-| Artifact | Path | Status | Verification Detail |
-| :--- | :--- | :--- | :--- |
-| **Extractor Script** | `stitch_allcode.py` | ✅ Verified | Extracts 24 files cleanly into `./allcode/` from Markdown bundles |
-| **macOS Native App** | `allcode/LinkToMac-macOS/build/LinkToMac.app` | ✅ Built & Signed | `build_mac_app.sh` completed with Exit Code 0 |
-| **macOS Binary** | `allcode/LinkToMac-macOS/build/LinkToMac.app/Contents/MacOS/LinkToMac` | ✅ Executable | 1.8 MB native Mach-O arm64 binary, ad-hoc codesigned |
-| **Android Debug APK** | `allcode/LinkToMac-Android/app/build/outputs/apk/debug/app-debug.apk` | ✅ Assembled | 21.1 MB APK compiled with Jetpack Compose & Material 3 |
-| **Source Manifests** | `ALLCODE_MACOS_COMPLETE.md`, `ALLCODE_ANDROID_COMPLETE.md` | ✅ Synchronized | Updated with all compiler fixes for 100% idempotent re-extraction |
-
----
-
-## 2. Issues Diagnosed & Fixed
-
-### 2.1 macOS Toolchain: `@State` SwiftUIMacros Missing on CLI
-* **Root Cause**: On macOS Command Line Tools (without full Xcode.app installed), Swift 6.x defaults to treating `@State` as an external macro (`#externalMacro(module: "SwiftUIMacros", type: "StateMacro")`). Because `libSwiftUIMacros.dylib` is not distributed with standalone Command Line Tools, any `@State` property failed with `plugin for module 'SwiftUIMacros' not found` and broke projected bindings (`$binding`).
-* **Architectural Fix**: Created `Sources/LinkToMac/LocalState.swift`, a lightweight native `DynamicProperty` property wrapper that backs state with an `ObservableObject` container. It provides identical semantics and projection (`Binding<Value>`) while bypassing macro resolution entirely.
-* **Closure Mutability**: Replaced struct mutating closures in `FeatureViews.swift` (`MessagesWorkspaceView`, `NotificationsWorkspaceView`, `FilesWorkspaceView`, `ClipboardWorkspaceView`) with `@LocalState` non-mutating setters.
-
-### 2.2 macOS Swift 6 Concurrency & Type Inference
-* **`MainDashboardView.swift`**: Disambiguated `List(DashboardSection.allCases, id: \.self, selection: $selectedSection)` to resolve `SelectionValue could not be inferred`.
-* **`ConnectionManager.swift`**: Resolved Swift 6 Sendable closure warnings (`reference to captured var 'self' in concurrently-executing code`) in the file streaming task by capturing `guard let self = self else { return }`. Fixed non-optional conditional binding on `self.currentDirectoryPath`.
-
-### 2.3 Android Toolchain: AndroidX, Gradle & Kotlin Daemon Compatibility
-* **AndroidX Configuration**: Added `gradle.properties` with `android.useAndroidX=true` to satisfy Android Gradle Plugin metadata checks for Compose BoM.
-* **Gradle Wrapper**: Configured Gradle 8.5 (`gradle-8.5-bin.zip`) compatible with AGP 8.3.0 and Kotlin 1.9.22.
-* **Kotlin Compiler Execution**: Added `kotlin.compiler.execution.strategy=in-process` in `gradle.properties` to ensure smooth compilation in headless CLI environments.
-
----
-
-## 3. Comprehensive Feature Audit
-
-Every feature promised in `LINKTOMAC_MASTER_PLAN.md` was audited across both codebases:
-
-### 01 • Messages & Contacts
-* **Android**: `SmsContactsCallBridge.kt` queries `ContactsContract.CommonDataKinds.Phone` and `Telephony.Sms`, groups incoming/outgoing SMS messages by phone number, and sends outbound SMS via `SmsManager`.
-* **macOS**: `FeatureViews.swift` (`MessagesWorkspaceView`) displays threaded conversations, contact names, dynamic search filtering, instant chat creation, and optimistic message append.
-
-### 02 • Notifications Mirroring & Inline Reply
-* **Android**: `LinkNotificationService.kt` (`NotificationListenerService`) intercepts status bar notifications, resolves app icons/names, automatically extracts 4–8 digit 2FA/OTP codes, and stores `RemoteInput` pending intents.
-* **macOS**: `FeatureViews.swift` (`NotificationsWorkspaceView`) and `ConnectionManager.swift` dispatch native macOS system notifications, provide inline keyboard reply inputs (`Enter ↵`), and route `NOTIFICATION_REPLY` directly back to Android apps (WhatsApp, Telegram, SMS).
-
-### 03 • Files Browser & High-Speed Transfers
-* **Android**: `FilePhotosBridge.kt` reads `/sdcard` directory listings, streams requested files in 64 KB chunks tagged with 36-byte UUID transfer headers, and receives incoming files to `/sdcard/Download/LinkToMac/`.
-* **macOS**: `FeatureViews.swift` (`FilesWorkspaceView`) provides folder navigation, bookmarks (Downloads, Camera, Pictures, Movies), Finder drag-and-drop file upload target (`.onDrop(of: [.fileURL])`), and "Save to Finder" with automatic file reveal (`NSWorkspace.shared.activateFileViewerSelecting`).
-
-### 04 • Photos Gallery
-* **Android**: `FilePhotosBridge.kt` queries `MediaStore.Images.Media`, loads 180×180 thumbnail previews with `loadThumbnail`, encodes JPEG Base64 thumbnails, and handles full-resolution file pulls.
-* **macOS**: `FeatureViews.swift` (`PhotosWorkspaceView`) renders an adaptive lazy grid with photo thumbnails, metadata, and 1-click download to Mac Downloads.
-
-### 05 • Universal Clipboard & URL Handoff
-* **macOS**: `ClipboardSyncManager.swift` monitors `NSPasteboard` every 650 ms, filters out password managers (`org.nspasteboard.ConcealedType`), transmits updates via `CLIPBOARD_SYNC`, and opens incoming URL handoffs in default browser (`NSWorkspace.shared.open`).
-* **Android**: `ClipboardManagerBridge` in `LinkConnectionService.kt` hooks `addPrimaryClipChangedListener`, syncs clipboard strings, and launches incoming `URL_HANDOFF` via `Intent(Intent.ACTION_VIEW)`.
-
-### 06 • Screen Mirroring & Desk Control
-* **Wireless Socket Stream**: `ScreenCameraStreamer.kt` streams JPEG frames over wire protocol `0x03` (`FRAME_VIDEO_JPEG`). `FeatureViews.swift` renders an interactive viewport with `SpatialTapGesture` to send normalized touch events back to Android.
-* **High-Speed USB `scrcpy` Mode**: `ADBBridge.swift` detects connected USB devices, ensures `adb reverse tcp:54921 tcp:54921`, and launches native `scrcpy` with `--turn-screen-off` and `--stay-awake`.
-* **Hardware Key Injection**: Remote Home (3), Back (4), App Switcher (187), and Lock/Wake (26) key injection via ADB and wire protocol.
-
-### 07 • Cellular Call Controls
-* **Android**: `SmsContactsCallBridge.kt` registers `TelephonyManager.ACTION_PHONE_STATE_CHANGED`, maps Ringing/Offhook/Idle states, answers calls via `TelecomManager.acceptRingingCall()`, declines via `endCall()`, and sends auto-decline SMS.
-* **macOS**: `IncomingCallHUDView` displays a floating overlay with Answer, Decline, Mute, and "Decline with SMS" while cellular audio stays on the phone.
-
-### 08 • Virtual Camera & Microphone Stream
-* **Android**: `ScreenCameraStreamer.kt` captures Camera2 frames (`LENS_FACING_BACK` and `LENS_FACING_FRONT`) converted from YUV_420_888 to JPEG, and records 16 kHz 16-bit mono PCM microphone audio via `AudioRecord`.
-* **macOS**: `ConnectionManager.swift` decodes incoming JPEG frames to `NSImage` and plays real-time microphone PCM audio via `AVAudioEngine` / `AVAudioPlayerNode`.
-
----
-
-## 4. Verification Instructions
-
-### To re-extract all files from scratch:
-```bash
-python3 stitch_allcode.py
-```
-
-### To compile the macOS application:
-```bash
-cd allcode/LinkToMac-macOS
-./build_mac_app.sh
-# Launch app:
-open build/LinkToMac.app
-```
-
-### To compile the Android APK:
-```bash
-cd allcode/LinkToMac-Android
-export JAVA_HOME=/Users/sanagariudbhav/Library/Java/JavaVirtualMachines/jbr-17.0.14/Contents/Home
-./gradlew assembleDebug
-# Generated APK:
-# allcode/LinkToMac-Android/app/build/outputs/apk/debug/app-debug.apk
-```
-
----
-
-## 5. Production Remediation Pass (Final Verification)
-
-**Completed:** 2026-10-20  
-**Verification Result:** ✅ All 6 remediation tasks completed with 0 errors across macOS and Android.
-
-### 5.1 Fixes Implemented in Production Remediation
-1. **`STREAM_CONTROL` Stream Retention & Action Routing**:
-   - `LinkConnectionService.kt` forwards the complete payload `JSONObject` to `ScreenCameraStreamer.handleStreamControl()`.
-   - `ScreenCameraStreamer.kt` handles `REMOTE_TAP` via `LinkTouchAccessibilityService.instance?.performNormalizedTap(normX, normY)` and `REMOTE_KEY` via `LinkTouchAccessibilityService.instance?.performRemoteKey(keyCode)` without stopping active video streams.
-   - `stopAllStreams()` is strictly reserved for mode switching (`NONE`, `MIRROR`, `WEBCAM_BACK`, `WEBCAM_FRONT`, `MIC_STREAM`).
-2. **`LinkTouchAccessibilityService.kt` Implementation**:
-   - Built full service implementation extending `AccessibilityService` with `instance` singleton lifecycle management.
-   - Implemented `performNormalizedTap(normX, normY)` scaled to device metrics.
-   - Implemented `performRemoteKey(keyCode)` for Home (3), Back (4), Recents (187), Lock (26), and Notifications (83).
-   - Implemented `captureScreenJpeg(callback)` using Android 11+ (`takeScreenshot`) with HardwareBuffer conversion, 540p aspect-ratio downscaling, and quality 70 JPEG compression.
-   - Implemented background clipboard sync on accessibility events (`onAccessibilityEvent`) and integrated `ClipboardManagerBridge.syncFromAccessibilityService`.
-   - Created `@xml/link_accessibility_config` with gesture, screenshot, and typeAllMask permissions and registered in `AndroidManifest.xml`.
-   - Added 1-tap "5. Enable Accessibility (Wireless Touch, Mirror & Background Clipboard)" button in `MainActivity.kt`.
-3. **Real Screen Mirroring Replacing Dummy Canvas**:
-   - `ScreenCameraStreamer.startMirrorStatusPreview()` captures real live screen frames via `captureScreenJpeg()` and streams over `FRAME_VIDEO_JPEG` (`0x03`).
-   - Only displays fallback instructional canvas when Accessibility Service is not yet enabled.
-4. **Android Share Sheet Ingestion**:
-   - `MainActivity.kt` handles `Intent.ACTION_SEND` and `ACTION_SEND_MULTIPLE`.
-   - Text/URLs stream immediately to Mac via `ClipboardManagerBridge.sendClipboardToMac` and `URL_HANDOFF`.
-   - File streams (`EXTRA_STREAM`) copy to `cacheDir` and stream on background coroutine via `FilePhotosBridge.streamFileToMac()`.
-5. **Auto-Unlock ADB Background Clipboard & Dynamic Screen Resolution**:
-   - `LinkConnectionService.kt` includes `screenWidth` and `screenHeight` in `HELLO` and `STATUS_UPDATE`.
-   - `ConnectionManager.swift` exposes `@Published var androidScreenWidth` and `androidScreenHeight` updated dynamically.
-   - `ADBBridge.swift` automatically executes `unlockBackgroundClipboardViaADB()` when USB device connects and scales taps to `androidScreenWidth` / `androidScreenHeight`.
-
-### 5.2 Build Status
-* **Extractor (`stitch_allcode.py`)**: Extracted all 28 files cleanly into `./allcode/`.
-* **macOS Native App (`build_mac_app.sh`)**: **Exit Code 0** (0 errors, 0 warnings).
-* **Android Companion App (`./gradlew assembleDebug`)**: **Exit Code 0** (`BUILD SUCCESSFUL in 5s`, 0 errors).
-* **Codebase Bundles**: `ALLCODE_ANDROID_COMPLETE.md`, `ALLCODE_MACOS_COMPLETE.md`, and `all_code.md` 100% synchronized and verified.
-````
 
 <a id="README-md"></a>
 ### `README.md`
@@ -27373,5128 +22089,38 @@ hdiutil create -volname "LinktoMac" -srcfolder "dist/LinktoMac.app" -ov -format 
 echo "✅ Build complete! Production output: dist/LinktoMac.dmg"
 ```
 
-<a id="index-html"></a>
-### `index.html`
+<a id="vercel-json"></a>
+### `vercel.json`
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LinkToMac — Download Android & macOS Companion</title>
-  <meta name="description" content="Seamless Android screen mirroring, remote control, universal clipboard, and file transfer for macOS.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #090d16;
-      --card-bg: #121824;
-      --card-border: #1e293b;
-      --primary: #4ade80;
-      --primary-hover: #22c55e;
-      --primary-glow: rgba(74, 222, 128, 0.25);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "outputDirectory": "public",
+  "buildCommand": null,
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*)\\.apk",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.android.package-archive"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"LinkToMac.apk\""
+        }
+      ]
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 24px;
-      width: 100%;
-    }
-
-    /* Navbar */
-    header {
-      padding: 24px 0;
-      border-bottom: 1px solid var(--card-border);
-    }
-
-    .nav-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      color: #fff;
-      text-decoration: none;
-    }
-
-    .logo-badge {
-      background: rgba(74, 222, 128, 0.15);
-      color: var(--primary);
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(74, 222, 128, 0.3);
-    }
-
-    .github-link {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    .github-link:hover {
-      color: #fff;
-    }
-
-    /* Hero Section */
-    .hero {
-      padding: 64px 0 40px;
-      text-align: center;
-    }
-
-    .headline {
-      font-size: clamp(32px, 6vw, 52px);
-      font-weight: 800;
-      letter-spacing: -1.5px;
-      line-height: 1.15;
-      margin-bottom: 20px;
-      background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .headline span {
-      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .subheadline {
-      font-size: clamp(16px, 2.5vw, 19px);
-      color: var(--text-muted);
-      max-width: 640px;
-      margin: 0 auto 36px;
-    }
-
-    /* CTA Buttons */
-    .cta-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 48px;
-    }
-
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      background: var(--primary);
-      color: #052e16;
-      font-size: 18px;
-      font-weight: 700;
-      padding: 16px 36px;
-      border-radius: 14px;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      box-shadow: 0 0 30px var(--primary-glow);
-      width: 100%;
-      max-width: 360px;
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 40px rgba(74, 222, 128, 0.4);
-    }
-
-    .btn-secondary {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-muted);
-      font-size: 14px;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .btn-secondary:hover {
-      color: #fff;
-    }
-
-    .badge-bar {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 4px;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .badge-pill {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      padding: 4px 10px;
-      border-radius: 6px;
-    }
-
-    /* Step Guide */
-    .section-title {
-      font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 20px;
-      letter-spacing: -0.5px;
-      text-align: center;
-    }
-
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      margin-bottom: 56px;
-    }
-
-    .step-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 24px;
-      position: relative;
-    }
-
-    .step-num {
-      display: inline-block;
-      width: 28px;
-      height: 28px;
-      line-height: 28px;
-      text-align: center;
-      background: rgba(74, 222, 128, 0.15);
-      color: var(--primary);
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-
-    .step-card h3 {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #fff;
-    }
-
-    .step-card p {
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* Features Grid */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-      margin-bottom: 64px;
-    }
-
-    .feature-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 22px;
-      transition: border-color 0.2s;
-    }
-
-    .feature-card:hover {
-      border-color: rgba(74, 222, 128, 0.4);
-    }
-
-    .feature-icon {
-      font-size: 24px;
-      margin-bottom: 10px;
-    }
-
-    .feature-card h4 {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #fff;
-    }
-
-    .feature-card p {
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* Footer */
-    footer {
-      margin-top: auto;
-      border-top: 1px solid var(--card-border);
-      padding: 28px 0;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 13px;
-    }
-
-    footer a {
-      color: var(--primary);
-      text-decoration: none;
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <div class="container nav-content">
-      <a href="/" class="logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-          <line x1="12" y1="18" x2="12.01" y2="18"></line>
-        </svg>
-        LinkToMac
-        <span class="logo-badge">v1.61</span>
-      </a>
-      <a href="https://github.com/Udbhav7002/LinktoMac" target="_blank" class="github-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-        </svg>
-        GitHub
-      </a>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="hero">
-      <h1 class="headline">Make Android feel at home on your <span>Mac</span></h1>
-      <p class="subheadline">
-        Ultra-low latency screen mirroring, universal clipboard, high-speed file transfer, and complete remote control — designed natively for macOS.
-      </p>
-
-      <div class="cta-container">
-        <a href="/downloads/LinkToMac.apk" download class="btn-primary" id="downloadBtn">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Download Android APK
-        </a>
-
-        <div class="badge-bar">
-          <span class="badge-pill">v1.61 (Latest)</span>
-          <span class="badge-pill">20 MB</span>
-          <span class="badge-pill">Android 11–15 Ready</span>
-          <span class="badge-pill">Zero Root Needed</span>
-        </div>
-
-        <a href="https://github.com/Udbhav7002/LinktoMac/releases" target="_blank" class="btn-secondary">
-          Download macOS App & Release Notes ↗
-        </a>
-      </div>
-    </section>
-
-    <!-- 3-Step Setup Guide -->
-    <h2 class="section-title">How Your Friend Can Connect in 3 Steps</h2>
-    <div class="steps-grid">
-      <div class="step-card">
-        <div class="step-num">1</div>
-        <h3>Install the APK</h3>
-        <p>Download the APK onto your Android phone and tap to install. If prompted, tap <em>"Allow from this source"</em>.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">2</div>
-        <h3>Enter Mac Details</h3>
-        <p>Open LinkToMac on your phone. Enter the host and port shown in the Mac app or your Pinggy tunnel (e.g. <code>ap.pinggy.link</code> : <code>43210</code>).</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">3</div>
-        <h3>Grant & Mirror</h3>
-        <p>Tap <strong>Connect Wi-Fi</strong>, enable the Accessibility service for remote touch, and watch the phone screen appear live on Mac!</p>
-      </div>
-    </div>
-
-    <!-- Feature Highlights -->
-    <h2 class="section-title">Built for Performance & Privacy</h2>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h4>Hardware Screen Mirroring</h4>
-        <p>Stream your live Android screen to Mac with responsive low-latency touch and key interactions.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📋</div>
-        <h4>Universal Clipboard</h4>
-        <p>Copy text on Mac and paste on Android, or copy on Android and paste instantly on Mac.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📁</div>
-        <h4>Instant File Transfers</h4>
-        <p>Browse phone files or share photos, URLs, and documents with 1-click directly into Mac Downloads.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">💬</div>
-        <h4>SMS & Notifications</h4>
-        <p>View phone notifications on your Mac screen with inline keyboard replies and automatic 2FA OTP extraction.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📞</div>
-        <h4>Call Controls</h4>
-        <p>Accept or decline phone calls with optional quick SMS replies directly from your Mac menu bar.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔒</div>
-        <h4>Private & Local-First</h4>
-        <p>Direct peer-to-peer TCP connection. No external servers or cloud accounts store your personal data.</p>
-      </div>
-    </div>
-  </main>
-
-  <footer>
-    <div class="container">
-      <p>LinkToMac is open source under the MIT License • Built for Android & macOS • <a href="https://github.com/Udbhav7002/LinktoMac" target="_blank">View on GitHub</a></p>
-    </div>
-  </footer>
-
-  <script>
-    // Fallback if /downloads/ is not directly served: fallback to /public/ or /LinkToMac.apk
-    document.getElementById('downloadBtn').addEventListener('click', function(e) {
-      setTimeout(function() {
-        // Verification ping
-      }, 500);
-    });
-  </script>
-</body>
-</html>
+  ]
+}
 ```
 
-<a id="linktomac-complete-android-source-code-md"></a>
-### `linktomac_complete_android_source_code.md`
+## Scripts, Tests & Documentation
 
-````markdown
-# LinkToMac — Complete Android Source Code (`allcode/LinkToMac-Android`)
-
-Every file below belongs inside the codebase. Run `python3 stitch_allcode.py` from `LINKTOMAC_MASTER_PLAN.md` to extract them automatically.
-
----
-
-### FILE: allcode/LinkToMac-Android/settings.gradle.kts
-```kotlin
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-rootProject.name = "LinkToMacAndroid"
-include(":app")
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/gradle.properties
-```properties
-android.useAndroidX=true
-org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-android.builtInKotlin=false
-android.newDsl=false
-kotlin.compiler.execution.strategy=in-process
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/gradle/wrapper/gradle-wrapper.properties
-```properties
-distributionBase=GRADLE_USER_HOME
-distributionPath=wrapper/dists
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
-networkTimeout=10000
-zipStoreBase=GRADLE_USER_HOME
-zipStorePath=wrapper/dists
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/build.gradle.kts
-```kotlin
-plugins {
-    id("com.android.application") version "8.3.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/build.gradle.kts
-```kotlin
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-}
-
-android {
-    namespace = "com.linktomac.android"
-    compileSdk = 34
-
-    defaultConfig {
-        applicationId = "com.linktomac.android"
-        minSdk = 29
-        targetSdk = 34
-        versionCode = 161
-        versionName = "1.61"
-    }
-
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
-
-dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
-    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    // ZXing QR Scanner for 1-tap QR code pairing
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/AndroidManifest.xml
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Local Wi-Fi & Foreground Service -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-    <!-- SMS, Contacts & Call Controls -->
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-
-    <!-- Files, Photos, Camera & Microphone -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <application
-        android:allowBackup="true"
-        android:label="LinkToMac"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
-
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <!-- Share Sheet Target: "Send to Mac (LinkToMac)" -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="*/*" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="*/*" />
-            </intent-filter>
-        </activity>
-
-        <service
-            android:name=".LinkConnectionService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="connectedDevice|camera|microphone|mediaProjection" />
-
-        <service
-            android:name=".LinkNotificationService"
-            android:label="LinkToMac Notification &amp; Media Bridge"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-
-        <service
-            android:name=".LinkTouchAccessibilityService"
-            android:label="LinkToMac Wireless Touch &amp; Mirror Bridge"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/link_accessibility_config" />
-        </service>
-    </application>
-</manifest>
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/res/values/strings.xml
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">LinkToMac</string>
-    <string name="accessibility_service_desc">Enables remote wireless touch input, navigation gestures, and screen capture streaming from your Mac.</string>
-</resources>
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/res/xml/accessibility_service_config.xml
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/accessibility_service_desc"
-    android:accessibilityEventTypes="typeAllMask"
-    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
-    android:accessibilityFeedbackType="feedbackGeneric"
-    android:notificationTimeout="50"
-    android:canPerformGestures="true"
-    android:canRetrieveWindowContent="true"
-    android:canTakeScreenshot="true" />
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/res/xml/link_accessibility_config.xml
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/accessibility_service_desc"
-    android:accessibilityEventTypes="typeAllMask"
-    android:accessibilityFeedbackType="feedbackGeneric"
-    android:notificationTimeout="100"
-    android:canPerformGestures="true"
-    android:canTakeScreenshot="true"
-    android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows" />
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ProtocolModels.kt
-```kotlin
-package com.linktomac.android
-
-import org.json.JSONArray
-import org.json.JSONObject
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-
-object WireProtocol {
-    const val FRAME_JSON: Byte       = 0x01
-    const val FRAME_FILE_CHUNK: Byte = 0x02
-    const val FRAME_VIDEO_JPEG: Byte = 0x03
-    const val FRAME_AUDIO_PCM: Byte  = 0x04
-
-    fun packFrame(frameType: Byte, payload: ByteArray): ByteArray {
-        val buffer = ByteBuffer.allocate(5 + payload.size).order(ByteOrder.BIG_ENDIAN)
-        buffer.putInt(payload.size)
-        buffer.put(frameType)
-        buffer.put(payload)
-        return buffer.array()
-    }
-
-    fun packJson(type: String, payloadMap: Map<String, String> = emptyMap(), extraBlock: (JSONObject.() -> Unit)? = null): ByteArray {
-        val root = JSONObject()
-        root.put("type", type)
-        root.put("timestamp", System.currentTimeMillis())
-        val payloadObj = JSONObject()
-        for ((k, v) in payloadMap) {
-            payloadObj.put(k, v)
-        }
-        root.put("payload", payloadObj)
-        extraBlock?.invoke(root)
-        return packFrame(FRAME_JSON, root.toString().toByteArray(Charsets.UTF_8))
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTouchAccessibilityService.kt
-```kotlin
-package com.linktomac.android
-
-import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityServiceInfo
-import android.accessibilityservice.GestureDescription
-import android.graphics.Bitmap
-import android.graphics.Path
-import android.os.Build
-import android.util.Log
-import android.view.Display
-import android.view.accessibility.AccessibilityEvent
-import java.io.ByteArrayOutputStream
-
-class LinkTouchAccessibilityService : AccessibilityService() {
-
-    companion object {
-        private const val TAG = "LinkTouchA11y"
-
-        @Volatile
-        var instance: LinkTouchAccessibilityService? = null
-
-        fun getRealScreenSize(context: android.content.Context): Pair<Int, Int> {
-            val metrics = context.resources.displayMetrics
-            return Pair(metrics.widthPixels, metrics.heightPixels)
-        }
-    }
-
-    override fun onServiceConnected() {
-        super.onServiceConnected()
-        instance = this
-        try {
-            val info = serviceInfo ?: AccessibilityServiceInfo()
-            info.flags = info.flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-            serviceInfo = info
-        } catch (_: Exception) {}
-        Log.i(TAG, "LinkTouchAccessibilityService connected")
-    }
-
-    fun performNormalizedTap(normX: Float, normY: Float): Boolean {
-        val width = resources.displayMetrics.widthPixels
-        val height = resources.displayMetrics.heightPixels
-        val px = (normX * width).coerceIn(0f, width.toFloat())
-        val py = (normY * height).coerceIn(0f, height.toFloat())
-
-        val path = Path().apply {
-            moveTo(px, py)
-        }
-        val stroke = GestureDescription.StrokeDescription(path, 0L, 50L)
-        val gesture = GestureDescription.Builder().addStroke(stroke).build()
-        return dispatchGesture(gesture, null, null)
-    }
-
-    fun performRemoteKey(keyCode: Int): Boolean {
-        return when (keyCode) {
-            3 -> performGlobalAction(GLOBAL_ACTION_HOME)
-            4 -> performGlobalAction(GLOBAL_ACTION_BACK)
-            187 -> performGlobalAction(GLOBAL_ACTION_RECENTS)
-            26 -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
-                } else false
-            }
-            83 -> performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
-            else -> false
-        }
-    }
-
-    fun captureScreenJpeg(callback: (ByteArray?) -> Unit) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            callback(null)
-            return
-        }
-        try {
-            takeScreenshot(Display.DEFAULT_DISPLAY, mainExecutor, object : TakeScreenshotCallback {
-                override fun onSuccess(result: ScreenshotResult) {
-                    val hwBuffer = result.hardwareBuffer
-                    val colorSpace = result.colorSpace
-                    try {
-                        val hwBmp = Bitmap.wrapHardwareBuffer(hwBuffer, colorSpace)
-                        if (hwBmp == null) {
-                            callback(null)
-                            return
-                        }
-                        val origW = hwBmp.width
-                        val origH = hwBmp.height
-                        val targetW = 540
-                        val targetH = ((origH.toFloat() / origW.toFloat()) * targetW).toInt().coerceAtLeast(1)
-
-                        val scaled = Bitmap.createScaledBitmap(hwBmp, targetW, targetH, true)
-                        val baos = ByteArrayOutputStream()
-                        scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos)
-                        scaled.recycle()
-                        hwBmp.recycle()
-                        callback(baos.toByteArray())
-                    } catch (e: Exception) {
-                        Log.w(TAG, "captureScreenJpeg processing failed: ${e.message}")
-                        callback(null)
-                    } finally {
-                        hwBuffer.close()
-                    }
-                }
-
-                override fun onFailure(errorCode: Int) {
-                    Log.w(TAG, "takeScreenshot failed with code: $errorCode")
-                    callback(null)
-                }
-            })
-        } catch (e: Exception) {
-            Log.w(TAG, "captureScreenJpeg invocation failed: ${e.message}")
-            callback(null)
-        }
-    }
-
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null) return
-        when (event.eventType) {
-            AccessibilityEvent.TYPE_VIEW_CLICKED,
-            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
-            AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED,
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                ClipboardManagerBridge.syncFromAccessibilityService(this)
-            }
-        }
-    }
-
-    override fun onInterrupt() {
-        Log.w(TAG, "LinkTouchAccessibilityService interrupted")
-    }
-
-    override fun onUnbind(intent: android.content.Intent?): Boolean {
-        instance = null
-        return super.onUnbind(intent)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (instance == this) {
-            instance = null
-        }
-        Log.i(TAG, "LinkTouchAccessibilityService destroyed")
-    }
-}
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkConnectionService.kt
-```kotlin
-package com.linktomac.android
-
-import android.app.*
-import android.content.*
-import android.media.AudioManager
-import android.media.RingtoneManager
-import android.net.Uri
-import android.net.nsd.NsdManager
-import android.net.nsd.NsdServiceInfo
-import android.os.*
-import kotlinx.coroutines.*
-import org.json.JSONObject
-import java.io.DataInputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
-import java.net.InetSocketAddress
-import java.net.Socket
-
-class LinkConnectionService : Service() {
-
-    companion object {
-        var instance: LinkConnectionService? = null
-        var isConnectedState: Boolean = false
-        var statusMessage: String = "Disconnected"
-        var discoveredMacHost: String = ""
-        var discoveredMacPort: Int = 54921
-    }
-
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var socket: Socket? = null
-    private var outputStream: OutputStream? = null
-    private var nsdManager: NsdManager? = null
-    private var discoveryListener: NsdManager.DiscoveryListener? = null
-    private val incomingFiles = mutableMapOf<String, FileOutputStream>()
-
-    override fun onCreate() {
-        super.onCreate()
-        instance = this
-        startForegroundNotification("LinkToMac Ready — Waiting for Mac")
-        startMdnsDiscovery()
-        ClipboardManagerBridge.init(this)
-        SmsContactsCallBridge.registerCallStateReceiver(this)
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val action = intent?.action
-        if (action == "CONNECT_HOST") {
-            val host = intent.getStringExtra("host") ?: "127.0.0.1"
-            val port = intent.getIntExtra("port", 54921)
-            val token = intent.getStringExtra("token") ?: ""
-            connectToMac(host, port, token)
-        } else if (action == "DISCONNECT") {
-            closeSocket()
-        }
-        return START_STICKY
-    }
-
-    fun connectToMac(host: String, port: Int, token: String) {
-        serviceScope.launch {
-            closeSocket()
-            try {
-                statusMessage = "Connecting to $host:$port..."
-                val s = Socket()
-                s.tcpNoDelay = true
-                s.connect(InetSocketAddress(host, port), 4000)
-                socket = s
-                outputStream = s.getOutputStream()
-                isConnectedState = true
-                val transport = if (host == "127.0.0.1") "USB" else "Local Wi-Fi"
-                statusMessage = "Connected ($transport • $host)"
-                startForegroundNotification("Connected to Mac ($transport)")
-
-                // Save last successful host
-                getSharedPreferences("linktomac", MODE_PRIVATE).edit()
-                    .putString("lastHost", host)
-                    .putInt("lastPort", port)
-                    .putString("lastToken", token)
-                    .apply()
-
-                sendHelloAndStatus(transport, token)
-                startStatusHeartbeat(transport)
-                readLoop(DataInputStream(s.getInputStream()))
-            } catch (e: Exception) {
-                isConnectedState = false
-                statusMessage = "Connection failed: ${e.localizedMessage}"
-            }
-        }
-    }
-
-    fun sendRawFrame(frameBytes: ByteArray) {
-        serviceScope.launch {
-            try {
-                synchronized(this@LinkConnectionService) {
-                    outputStream?.write(frameBytes)
-                    outputStream?.flush()
-                }
-            } catch (_: Exception) {
-                closeSocket()
-            }
-        }
-    }
-
-    private fun sendHelloAndStatus(transport: String, token: String) {
-        val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
-        val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-        val charging = bm.isCharging
-        val model = "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}"
-
-        val bytes = WireProtocol.packJson(
-            type = "HELLO",
-            payloadMap = mapOf(
-                "deviceName" to model,
-                "battery" to battery.toString(),
-                "charging" to charging.toString(),
-                "transport" to transport,
-                "pairToken" to token,
-                "mediaTitle" to LinkNotificationService.currentMediaTitle,
-                "mediaArtist" to LinkNotificationService.currentMediaArtist,
-                "screenWidth" to resources.displayMetrics.widthPixels.toString(),
-                "screenHeight" to resources.displayMetrics.heightPixels.toString()
-            )
-        )
-        sendRawFrame(bytes)
-    }
-
-    private fun startStatusHeartbeat(transport: String) {
-        serviceScope.launch {
-            while (isActive && isConnectedState) {
-                delay(8000)
-                val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
-                val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-                val charging = bm.isCharging
-                val bytes = WireProtocol.packJson(
-                    type = "STATUS_UPDATE",
-                    payloadMap = mapOf(
-                        "deviceName" to "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}",
-                        "battery" to battery.toString(),
-                        "charging" to charging.toString(),
-                        "transport" to transport,
-                        "mediaTitle" to LinkNotificationService.currentMediaTitle,
-                        "mediaArtist" to LinkNotificationService.currentMediaArtist,
-                        "screenWidth" to resources.displayMetrics.widthPixels.toString(),
-                        "screenHeight" to resources.displayMetrics.heightPixels.toString()
-                    )
-                )
-                sendRawFrame(bytes)
-            }
-        }
-    }
-
-    private fun readLoop(input: DataInputStream) {
-        try {
-            while (isConnectedState) {
-                val length = input.readInt()
-                val type = input.readByte()
-                if (length <= 0 || length > 30_000_000) continue
-                val payload = ByteArray(length)
-                input.readFully(payload)
-
-                when (type) {
-                    WireProtocol.FRAME_JSON -> handleIncomingJson(String(payload, Charsets.UTF_8))
-                    WireProtocol.FRAME_FILE_CHUNK -> handleIncomingFileChunk(payload)
-                }
-            }
-        } catch (_: Exception) {
-            closeSocket()
-        }
-    }
-
-    private fun handleIncomingJson(jsonStr: String) {
-        val obj = JSONObject(jsonStr)
-        val type = obj.optString("type")
-        val payload = obj.optJSONObject("payload") ?: JSONObject()
-
-        when (type) {
-            "NOTIFICATION_REPLY" -> {
-                val id = payload.optString("id")
-                val replyText = payload.optString("replyText")
-                LinkNotificationService.performInlineReply(this, id, replyText)
-            }
-            "NOTIFICATION_REMOVED" -> {
-                val id = payload.optString("id")
-                LinkNotificationService.dismissNotification(id)
-            }
-            "SMS_THREADS_REQ" -> {
-                SmsContactsCallBridge.syncSmsAndContactsToMac(this)
-            }
-            "SMS_SEND" -> {
-                val addr = payload.optString("address")
-                val body = payload.optString("body")
-                SmsContactsCallBridge.sendSms(this, addr, body)
-            }
-            "CALL_ACTION" -> {
-                val action = payload.optString("action")
-                val number = payload.optString("number")
-                val smsReply = payload.optString("smsReply")
-                SmsContactsCallBridge.handleCallAction(this, action, number, smsReply)
-            }
-            "CLIPBOARD_SYNC" -> {
-                val content = payload.optString("content")
-                ClipboardManagerBridge.applyFromMac(this, content)
-            }
-            "URL_HANDOFF" -> {
-                val url = payload.optString("url")
-                if (url.isNotEmpty()) {
-                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    startActivity(browserIntent)
-                }
-            }
-            "FILE_LIST_REQ" -> {
-                val path = payload.optString("path", "/sdcard/Download")
-                FilePhotosBridge.sendDirectoryListing(path)
-            }
-            "PHOTOS_LIST_REQ" -> {
-                FilePhotosBridge.sendPhotosList(this)
-            }
-            "FILE_PULL_REQ" -> {
-                val path = payload.optString("path")
-                val fileName = payload.optString("fileName")
-                val reveal = payload.optString("revealInFinder", "true")
-                FilePhotosBridge.streamFileToMac(path, fileName, reveal)
-            }
-            "FILE_TRANSFER_START" -> {
-                val tid = payload.optString("transferId")
-                val fileName = payload.optString("fileName")
-                val destFolder = payload.optString("destFolder", "/sdcard/Download/LinkToMac")
-                val dir = File(destFolder)
-                if (!dir.exists()) dir.mkdirs()
-                val outFile = File(dir, fileName)
-                incomingFiles[tid] = FileOutputStream(outFile)
-            }
-            "FILE_TRANSFER_END" -> {
-                val tid = payload.optString("transferId")
-                incomingFiles.remove(tid)?.close()
-            }
-            "MEDIA_ACTION" -> {
-                val action = payload.optString("action")
-                handleMediaAction(action)
-            }
-            "STREAM_CONTROL" -> {
-                ScreenCameraStreamer.handleStreamControl(this, payload)
-            }
-        }
-    }
-
-    private fun handleIncomingFileChunk(payload: ByteArray) {
-        if (payload.size <= 36) return
-        val tid = String(payload, 0, 36, Charsets.UTF_8).trim()
-        val fos = incomingFiles[tid] ?: return
-        fos.write(payload, 36, payload.size - 36)
-    }
-
-    private fun handleMediaAction(action: String) {
-        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
-        when (action) {
-            "PLAY_PAUSE" -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
-            "NEXT"       -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_NEXT)
-            "PREV"       -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS)
-            "VOL_UP"     -> audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-            "VOL_DOWN"   -> audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-            "RING_PHONE" -> {
-                val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                val ringtone = RingtoneManager.getRingtone(applicationContext, uri)
-                ringtone?.play()
-            }
-        }
-    }
-
-    private fun dispatchMediaKey(keyCode: Int) {
-        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
-        audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, keyCode))
-        audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, keyCode))
-    }
-
-    // MARK: - mDNS Automatic Discovery (_linktomac._tcp)
-    private fun startMdnsDiscovery() {
-        try {
-            nsdManager = getSystemService(NSD_SERVICE) as NsdManager
-            val listener = object : NsdManager.DiscoveryListener {
-                override fun onDiscoveryStarted(regType: String) {}
-                override fun onServiceFound(service: NsdServiceInfo) {
-                    if (service.serviceType.contains("_linktomac._tcp")) {
-                        nsdManager?.resolveService(service, object : NsdManager.ResolveListener {
-                            override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
-                            override fun onServiceResolved(resolved: NsdServiceInfo) {
-                                val host = resolved.host?.hostAddress ?: return
-                                discoveredMacHost = host
-                                discoveredMacPort = resolved.port
-                            }
-                        })
-                    }
-                }
-                override fun onServiceLost(service: NsdServiceInfo) {}
-                override fun onDiscoveryStopped(serviceType: String) {}
-                override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {}
-                override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {}
-            }
-            discoveryListener = listener
-            nsdManager?.discoverServices("_linktomac._tcp.", NsdManager.PROTOCOL_DNS_SD, listener)
-        } catch (_: Exception) {}
-    }
-
-    private fun closeSocket() {
-        isConnectedState = false
-        statusMessage = "Disconnected"
-        try { outputStream?.close() } catch (_: Exception) {}
-        try { socket?.close() } catch (_: Exception) {}
-        outputStream = null
-        socket = null
-    }
-
-    private fun startForegroundNotification(text: String) {
-        val channelId = "linktomac_channel"
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        val chan = NotificationChannel(channelId, "LinkToMac Connection", NotificationManager.IMPORTANCE_LOW)
-        nm.createNotificationChannel(chan)
-
-        val notif = Notification.Builder(this, channelId)
-            .setContentTitle("LinkToMac Companion")
-            .setContentText(text)
-            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
-            .setOngoing(true)
-            .build()
-
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(1001, notif, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
-        } else {
-            startForeground(1001, notif)
-        }
-    }
-
-    override fun onBind(intent: Intent?): IBinder? = null
-}
-
-// MARK: - Clipboard Bridge Helper
-object ClipboardManagerBridge {
-    private var lastClipboardText = ""
-
-    fun init(context: Context) {
-        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        cm.addPrimaryClipChangedListener {
-            val text = cm.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim() ?: return@addPrimaryClipChangedListener
-            if (text.isNotEmpty() && text != lastClipboardText) {
-                lastClipboardText = text
-                sendClipboardToMac(text)
-            }
-        }
-    }
-
-    fun sendCurrentClipboardToMac(context: Context) {
-        Handler(Looper.getMainLooper()).post {
-            try {
-                val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                val text = cm?.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim() ?: return@post
-                if (text.isNotEmpty() && text != lastClipboardText) {
-                    lastClipboardText = text
-                    sendClipboardToMac(text)
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    fun syncFromAccessibilityService(context: Context) {
-        sendCurrentClipboardToMac(context)
-    }
-
-    fun sendClipboardToMac(text: String) {
-        val isUrl = text.startsWith("http://") || text.startsWith("https://")
-        val bytes = WireProtocol.packJson(
-            type = "CLIPBOARD_SYNC",
-            payloadMap = mapOf("content" to text, "isUrl" to isUrl.toString())
-        )
-        LinkConnectionService.instance?.sendRawFrame(bytes)
-    }
-
-    fun applyFromMac(context: Context, text: String) {
-        if (text == lastClipboardText) return
-        lastClipboardText = text
-        Handler(Looper.getMainLooper()).post {
-            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("LinkToMac", text))
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkNotificationService.kt
-```kotlin
-package com.linktomac.android
-
-import android.app.Notification
-import android.app.PendingIntent
-import android.app.RemoteInput
-import android.content.Context
-import android.content.Intent
-import android.media.MediaMetadata
-import android.media.session.MediaSessionManager
-import android.os.Bundle
-import android.service.notification.NotificationListenerService
-import android.service.notification.StatusBarNotification
-import org.json.JSONArray
-import org.json.JSONObject
-import java.util.concurrent.ConcurrentHashMap
-
-class LinkNotificationService : NotificationListenerService() {
-
-    private data class ReplyActionHolder(
-        val pendingIntent: PendingIntent,
-        val remoteInputs: Array<RemoteInput>
-    )
-
-    companion object {
-        private var instance: LinkNotificationService? = null
-        private val replyActions = ConcurrentHashMap<String, ReplyActionHolder>()
-        var currentMediaTitle: String = "Nothing Playing"
-        var currentMediaArtist: String = "Android Media"
-
-        fun performInlineReply(context: Context, key: String, replyText: String) {
-            val holder = replyActions[key] ?: return
-            val intent = Intent()
-            val bundle = Bundle()
-            for (remoteInput in holder.remoteInputs) {
-                bundle.putCharSequence(remoteInput.resultKey, replyText)
-            }
-            RemoteInput.addResultsToIntent(holder.remoteInputs, intent, bundle)
-            try {
-                holder.pendingIntent.send(context, 0, intent)
-            } catch (_: Exception) {}
-        }
-
-        fun dismissNotification(key: String) {
-            try {
-                instance?.cancelNotification(key)
-            } catch (_: Exception) {}
-        }
-    }
-
-    override fun onListenerConnected() {
-        super.onListenerConnected()
-        instance = this
-        updateActiveMediaSession()
-    }
-
-    override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        guardSbn(sbn) ?: return
-        updateActiveMediaSession()
-
-        val notif = sbn!!.notification
-        if ((notif.flags and Notification.FLAG_ONGOING_EVENT) != 0) return
-        if (sbn.packageName == packageName || sbn.packageName == "com.android.systemui") return
-
-        val extras = notif.extras
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
-        val body = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-        if (title.isEmpty() && body.isEmpty()) return
-
-        // Check for inline RemoteInput reply actions
-        var canReply = false
-        notif.actions?.forEach { action ->
-            val inputs = action.remoteInputs
-            if (!inputs.isNullOrEmpty() && action.actionIntent != null) {
-                canReply = true
-                replyActions[sbn.key] = ReplyActionHolder(action.actionIntent, inputs)
-            }
-        }
-
-        // Detect 4-8 digit 2FA / OTP codes automatically
-        val otpRegex = Regex("\\b(\\d{4,8})\\b")
-        val otpMatch = otpRegex.find(body)?.value ?: ""
-
-        val pm = applicationContext.packageManager
-        val appName = try {
-            pm.getApplicationLabel(pm.getApplicationInfo(sbn.packageName, 0)).toString()
-        } catch (_: Exception) {
-            sbn.packageName
-        }
-
-        val itemJson = JSONObject().apply {
-            put("id", sbn.key)
-            put("packageName", sbn.packageName)
-            put("appName", appName)
-            put("title", title)
-            put("body", body)
-            put("timestamp", sbn.postTime)
-            put("canReply", canReply)
-            put("otpCode", otpMatch)
-        }
-
-        val arr = JSONArray().apply { put(itemJson) }
-        val bytes = WireProtocol.packJson("NOTIFICATION_POSTED") {
-            put("notifications", arr)
-        }
-        LinkConnectionService.instance?.sendRawFrame(bytes)
-    }
-
-    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
-        val key = sbn?.key ?: return
-        replyActions.remove(key)
-        val bytes = WireProtocol.packJson(
-            type = "NOTIFICATION_REMOVED",
-            payloadMap = mapOf("id" to key)
-        )
-        LinkConnectionService.instance?.sendRawFrame(bytes)
-    }
-
-    private fun updateActiveMediaSession() {
-        try {
-            val msm = getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
-            val controllers = msm.getActiveSessions(
-                android.content.ComponentName(this, LinkNotificationService::class.java)
-            )
-            val first = controllers.firstOrNull()
-            val meta = first?.metadata
-            if (meta != null) {
-                currentMediaTitle = meta.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "Playing Media"
-                currentMediaArtist = meta.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: ""
-            }
-        } catch (_: Exception) {}
-    }
-
-    private fun guardSbn(sbn: StatusBarNotification?): StatusBarNotification? = sbn
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/SmsContactsCallBridge.kt
-```kotlin
-package com.linktomac.android
-
-import android.annotation.SuppressLint
-import android.content.*
-import android.net.Uri
-import android.provider.ContactsContract
-import android.provider.Telephony
-import android.telecom.TelecomManager
-import android.telephony.SmsManager
-import android.telephony.TelephonyManager
-import org.json.JSONArray
-import org.json.JSONObject
-
-object SmsContactsCallBridge {
-
-    @SuppressLint("Range")
-    fun syncSmsAndContactsToMac(context: Context) {
-        val contactsMap = mutableMapOf<String, String>()
-        val contactsArray = JSONArray()
-
-        // 1. Load Contacts
-        try {
-            context.contentResolver.query(
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                arrayOf(
-                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                    ContactsContract.CommonDataKinds.Phone.NUMBER
-                ),
-                null, null,
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
-            )?.use { cursor ->
-                var count = 0
-                while (cursor.moveToNext() && count < 200) {
-                    val id = cursor.getString(0) ?: ""
-                    val name = cursor.getString(1) ?: ""
-                    val number = cursor.getString(2)?.replace(" ", "") ?: ""
-                    if (number.isNotEmpty()) {
-                        contactsMap[number] = name
-                        contactsArray.put(JSONObject().apply {
-                            put("id", "$id-$number")
-                            put("name", name)
-                            put("phoneNumber", number)
-                        })
-                        count++
-                    }
-                }
-            }
-        } catch (_: Exception) {}
-
-        // 2. Load Recent SMS Messages & Group by Address
-        val threadsMap = linkedMapOf<String, MutableList<JSONObject>>()
-        try {
-            context.contentResolver.query(
-                Telephony.Sms.CONTENT_URI,
-                arrayOf(
-                    Telephony.Sms._ID,
-                    Telephony.Sms.ADDRESS,
-                    Telephony.Sms.BODY,
-                    Telephony.Sms.DATE,
-                    Telephony.Sms.TYPE
-                ),
-                null, null,
-                Telephony.Sms.DATE + " DESC LIMIT 120"
-            )?.use { cursor ->
-                while (cursor.moveToNext()) {
-                    val id = cursor.getString(0) ?: ""
-                    val addr = cursor.getString(1) ?: "Unknown"
-                    val body = cursor.getString(2) ?: ""
-                    val date = cursor.getLong(3)
-                    val type = cursor.getInt(4)
-                    val isIncoming = (type == Telephony.Sms.MESSAGE_TYPE_INBOX)
-
-                    val msgJson = JSONObject().apply {
-                        put("id", id)
-                        put("address", addr)
-                        put("body", body)
-                        put("date", date)
-                        put("isIncoming", isIncoming)
-                    }
-                    threadsMap.getOrPut(addr) { mutableListOf() }.add(0, msgJson)
-                }
-            }
-        } catch (_: Exception) {}
-
-        val threadsArray = JSONArray()
-        for ((addr, messages) in threadsMap) {
-            val lastMsg = messages.lastOrNull()
-            val contactName = contactsMap[addr] ?: addr
-            threadsArray.put(JSONObject().apply {
-                put("id", addr)
-                put("contactName", contactName)
-                put("address", addr)
-                put("lastMessage", lastMsg?.optString("body") ?: "")
-                put("timestamp", lastMsg?.optLong("date") ?: System.currentTimeMillis())
-                put("messages", JSONArray(messages))
-            })
-        }
-
-        val frame = WireProtocol.packJson("SMS_THREADS_SYNC") {
-            put("smsThreads", threadsArray)
-            put("contacts", contactsArray)
-        }
-        LinkConnectionService.instance?.sendRawFrame(frame)
-    }
-
-    fun sendSms(context: Context, address: String, body: String) {
-        try {
-            val smsManager = context.getSystemService(SmsManager::class.java)
-            smsManager.sendTextMessage(address, null, body, null, null)
-        } catch (_: Exception) {}
-    }
-
-    // MARK: - Call Controls (Cellular Audio Remains on Phone)
-    @SuppressLint("MissingPermission")
-    fun handleCallAction(context: Context, action: String, number: String, smsReply: String) {
-        val tm = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
-        try {
-            when (action) {
-                "ANSWER" -> tm.acceptRingingCall()
-                "DECLINE", "END" -> tm.endCall()
-                "DECLINE_WITH_SMS" -> {
-                    tm.endCall()
-                    if (number.isNotEmpty() && smsReply.isNotEmpty()) {
-                        sendSms(context, number, smsReply)
-                    }
-                }
-                "DIAL" -> {
-                    if (number.isNotEmpty()) {
-                        val callIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(callIntent)
-                    }
-                }
-            }
-        } catch (_: Exception) {}
-    }
-
-    fun registerCallStateReceiver(context: Context) {
-        val filter = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
-        context.registerReceiver(object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context?, intent: Intent?) {
-                val stateStr = intent?.getStringExtra(TelephonyManager.EXTRA_STATE) ?: return
-                val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: "Cellular Call"
-                val mappedState = when (stateStr) {
-                    TelephonyManager.EXTRA_STATE_RINGING -> "RINGING"
-                    TelephonyManager.EXTRA_STATE_OFFHOOK -> "OFFHOOK"
-                    else -> "IDLE"
-                }
-                val frame = WireProtocol.packJson(
-                    type = "CALL_STATE",
-                    payloadMap = mapOf(
-                        "state" to mappedState,
-                        "number" to incomingNumber,
-                        "contactName" to incomingNumber
-                    )
-                )
-                LinkConnectionService.instance?.sendRawFrame(frame)
-            }
-        }, filter)
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/FilePhotosBridge.kt
-```kotlin
-package com.linktomac.android
-
-import android.content.Context
-import android.graphics.Bitmap
-import android.provider.MediaStore
-import android.util.Base64
-import android.util.Size
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileInputStream
-import java.util.UUID
-
-object FilePhotosBridge {
-
-    fun sendDirectoryListing(path: String) {
-        val dir = File(path)
-        val arr = JSONArray()
-        dir.listFiles()?.forEach { f ->
-            arr.put(JSONObject().apply {
-                put("name", f.name)
-                put("path", f.absolutePath)
-                put("sizeBytes", if (f.isDirectory) 0L else f.length())
-                put("isDirectory", f.isDirectory)
-                put("lastModified", f.lastModified())
-            })
-        }
-        val frame = WireProtocol.packJson(
-            type = "FILE_LIST_RES",
-            payloadMap = mapOf("path" to path)
-        ) {
-            put("files", arr)
-        }
-        LinkConnectionService.instance?.sendRawFrame(frame)
-    }
-
-    fun sendPhotosList(context: Context) {
-        val arr = JSONArray()
-        try {
-            val projection = arrayOf(
-                MediaStore.Images.Media._ID,
-                MediaStore.Images.Media.DISPLAY_NAME,
-                MediaStore.Images.Media.DATA,
-                MediaStore.Images.Media.DATE_TAKEN,
-                MediaStore.Images.Media.SIZE
-            )
-            context.contentResolver.query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                null, null,
-                MediaStore.Images.Media.DATE_TAKEN + " DESC"
-            )?.use { cursor ->
-                var count = 0
-                while (cursor.moveToNext() && count < 40) {
-                    val id = cursor.getLong(0)
-                    val name = cursor.getString(1) ?: "photo.jpg"
-                    val path = cursor.getString(2) ?: ""
-                    val date = cursor.getLong(3)
-                    val size = cursor.getLong(4)
-
-                    var thumbB64 = ""
-                    try {
-                        val contentUri = android.content.ContentUris.withAppendedId(
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id
-                        )
-                        val bmp = context.contentResolver.loadThumbnail(contentUri, Size(180, 180), null)
-                        val baos = ByteArrayOutputStream()
-                        bmp.compress(Bitmap.CompressFormat.JPEG, 65, baos)
-                        thumbB64 = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP)
-                    } catch (_: Exception) {}
-
-                    arr.put(JSONObject().apply {
-                        put("id", id.toString())
-                        put("name", name)
-                        put("path", path)
-                        put("dateTaken", date)
-                        put("sizeBytes", size)
-                        put("isVideo", false)
-                        put("thumbnailBase64", thumbB64)
-                    })
-                    count++
-                }
-            }
-        } catch (_: Exception) {}
-
-        val frame = WireProtocol.packJson("PHOTOS_LIST_RES") {
-            put("photos", arr)
-        }
-        LinkConnectionService.instance?.sendRawFrame(frame)
-    }
-
-    fun streamFileToMac(path: String, fileName: String, revealInFinder: String = "true") {
-        val file = File(path)
-        if (!file.exists() || !file.isFile) return
-        val tid = UUID.randomUUID().toString() // 36 chars
-
-        val startFrame = WireProtocol.packJson(
-            type = "FILE_TRANSFER_START",
-            payloadMap = mapOf(
-                "transferId" to tid,
-                "fileName" to fileName,
-                "totalBytes" to file.length().toString()
-            )
-        )
-        LinkConnectionService.instance?.sendRawFrame(startFrame)
-
-        val tidBytes = tid.padEnd(36, ' ').toByteArray(Charsets.UTF_8)
-        FileInputStream(file).use { fis ->
-            val buf = ByteArray(65536)
-            while (true) {
-                val read = fis.read(buf)
-                if (read <= 0) break
-                val chunkPayload = ByteArray(36 + read)
-                System.arraycopy(tidBytes, 0, chunkPayload, 0, 36)
-                System.arraycopy(buf, 0, chunkPayload, 36, read)
-                val packed = WireProtocol.packFrame(WireProtocol.FRAME_FILE_CHUNK, chunkPayload)
-                LinkConnectionService.instance?.sendRawFrame(packed)
-                Thread.sleep(2)
-            }
-        }
-
-        val endFrame = WireProtocol.packJson(
-            type = "FILE_TRANSFER_END",
-            payloadMap = mapOf(
-                "transferId" to tid,
-                "fileName" to fileName,
-                "revealInFinder" to revealInFinder
-            )
-        )
-        LinkConnectionService.instance?.sendRawFrame(endFrame)
-    }
-
-    fun streamUriToMac(context: Context, uri: android.net.Uri, fileName: String, revealInFinder: String = "true") {
-        var size = -1L
-        try {
-            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
-                if (sizeIndex != -1 && cursor.moveToFirst()) {
-                    size = cursor.getLong(sizeIndex)
-                }
-            }
-        } catch (_: Exception) {}
-        if (size <= 0) {
-            try {
-                context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
-                    size = pfd.statSize
-                }
-            } catch (_: Exception) {}
-        }
-        if (size < 0) size = 0L
-
-        val tid = UUID.randomUUID().toString()
-        val startFrame = WireProtocol.packJson(
-            type = "FILE_TRANSFER_START",
-            payloadMap = mapOf(
-                "transferId" to tid,
-                "fileName" to fileName,
-                "totalBytes" to size.toString()
-            )
-        )
-        LinkConnectionService.instance?.sendRawFrame(startFrame)
-
-        val tidBytes = tid.padEnd(36, ' ').toByteArray(Charsets.UTF_8)
-        try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                val buf = ByteArray(65536)
-                while (true) {
-                    val read = inputStream.read(buf)
-                    if (read <= 0) break
-                    val chunkPayload = ByteArray(36 + read)
-                    System.arraycopy(tidBytes, 0, chunkPayload, 0, 36)
-                    System.arraycopy(buf, 0, chunkPayload, 36, read)
-                    val packed = WireProtocol.packFrame(WireProtocol.FRAME_FILE_CHUNK, chunkPayload)
-                    LinkConnectionService.instance?.sendRawFrame(packed)
-                    Thread.sleep(2)
-                }
-            }
-        } catch (_: Exception) {}
-
-        val endFrame = WireProtocol.packJson(
-            type = "FILE_TRANSFER_END",
-            payloadMap = mapOf(
-                "transferId" to tid,
-                "fileName" to fileName,
-                "revealInFinder" to revealInFinder
-            )
-        )
-        LinkConnectionService.instance?.sendRawFrame(endFrame)
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ScreenCameraStreamer.kt
-```kotlin
-package com.linktomac.android
-
-import android.accessibilityservice.AccessibilityService
-import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.*
-import android.hardware.camera2.*
-import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.ImageReader
-import android.media.MediaRecorder
-import android.media.projection.MediaProjection
-import android.os.Build
-import android.os.Handler
-import android.os.HandlerThread
-import android.util.Log
-import android.view.Display
-import kotlinx.coroutines.*
-import java.io.ByteArrayOutputStream
-import java.util.concurrent.Executors
-
-object ScreenCameraStreamer {
-    private const val TAG = "ScreenCamStreamer"
-
-    private var streamJob: Job? = null
-    private var cameraDevice: CameraDevice? = null
-    private var imageReader: ImageReader? = null
-    private var workerThread: HandlerThread? = null
-    private var virtualDisplay: VirtualDisplay? = null
-
-    @Volatile
-    var activeMediaProjection: MediaProjection? = null
-
-    fun handleStreamControl(context: Context, mode: String) {
-        handleStreamControl(context, org.json.JSONObject().put("mode", mode))
-    }
-
-    fun handleStreamControl(context: Context, payload: org.json.JSONObject) {
-        val mode = payload.optString("mode")
-        when (mode) {
-            "REMOTE_TAP" -> {
-                val normX = payload.optString("x").toFloatOrNull() ?: return
-                val normY = payload.optString("y").toFloatOrNull() ?: return
-                LinkTouchAccessibilityService.instance?.performNormalizedTap(normX, normY)
-            }
-            "REMOTE_KEY" -> {
-                val keyCode = payload.optString("keyCode").toIntOrNull() ?: return
-                LinkTouchAccessibilityService.instance?.performRemoteKey(keyCode)
-            }
-            "WEBCAM_BACK" -> {
-                stopAllStreams()
-                startCameraStream(context, CameraCharacteristics.LENS_FACING_BACK)
-            }
-            "WEBCAM_FRONT" -> {
-                stopAllStreams()
-                startCameraStream(context, CameraCharacteristics.LENS_FACING_FRONT)
-            }
-            "MIC_STREAM" -> {
-                stopAllStreams()
-                startMicrophoneStream()
-            }
-            "MIRROR" -> {
-                stopAllStreams()
-                startMirrorStatusPreview(context)
-            }
-            "NONE" -> {
-                stopAllStreams()
-            }
-            else -> {
-                // Do NOT call stopAllStreams() for unknown or action commands!
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startCameraStream(context: Context, lensFacing: Int) {
-        val cm = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        val cameraId = cm.cameraIdList.firstOrNull { id ->
-            cm.getCameraCharacteristics(id).get(CameraCharacteristics.LENS_FACING) == lensFacing
-        } ?: cm.cameraIdList.firstOrNull() ?: return
-
-        val ht = HandlerThread("LinkToMacCam").apply { start() }
-        workerThread = ht
-        val handler = Handler(ht.looper)
-
-        val reader = ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2)
-        imageReader = reader
-        var lastSent = 0L
-
-        reader.setOnImageAvailableListener({ ir ->
-            val img = ir.acquireLatestImage() ?: return@setOnImageAvailableListener
-            val now = System.currentTimeMillis()
-            if (now - lastSent >= 65) { // ~15 fps over universal socket
-                lastSent = now
-                val jpeg = yuv420ToJpeg(img)
-                if (jpeg != null) {
-                    val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, jpeg)
-                    LinkConnectionService.instance?.sendRawFrame(frame)
-                }
-            }
-            img.close()
-        }, handler)
-
-        try {
-            cm.openCamera(cameraId, object : CameraDevice.StateCallback() {
-                override fun onOpened(camera: CameraDevice) {
-                    cameraDevice = camera
-                    val req = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                        addTarget(reader.surface)
-                    }
-                    camera.createCaptureSession(
-                        listOf(reader.surface),
-                        object : CameraCaptureSession.StateCallback() {
-                            override fun onConfigured(session: CameraCaptureSession) {
-                                session.setRepeatingRequest(req.build(), null, handler)
-                            }
-                            override fun onConfigureFailed(session: CameraCaptureSession) {}
-                        },
-                        handler
-                    )
-                }
-                override fun onDisconnected(camera: CameraDevice) { camera.close() }
-                override fun onError(camera: CameraDevice, error: Int) { camera.close() }
-            }, handler)
-        } catch (_: Exception) {}
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startMicrophoneStream() {
-        streamJob = CoroutineScope(Dispatchers.IO).launch {
-            val sampleRate = 16000
-            val minBuf = AudioRecord.getMinBufferSize(
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            val recorder = AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                minBuf * 2
-            )
-            val buf = ByteArray(2048)
-            recorder.startRecording()
-            try {
-                while (isActive) {
-                    val read = recorder.read(buf, 0, buf.size)
-                    if (read > 0) {
-                        val chunk = buf.copyOf(read)
-                        val frame = WireProtocol.packFrame(WireProtocol.FRAME_AUDIO_PCM, chunk)
-                        LinkConnectionService.instance?.sendRawFrame(frame)
-                    }
-                }
-            } finally {
-                recorder.stop()
-                recorder.release()
-            }
-        }
-    }
-
-    fun startMirrorStatusPreview(context: Context) {
-        val proj = activeMediaProjection
-        if (proj != null) {
-            startMediaProjectionMirror(context, proj)
-            return
-        }
-
-        val width = context.resources.displayMetrics.widthPixels
-        val height = context.resources.displayMetrics.heightPixels
-        val targetW = 540
-        val targetH = ((height.toFloat() / width.toFloat()) * targetW).toInt().coerceAtLeast(960)
-
-        var inFlight = false
-        streamJob = CoroutineScope(Dispatchers.IO).launch {
-            while (isActive) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && LinkTouchAccessibilityService.instance != null) {
-                    if (!inFlight) {
-                        inFlight = true
-                        LinkTouchAccessibilityService.instance?.captureScreenJpeg { jpegBytes ->
-                            try {
-                                if (jpegBytes != null) {
-                                    val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, jpegBytes)
-                                    LinkConnectionService.instance?.sendRawFrame(frame)
-                                }
-                            } finally {
-                                inFlight = false
-                            }
-                        }
-                    }
-                    delay(55) // ~18 fps
-                } else {
-                    // Fall back to drawing status canvas if LinkTouchAccessibilityService.instance == null
-                    val bmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
-                    val canvas = Canvas(bmp)
-                    canvas.drawColor(Color.rgb(18, 22, 28))
-                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = Color.rgb(74, 222, 128)
-                        textSize = 28f
-                    }
-                    canvas.drawText("LinkToMac Screen Mirroring", 50f, (targetH / 2 - 40).toFloat(), paint)
-                    paint.color = Color.WHITE
-                    paint.textSize = 20f
-                    canvas.drawText("Enable LinkToMac Accessibility Service", 50f, (targetH / 2 + 10).toFloat(), paint)
-                    canvas.drawText("on phone for Live Wireless Mirror", 50f, (targetH / 2 + 45).toFloat(), paint)
-
-                    val baos = ByteArrayOutputStream()
-                    bmp.compress(Bitmap.CompressFormat.JPEG, 70, baos)
-                    bmp.recycle()
-                    val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, baos.toByteArray())
-                    LinkConnectionService.instance?.sendRawFrame(frame)
-                    delay(600)
-                }
-            }
-        }
-    }
-
-    private fun startMediaProjectionMirror(context: Context, projection: MediaProjection) {
-        val realW = context.resources.displayMetrics.widthPixels
-        val realH = context.resources.displayMetrics.heightPixels
-        val targetW = 540
-        val targetH = ((realH.toFloat() / realW.toFloat()) * targetW).toInt().coerceAtLeast(960)
-
-        val ht = HandlerThread("LinkToMacProj").apply { start() }
-        workerThread = ht
-        val handler = Handler(ht.looper)
-
-        val reader = ImageReader.newInstance(targetW, targetH, PixelFormat.RGBA_8888, 2)
-        imageReader = reader
-
-        val metrics = context.resources.displayMetrics
-        val vd = projection.createVirtualDisplay(
-            "LinkToMacMirror",
-            targetW, targetH, metrics.densityDpi,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            reader.surface, null, handler
-        )
-        virtualDisplay = vd
-
-        var lastSent = 0L
-        reader.setOnImageAvailableListener({ ir ->
-            val img = ir.acquireLatestImage() ?: return@setOnImageAvailableListener
-            val now = System.currentTimeMillis()
-            if (now - lastSent >= 50) { // ~20 fps
-                lastSent = now
-                val planes = img.planes
-                val buffer = planes[0].buffer
-                val pixelStride = planes[0].pixelStride
-                val rowStride = planes[0].rowStride
-                val rowPadding = rowStride - pixelStride * targetW
-
-                val bmp = Bitmap.createBitmap(targetW + rowPadding / pixelStride, targetH, Bitmap.Config.ARGB_8888)
-                bmp.copyPixelsFromBuffer(buffer)
-                val finalBmp = if (rowPadding > 0) Bitmap.createBitmap(bmp, 0, 0, targetW, targetH) else bmp
-
-                val baos = ByteArrayOutputStream()
-                finalBmp.compress(Bitmap.CompressFormat.JPEG, 65, baos)
-                if (rowPadding > 0) finalBmp.recycle()
-                bmp.recycle()
-
-                val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, baos.toByteArray())
-                LinkConnectionService.instance?.sendRawFrame(frame)
-            }
-            img.close()
-        }, handler)
-    }
-
-    fun stopAllStreams() {
-        streamJob?.cancel()
-        streamJob = null
-
-        try { virtualDisplay?.release() } catch (_: Exception) {}
-        virtualDisplay = null
-
-        try { cameraDevice?.close() } catch (_: Exception) {}
-        cameraDevice = null
-
-        try { imageReader?.close() } catch (_: Exception) {}
-        imageReader = null
-
-        try { workerThread?.quitSafely() } catch (_: Exception) {}
-        workerThread = null
-    }
-
-    private fun yuv420ToJpeg(image: android.media.Image): ByteArray? {
-        return try {
-            val yBuffer = image.planes[0].buffer
-            val uBuffer = image.planes[1].buffer
-            val vBuffer = image.planes[2].buffer
-            val ySize = yBuffer.remaining()
-            val uSize = uBuffer.remaining()
-            val vSize = vBuffer.remaining()
-            val nv21 = ByteArray(ySize + uSize + vSize)
-            yBuffer.get(nv21, 0, ySize)
-            vBuffer.get(nv21, ySize, vSize)
-            uBuffer.get(nv21, ySize + vSize, uSize)
-            val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
-            val out = ByteArrayOutputStream()
-            yuvImage.compressToJpeg(Rect(0, 0, image.width, image.height), 65, out)
-            out.toByteArray()
-        } catch (_: Exception) {
-            null
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/MainActivity.kt
-```kotlin
-package com.linktomac.android
-
-import android.Manifest
-import android.content.Intent
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.PowerManager
-import android.provider.Settings
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
-import kotlinx.coroutines.delay
-import org.json.JSONObject
-
-class MainActivity : ComponentActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // Start foreground companion service immediately
-        startForegroundService(Intent(this, LinkConnectionService::class.java))
-
-        handleIncomingShareIntent(intent)
-
-        setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
-                LinkToMacAndroidScreen()
-            }
-        }
-    }
-
-    @Composable
-    fun LinkToMacAndroidScreen() {
-        val prefs = getSharedPreferences("linktomac", MODE_PRIVATE)
-        var hostInput by remember { mutableStateOf(prefs.getString("lastHost", "192.168.1.100") ?: "") }
-        var portInput by remember { mutableStateOf(prefs.getInt("lastPort", 54921).toString()) }
-        var tokenInput by remember { mutableStateOf(prefs.getString("lastToken", "") ?: "") }
-        var statusText by remember { mutableStateOf(LinkConnectionService.statusMessage) }
-        var discoveredHost by remember { mutableStateOf(LinkConnectionService.discoveredMacHost) }
-
-        // Poll connection status every second for UI
-        LaunchedEffect(Unit) {
-            while (true) {
-                statusText = LinkConnectionService.statusMessage
-                discoveredHost = LinkConnectionService.discoveredMacHost
-                delay(1000)
-            }
-        }
-
-        // Runtime Permissions Launcher
-        val permLauncher = rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { _ -> }
-
-        // QR Code Scanner Launcher
-        val qrLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
-            val contents = result.contents ?: return@rememberLauncherForActivityResult
-            try {
-                val json = JSONObject(contents)
-                val h = json.optString("host")
-                val p = json.optInt("port", 54921)
-                val t = json.optString("token")
-                if (h.isNotEmpty()) {
-                    hostInput = h
-                    portInput = p.toString()
-                    tokenInput = t
-                    triggerConnect(h, p, t)
-                }
-            } catch (_: Exception) {}
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF0E1116))
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "LinkToMac",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF4ADE80)
-            )
-            Text(
-                text = "Make Android feel at home on your Mac • v1.61",
-                fontSize = 14.sp,
-                color = Color.LightGray
-            )
-
-            // Status Banner
-            Surface(
-                color = Color(0xFF1A202C),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = if (LinkConnectionService.isConnectedState) "● Connected to Mac" else "○ Not Connected",
-                        color = if (LinkConnectionService.isConnectedState) Color(0xFF4ADE80) else Color(0xFFFBBF24),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                    Text(text = statusText, color = Color.White, fontSize = 13.sp)
-
-                    if (discoveredHost.isNotEmpty() && !LinkConnectionService.isConnectedState) {
-                        Button(
-                            onClick = {
-                                hostInput = discoveredHost
-                                triggerConnect(discoveredHost, LinkConnectionService.discoveredMacPort, tokenInput)
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4ADE80))
-                        ) {
-                            Text("Auto-Connect Discovered Mac ($discoveredHost)", color = Color.Black)
-                        }
-                    }
-                }
-            }
-
-            // Step 1: Connect via QR, USB, or Wi-Fi
-            Surface(
-                color = Color(0xFF1A202C),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("01 • Pair or Connect", fontWeight = FontWeight.Bold, color = Color.White)
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
-                            onClick = {
-                                val options = ScanOptions().apply {
-                                    setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                                    setPrompt("Scan the LinkToMac QR Code on your Mac")
-                                    setBeepEnabled(false)
-                                }
-                                qrLauncher.launch(options)
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4ADE80)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Scan Mac QR Code", color = Color.Black, fontWeight = FontWeight.Bold)
-                        }
-
-                        Button(
-                            onClick = {
-                                // USB ADB reverse maps Mac port 54921 to phone's 127.0.0.1:54921
-                                triggerConnect("127.0.0.1", 54921, tokenInput)
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Connect via USB")
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = hostInput,
-                        onValueChange = { hostInput = it },
-                        label = { Text("Mac Local Wi-Fi IP") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = portInput,
-                            onValueChange = { portInput = it },
-                            label = { Text("Port") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = tokenInput,
-                            onValueChange = { tokenInput = it },
-                            label = { Text("6-Digit Token") },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
-                            onClick = {
-                                triggerConnect(hostInput.trim(), portInput.toIntOrNull() ?: 54921, tokenInput.trim())
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Connect Wi-Fi")
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                startService(Intent(this@MainActivity, LinkConnectionService::class.java).apply {
-                                    action = "DISCONNECT"
-                                })
-                            }
-                        ) {
-                            Text("Disconnect")
-                        }
-                    }
-                }
-            }
-
-            // Step 2: Quick Actions (Send Clipboard & Sync)
-            Surface(
-                color = Color(0xFF1A202C),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("02 • Instant Desk Actions", fontWeight = FontWeight.Bold, color = Color.White)
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
-                            onClick = { ClipboardManagerBridge.sendCurrentClipboardToMac(this@MainActivity) },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Push Clipboard to Mac")
-                        }
-                        Button(
-                            onClick = { SmsContactsCallBridge.syncSmsAndContactsToMac(this@MainActivity) },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Sync SMS & Contacts")
-                        }
-                    }
-                }
-            }
-
-            // Step 3: 1-Tap Permission Checklist
-            Surface(
-                color = Color(0xFF1A202C),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("03 • One-Time Companion Permissions", fontWeight = FontWeight.Bold, color = Color.White)
-
-                    Button(
-                        onClick = {
-                            val perms = mutableListOf(
-                                Manifest.permission.READ_SMS,
-                                Manifest.permission.SEND_SMS,
-                                Manifest.permission.RECEIVE_SMS,
-                                Manifest.permission.READ_CONTACTS,
-                                Manifest.permission.READ_PHONE_STATE,
-                                Manifest.permission.READ_CALL_LOG,
-                                Manifest.permission.ANSWER_PHONE_CALLS,
-                                Manifest.permission.CALL_PHONE,
-                                Manifest.permission.CAMERA,
-                                Manifest.permission.RECORD_AUDIO
-                            )
-                            if (Build.VERSION.SDK_INT >= 33) {
-                                perms.add(Manifest.permission.POST_NOTIFICATIONS)
-                                perms.add(Manifest.permission.READ_MEDIA_IMAGES)
-                                perms.add(Manifest.permission.READ_MEDIA_VIDEO)
-                            } else {
-                                perms.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-                            }
-                            permLauncher.launch(perms.toTypedArray())
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("1. Grant SMS, Call, Contacts, Camera & Mic")
-                    }
-
-                    Button(
-                        onClick = {
-                            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("2. Enable Notification Mirroring & Replies")
-                    }
-
-                    Button(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-                                val intent = Intent(
-                                    Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                                    android.net.Uri.parse("package:$packageName")
-                                )
-                                startActivity(intent)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("3. Enable Full Storage Access (Files Transfer)")
-                    }
-
-                    Button(
-                        onClick = {
-                            val pm = getSystemService(POWER_SERVICE) as PowerManager
-                            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                                val intent = Intent(
-                                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                    android.net.Uri.parse("package:$packageName")
-                                )
-                                startActivity(intent)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("4. Allow Unrestricted Battery (Stay Connected)")
-                    }
-
-                    Button(
-                        onClick = {
-                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("5. Enable Accessibility (Wireless Touch, Mirror & Background Clipboard)")
-                    }
-                }
-            }
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        handleIncomingShareIntent(intent)
-    }
-
-    private fun handleIncomingShareIntent(intent: Intent?) {
-        if (intent == null) return
-        val action = intent.action ?: return
-
-        when (action) {
-            Intent.ACTION_SEND -> {
-                val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-                if (!sharedText.isNullOrBlank()) {
-                    ClipboardManagerBridge.sendClipboardToMac(sharedText)
-                    val trimmed = sharedText.trim()
-                    if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
-                        val frame = WireProtocol.packJson(
-                            type = "URL_HANDOFF",
-                            payloadMap = mapOf("url" to trimmed)
-                        )
-                        LinkConnectionService.instance?.sendRawFrame(frame)
-                    }
-                }
-
-                val streamUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
-                }
-
-                if (streamUri != null) {
-                    shareUriToMac(streamUri)
-                }
-            }
-
-            Intent.ACTION_SEND_MULTIPLE -> {
-                val streamUris = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableArrayListExtra<android.net.Uri>(Intent.EXTRA_STREAM)
-                }
-
-                if (!streamUris.isNullOrEmpty()) {
-                    for (uri in streamUris) {
-                        shareUriToMac(uri)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun shareUriToMac(uri: android.net.Uri) {
-        Thread {
-            try {
-                var fileName = "shared_${System.currentTimeMillis()}"
-                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                    val nameIdx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (nameIdx != -1 && cursor.moveToFirst()) {
-                        cursor.getString(nameIdx)?.let { fileName = it }
-                    }
-                }
-                val tempFile = java.io.File(cacheDir, fileName)
-                contentResolver.openInputStream(uri)?.use { input ->
-                    java.io.FileOutputStream(tempFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                FilePhotosBridge.streamFileToMac(tempFile.absolutePath, fileName, "true")
-            } catch (e: Exception) {
-                android.util.Log.w("MainActivity", "Failed to share URI to Mac: ${e.message}")
-            }
-        }.start()
-    }
-
-    private fun triggerConnect(host: String, port: Int, token: String) {
-        startService(Intent(this, LinkConnectionService::class.java).apply {
-            action = "CONNECT_HOST"
-            putExtra("host", host)
-            putExtra("port", port)
-            putExtra("token", token)
-        })
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-````
-
-<a id="linktomac-complete-macos-source-code-md"></a>
-### `linktomac_complete_macos_source_code.md`
-
-````markdown
-# LinkToMac — Complete macOS Source Code (`allcode/LinkToMac-macOS`)
-
-Every file below belongs inside the codebase. Run `python3 stitch_allcode.py` from `LINKTOMAC_MASTER_PLAN.md` to extract them automatically.
-
----
-
-### FILE: allcode/LinkToMac-macOS/Package.swift
-```swift
-// swift-tools-version: 5.9
-import PackageDescription
-
-let package = Package(
-    name: "LinkToMac",
-    platforms: [
-        .macOS(.v13)
-    ],
-    products: [
-        .executable(name: "LinkToMac", targets: ["LinkToMac"])
-    ],
-    targets: [
-        .executableTarget(
-            name: "LinkToMac",
-            path: "Sources/LinkToMac"
-        )
-    ]
-)
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Info.plist
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
-    <key>CFBundleExecutable</key>
-    <string>LinkToMac</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.linktomac.mac</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>LinkToMac</string>
-    <key>CFBundleDisplayName</key>
-    <string>LinkToMac</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.61</string>
-    <key>CFBundleVersion</key>
-    <string>161</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>13.0</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSLocalNetworkUsageDescription</key>
-    <string>LinkToMac connects directly to your Android phone over local Wi-Fi and USB without cloud servers.</string>
-    <key>NSBonjourServices</key>
-    <array>
-        <string>_linktomac._tcp</string>
-    </array>
-</dict>
-</plist>
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/build_mac_app.sh
-```bash
-#!/usr/bin/env bash
-set -e
-
-echo "=========================================="
-echo " Building LinkToMac for macOS (v1.61)..."
-echo "=========================================="
-
-swift build -c release
-
-APP_DIR="build/LinkToMac.app"
-CONTENTS_DIR="$APP_DIR/Contents"
-MACOS_DIR="$CONTENTS_DIR/MacOS"
-RESOURCES_DIR="$CONTENTS_DIR/Resources"
-
-rm -rf "$APP_DIR"
-mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
-
-cp ".build/release/LinkToMac" "$MACOS_DIR/LinkToMac"
-cp "Info.plist" "$CONTENTS_DIR/Info.plist"
-chmod +x "$MACOS_DIR/LinkToMac"
-
-# Ad-hoc sign so macOS Local Network & Notification permissions work smoothly
-codesign --force --deep --sign - "$APP_DIR"
-
-echo "=========================================="
-echo " SUCCESS: Built $APP_DIR"
-echo " Run with: open $APP_DIR"
-echo "=========================================="
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift
-```swift
-import Foundation
-
-// MARK: - Binary Wire Frame Constants
-enum WireFrameType: UInt8 {
-    case jsonControl = 0x01
-    case fileChunk   = 0x02
-    case videoFrame  = 0x03
-    case audioFrame  = 0x04
-}
-
-// MARK: - Top-Level JSON Envelope
-struct LinkEnvelope: Codable {
-    var type: String
-    var timestamp: Int64 = Int64(Date().timeIntervalSince1970 * 1000)
-    var payload: [String: String] = [:]
-    var notifications: [AndroidNotificationItem]? = nil
-    var smsThreads: [SmsThreadItem]? = nil
-    var contacts: [AndroidContactItem]? = nil
-    var files: [RemoteFileItem]? = nil
-    var photos: [RemotePhotoItem]? = nil
-}
-
-// MARK: - Feature Models
-struct AndroidNotificationItem: Identifiable, Codable, Hashable {
-    var id: String
-    var packageName: String
-    var appName: String
-    var title: String
-    var body: String
-    var timestamp: Int64
-    var canReply: Bool
-    var otpCode: String?
-    var replySentText: String?
-}
-
-struct SmsMessageItem: Identifiable, Codable, Hashable {
-    var id: String
-    var address: String
-    var body: String
-    var date: Int64
-    var isIncoming: Bool
-}
-
-struct SmsThreadItem: Identifiable, Codable, Hashable {
-    var id: String // phone number / address
-    var contactName: String
-    var address: String
-    var lastMessage: String
-    var timestamp: Int64
-    var messages: [SmsMessageItem]
-}
-
-struct AndroidContactItem: Identifiable, Codable, Hashable {
-    var id: String
-    var name: String
-    var phoneNumber: String
-}
-
-struct RemoteFileItem: Identifiable, Codable, Hashable {
-    var id: String { path }
-    var name: String
-    var path: String
-    var sizeBytes: Int64
-    var isDirectory: Bool
-    var lastModified: Int64
-}
-
-struct RemotePhotoItem: Identifiable, Codable, Hashable {
-    var id: String
-    var name: String
-    var path: String
-    var dateTaken: Int64
-    var sizeBytes: Int64
-    var isVideo: Bool
-    var thumbnailBase64: String?
-}
-
-struct ClipboardHistoryItem: Identifiable, Hashable {
-    let id = UUID()
-    let content: String
-    let isUrl: Bool
-    let source: String // "Android" or "This Mac"
-    let timestamp: Date
-}
-
-struct ActiveTransferItem: Identifiable {
-    let id: String
-    var fileName: String
-    var direction: String // "Sending to Android" or "Receiving from Android"
-    var totalBytes: Int64
-    var transferredBytes: Int64
-    var transport: String
-    var isCompleted: Bool = false
-
-    var progress: Double {
-        guard totalBytes > 0 else { return 0 }
-        return min(1.0, Double(transferredBytes) / Double(totalBytes))
-    }
-}
-
-struct IncomingCallState: Equatable {
-    var isActive: Bool = false
-    var state: String = "IDLE" // "RINGING", "OFFHOOK", "IDLE"
-    var phoneNumber: String = ""
-    var contactName: String = ""
-    var isMuted: Bool = false
-}
-
-// MARK: - Wire Framing Helper
-enum WireFramer {
-    static func packJSON(_ envelope: LinkEnvelope) -> Data? {
-        guard let jsonData = try? JSONEncoder().encode(envelope) else { return nil }
-        return packFrame(type: .jsonControl, payload: jsonData)
-    }
-
-    static func packFrame(type: WireFrameType, payload: Data) -> Data {
-        var lengthBE = UInt32(payload.count).bigEndian
-        var header = Data(bytes: &lengthBE, count: 4)
-        header.append(type.rawValue)
-        header.append(payload)
-        return header
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift
-```swift
-import SwiftUI
-
-@propertyWrapper
-public struct LocalState<Value>: DynamicProperty {
-    @StateObject private var container: Container
-
-    final class Container: ObservableObject {
-        @Published var value: Value
-        init(_ value: Value) { self.value = value }
-    }
-
-    public init(wrappedValue: Value) {
-        _container = StateObject(wrappedValue: Container(wrappedValue))
-    }
-
-    public init() where Value: ExpressibleByNilLiteral {
-        self.init(wrappedValue: nil)
-    }
-
-    public var wrappedValue: Value {
-        get { container.value }
-        nonmutating set { container.value = newValue }
-    }
-
-    public var projectedValue: Binding<Value> {
-        Binding(
-            get: { self.container.value },
-            set: { self.container.value = $0 }
-        )
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ConnectionManager.swift
-```swift
-import Foundation
-import Network
-import AppKit
-import UserNotifications
-import AVFoundation
-
-@MainActor
-final class ConnectionManager: ObservableObject {
-    static let shared = ConnectionManager()
-
-    // Connection State
-    @Published var isConnected: Bool = false
-    @Published var connectedDeviceName: String = "No Android Connected"
-    @Published var connectionTransport: String = "Waiting..." // "USB" or "Local Wi-Fi"
-    @Published var batteryLevel: Int = 0
-    @Published var isCharging: Bool = false
-    @Published var ringerMode: String = "Normal"
-    @Published var localIPAddress: String = "127.0.0.1"
-    @Published var listenPort: UInt16 = 54921
-    @Published var pairingToken: String = ""
-
-    // Feature State
-    @Published var notifications: [AndroidNotificationItem] = []
-    @Published var mutedApps: Set<String> = []
-    @Published var smsThreads: [SmsThreadItem] = []
-    @Published var contacts: [AndroidContactItem] = []
-    @Published var currentDirectoryPath: String = "/sdcard/Download"
-    @Published var remoteFiles: [RemoteFileItem] = []
-    @Published var remotePhotos: [RemotePhotoItem] = []
-    @Published var transfers: [ActiveTransferItem] = []
-    @Published var callState: IncomingCallState = IncomingCallState()
-
-    // Media & Live Stream State
-    @Published var nowPlayingTitle: String = "Nothing Playing"
-    @Published var nowPlayingArtist: String = "Android Media Remote"
-    @Published var liveVideoFrame: NSImage? = nil
-    @Published var activeStreamMode: String = "NONE" // "NONE", "MIRROR", "WEBCAM_BACK", "WEBCAM_FRONT"
-    @Published var isScreenOffMirror: Bool = false
-    @Published var androidScreenWidth: Double = 1080.0
-    @Published var androidScreenHeight: Double = 2400.0
-    @Published var deviceScreenWidth: Int = 1080
-    @Published var deviceScreenHeight: Int = 2400
-
-    private var listener: NWListener?
-    private var activeConnection: NWConnection?
-    private var receiveBuffer = Data()
-    private var incomingFileHandles: [String: (url: URL, handle: FileHandle, expectedBytes: Int64)] = [:]
-
-    // Audio player for live microphone/cast PCM frames
-    private let audioEngine = AVAudioEngine()
-    private let playerNode = AVAudioPlayerNode()
-    private var audioConfigured = false
-
-    private init() {
-        self.localIPAddress = Self.detectLocalIPAddress() ?? "127.0.0.1"
-        if let savedToken = UserDefaults.standard.string(forKey: "LinkToMacPairingToken"), !savedToken.isEmpty {
-            self.pairingToken = savedToken
-        } else {
-            let newToken = String(format: "%06d", Int.random(in: 100000...999999))
-            UserDefaults.standard.set(newToken, forKey: "LinkToMacPairingToken")
-            self.pairingToken = newToken
-        }
-
-        requestMacNotificationPermission()
-        startServer()
-        observeMacWake()
-    }
-
-    // MARK: - Server & Bonjour mDNS
-    func startServer() {
-        listener?.cancel()
-        do {
-            let params = NWParameters.tcp
-            params.allowLocalEndpointReuse = true
-            let nwPort = NWEndpoint.Port(rawValue: listenPort)!
-            let newListener = try NWListener(using: params, on: nwPort)
-
-            // Advertise Bonjour _linktomac._tcp so Android discovers Mac automatically
-            let hostName = Host.current().localizedName ?? "Mac"
-            newListener.service = NWListener.Service(
-                name: "LinkToMac-\(hostName)",
-                type: "_linktomac._tcp"
-            )
-
-            newListener.newConnectionHandler = { [weak self] connection in
-                Task { @MainActor in
-                    self?.acceptConnection(connection)
-                }
-            }
-
-            newListener.start(queue: .main)
-            self.listener = newListener
-        } catch {
-            print("[LinkToMac] Failed to start listener: \(error)")
-        }
-    }
-
-    private func acceptConnection(_ connection: NWConnection) {
-        activeConnection?.cancel()
-        activeConnection = connection
-        receiveBuffer.removeAll()
-
-        connection.stateUpdateHandler = { [weak self] state in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch state {
-                case .ready:
-                    self.isConnected = true
-                    self.sendHello()
-                    self.readNextChunk(from: connection)
-                case .failed, .cancelled:
-                    if self.activeConnection === connection {
-                        self.isConnected = false
-                        self.connectionTransport = "Disconnected"
-                    }
-                default:
-                    break
-                }
-            }
-        }
-        connection.start(queue: .main)
-    }
-
-    private func readNextChunk(from connection: NWConnection) {
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 131072) { [weak self] data, _, isComplete, error in
-            Task { @MainActor in
-                guard let self = self else { return }
-                if let data = data, !data.isEmpty {
-                    self.receiveBuffer.append(data)
-                    self.processReceiveBuffer()
-                }
-                if isComplete || error != nil {
-                    if self.activeConnection === connection {
-                        self.isConnected = false
-                    }
-                    return
-                }
-                self.readNextChunk(from: connection)
-            }
-        }
-    }
-
-    private func processReceiveBuffer() {
-        while receiveBuffer.count >= 5 {
-            let lengthBytes = receiveBuffer.subdata(in: 0..<4)
-            let length = lengthBytes.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
-            let frameTypeByte = receiveBuffer[4]
-            let totalFrameSize = 5 + Int(length)
-
-            guard receiveBuffer.count >= totalFrameSize else { break }
-            let payload = receiveBuffer.subdata(in: 5..<totalFrameSize)
-            receiveBuffer.removeSubrange(0..<totalFrameSize)
-
-            guard let frameType = WireFrameType(rawValue: frameTypeByte) else { continue }
-            switch frameType {
-            case .jsonControl:
-                handleJSONPayload(payload)
-            case .fileChunk:
-                handleBinaryFileChunk(payload)
-            case .videoFrame:
-                if let img = NSImage(data: payload) {
-                    self.liveVideoFrame = img
-                }
-            case .audioFrame:
-                playPCMFrame(payload)
-            }
-        }
-    }
-
-    // MARK: - Handle Incoming JSON Commands
-    private func handleJSONPayload(_ data: Data) {
-        guard let env = try? JSONDecoder().decode(LinkEnvelope.self, from: data) else { return }
-
-        switch env.type {
-        case "HELLO", "STATUS_UPDATE":
-            if let name = env.payload["deviceName"] { self.connectedDeviceName = name }
-            if let batStr = env.payload["battery"], let bat = Int(batStr) { self.batteryLevel = bat }
-            if let chg = env.payload["charging"] { self.isCharging = (chg == "true") }
-            if let trans = env.payload["transport"] {
-                self.connectionTransport = ADBBridge.shared.isUSBDeviceConnected ? "USB" : trans
-            }
-            if let ringer = env.payload["ringerMode"] { self.ringerMode = ringer }
-            if let track = env.payload["mediaTitle"], !track.isEmpty {
-                self.nowPlayingTitle = track
-                self.nowPlayingArtist = env.payload["mediaArtist"] ?? "Android Media"
-            }
-            if let wStr = env.payload["screenWidth"], let w = Double(wStr), w > 0 {
-                self.androidScreenWidth = w
-                self.deviceScreenWidth = Int(w)
-                ADBBridge.shared.deviceScreenWidth = Int(w)
-            }
-            if let hStr = env.payload["screenHeight"], let h = Double(hStr), h > 0 {
-                self.androidScreenHeight = h
-                self.deviceScreenHeight = Int(h)
-                ADBBridge.shared.deviceScreenHeight = Int(h)
-            }
-            if env.type == "HELLO" {
-                requestDirectoryListing(path: currentDirectoryPath)
-                requestPhotosList()
-                requestSmsAndContacts()
-            }
-
-        case "NOTIFICATION_POSTED":
-            if let items = env.notifications {
-                for item in items {
-                    guard !mutedApps.contains(item.packageName) else { continue }
-                    notifications.removeAll { $0.id == item.id }
-                    notifications.insert(item, at: 0)
-                    postNativeMacNotification(item)
-                }
-            }
-
-        case "NOTIFICATION_REMOVED":
-            if let id = env.payload["id"] {
-                notifications.removeAll { $0.id == id }
-            }
-
-        case "SMS_THREADS_SYNC":
-            if let threads = env.smsThreads {
-                self.smsThreads = threads
-            }
-            if let contactList = env.contacts {
-                self.contacts = contactList
-            }
-
-        case "CALL_STATE":
-            let state = env.payload["state"] ?? "IDLE"
-            let number = env.payload["number"] ?? "Unknown"
-            let name = env.payload["contactName"] ?? number
-            self.callState = IncomingCallState(
-                isActive: state != "IDLE",
-                state: state,
-                phoneNumber: number,
-                contactName: name,
-                isMuted: env.payload["isMuted"] == "true"
-            )
-
-        case "CLIPBOARD_SYNC":
-            if let text = env.payload["content"], !text.isEmpty {
-                ClipboardSyncManager.shared.applyIncomingFromAndroid(text: text)
-            }
-
-        case "URL_HANDOFF":
-            if let urlStr = env.payload["url"], let url = URL(string: urlStr) {
-                NSWorkspace.shared.open(url)
-            }
-
-        case "FILE_LIST_RES":
-            if let path = env.payload["path"] {
-                self.currentDirectoryPath = path
-            }
-            if let files = env.files {
-                self.remoteFiles = files.sorted {
-                    if $0.isDirectory != $1.isDirectory { return $0.isDirectory && !$1.isDirectory }
-                    return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-                }
-            }
-
-        case "PHOTOS_LIST_RES":
-            if let photos = env.photos {
-                self.remotePhotos = photos
-            }
-
-        case "FILE_TRANSFER_START":
-            guard let tid = env.payload["transferId"],
-                  let fileName = env.payload["fileName"],
-                  let sizeStr = env.payload["totalBytes"],
-                  let totalBytes = Int64(sizeStr) else { return }
-
-            let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
-                .appendingPathComponent("LinkToMac", isDirectory: true)
-            try? FileManager.default.createDirectory(at: downloadsDir, withIntermediateDirectories: true)
-            let destURL = downloadsDir.appendingPathComponent(fileName)
-            FileManager.default.createFile(atPath: destURL.path, contents: nil)
-            if let handle = try? FileHandle(forWritingTo: destURL) {
-                incomingFileHandles[tid] = (destURL, handle, totalBytes)
-                transfers.insert(ActiveTransferItem(
-                    id: tid,
-                    fileName: fileName,
-                    direction: "Receiving from Android",
-                    totalBytes: totalBytes,
-                    transferredBytes: 0,
-                    transport: connectionTransport
-                ), at: 0)
-            }
-
-        case "FILE_TRANSFER_END":
-            guard let tid = env.payload["transferId"] else { return }
-            if let entry = incomingFileHandles.removeValue(forKey: tid) {
-                try? entry.handle.close()
-                if let idx = transfers.firstIndex(where: { $0.id == tid }) {
-                    transfers[idx].transferredBytes = transfers[idx].totalBytes
-                    transfers[idx].isCompleted = true
-                }
-                // Reveal in Finder if requested
-                if env.payload["revealInFinder"] == "true" {
-                    NSWorkspace.shared.activateFileViewerSelecting([entry.url])
-                }
-            }
-
-        default:
-            break
-        }
-    }
-
-    // MARK: - Handle Incoming Binary File Chunks
-    private func handleBinaryFileChunk(_ payload: Data) {
-        guard payload.count > 36 else { return }
-        let tidData = payload.subdata(in: 0..<36)
-        guard let tid = String(data: tidData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
-        let chunkData = payload.subdata(in: 36..<payload.count)
-
-        if let entry = incomingFileHandles[tid] {
-            try? entry.handle.write(contentsOf: chunkData)
-            if let idx = transfers.firstIndex(where: { $0.id == tid }) {
-                transfers[idx].transferredBytes += Int64(chunkData.count)
-            }
-        }
-    }
-
-    // MARK: - Outgoing Commands
-    func sendEnvelope(_ env: LinkEnvelope) {
-        guard let connection = activeConnection,
-              let data = WireFramer.packJSON(env) else { return }
-        connection.send(content: data, completion: .contentProcessed { _ in })
-    }
-
-    func sendHello() {
-        let hostName = Host.current().localizedName ?? "Mac"
-        sendEnvelope(LinkEnvelope(
-            type: "HELLO",
-            payload: [
-                "deviceName": hostName,
-                "pairToken": pairingToken
-            ]
-        ))
-    }
-
-    func sendNotificationReply(notificationId: String, replyText: String) {
-        guard !replyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        sendEnvelope(LinkEnvelope(
-            type: "NOTIFICATION_REPLY",
-            payload: [
-                "id": notificationId,
-                "replyText": replyText
-            ]
-        ))
-        if let idx = notifications.firstIndex(where: { $0.id == notificationId }) {
-            notifications[idx].replySentText = replyText
-        }
-    }
-
-    func dismissNotification(notificationId: String) {
-        notifications.removeAll { $0.id == notificationId }
-        sendEnvelope(LinkEnvelope(
-            type: "NOTIFICATION_REMOVED",
-            payload: ["id": notificationId]
-        ))
-    }
-
-    func sendSms(address: String, body: String) {
-        guard !body.isEmpty else { return }
-        sendEnvelope(LinkEnvelope(
-            type: "SMS_SEND",
-            payload: [
-                "address": address,
-                "body": body
-            ]
-        ))
-        // Optimistically append to local thread
-        let newMsg = SmsMessageItem(
-            id: UUID().uuidString,
-            address: address,
-            body: body,
-            date: Int64(Date().timeIntervalSince1970 * 1000),
-            isIncoming: false
-        )
-        if let idx = smsThreads.firstIndex(where: { $0.address == address }) {
-            smsThreads[idx].messages.append(newMsg)
-            smsThreads[idx].lastMessage = body
-        } else {
-            smsThreads.insert(SmsThreadItem(
-                id: address,
-                contactName: address,
-                address: address,
-                lastMessage: body,
-                timestamp: newMsg.date,
-                messages: [newMsg]
-            ), at: 0)
-        }
-    }
-
-    func sendCallAction(_ action: String, smsReply: String? = nil) {
-        var payload = ["action": action]
-        if let smsReply = smsReply {
-            payload["smsReply"] = smsReply
-            payload["number"] = callState.phoneNumber
-        }
-        sendEnvelope(LinkEnvelope(type: "CALL_ACTION", payload: payload))
-        if action == "DECLINE" || action == "END" || action == "DECLINE_WITH_SMS" {
-            callState.isActive = false
-            callState.state = "IDLE"
-        } else if action == "MUTE" {
-            callState.isMuted.toggle()
-        }
-    }
-
-    func dialPhoneNumber(_ number: String) {
-        sendEnvelope(LinkEnvelope(
-            type: "CALL_ACTION",
-            payload: ["action": "DIAL", "number": number]
-        ))
-    }
-
-    func requestDirectoryListing(path: String) {
-        sendEnvelope(LinkEnvelope(
-            type: "FILE_LIST_REQ",
-            payload: ["path": path]
-        ))
-    }
-
-    func requestPhotosList() {
-        sendEnvelope(LinkEnvelope(type: "PHOTOS_LIST_REQ"))
-    }
-
-    func requestSmsAndContacts() {
-        sendEnvelope(LinkEnvelope(type: "SMS_THREADS_REQ"))
-    }
-
-    func pullRemoteFileToMac(remotePath: String, fileName: String, revealInFinder: Bool = true) {
-        sendEnvelope(LinkEnvelope(
-            type: "FILE_PULL_REQ",
-            payload: [
-                "path": remotePath,
-                "fileName": fileName,
-                "revealInFinder": revealInFinder ? "true" : "false"
-            ]
-        ))
-    }
-
-    // MARK: - Send File from Mac Finder to Android (Chunked High-Speed Stream)
-    func sendFileToAndroid(fileURL: URL, destinationFolder: String = "/sdcard/Download/LinkToMac") {
-        guard let connection = activeConnection else { return }
-        let fileName = fileURL.lastPathComponent
-        guard let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-              let fileSize = attrs[.size] as? Int64 else { return }
-
-        let transferId = UUID().uuidString // 36 chars
-        let transportLabel = connectionTransport
-
-        transfers.insert(ActiveTransferItem(
-            id: transferId,
-            fileName: fileName,
-            direction: "Sending to Android",
-            totalBytes: fileSize,
-            transferredBytes: 0,
-            transport: transportLabel
-        ), at: 0)
-
-        sendEnvelope(LinkEnvelope(
-            type: "FILE_TRANSFER_START",
-            payload: [
-                "transferId": transferId,
-                "fileName": fileName,
-                "totalBytes": "\(fileSize)",
-                "destFolder": destinationFolder
-            ]
-        ))
-
-        Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self = self else { return }
-            guard let handle = try? FileHandle(forReadingFrom: fileURL) else { return }
-            defer { try? handle.close() }
-
-            let tidBytes = transferId.padding(toLength: 36, withPad: " ", startingAt: 0).data(using: .utf8)!
-            var sent: Int64 = 0
-            let chunkSize = 65536
-
-            while true {
-                let chunk = (try? handle.read(upToCount: chunkSize)) ?? Data()
-                if chunk.isEmpty { break }
-
-                var framePayload = Data(tidBytes)
-                framePayload.append(chunk)
-                let packed = WireFramer.packFrame(type: .fileChunk, payload: framePayload)
-                connection.send(content: packed, completion: .contentProcessed { _ in })
-
-                sent += Int64(chunk.count)
-                let currentSent = sent
-                await MainActor.run {
-                    if let idx = self.transfers.firstIndex(where: { $0.id == transferId }) {
-                        self.transfers[idx].transferredBytes = currentSent
-                    }
-                }
-                try? await Task.sleep(nanoseconds: 1_500_000) // Smooth socket pacing
-            }
-
-            await MainActor.run {
-                self.sendEnvelope(LinkEnvelope(
-                    type: "FILE_TRANSFER_END",
-                    payload: ["transferId": transferId, "fileName": fileName]
-                ))
-                if let idx = self.transfers.firstIndex(where: { $0.id == transferId }) {
-                    self.transfers[idx].isCompleted = true
-                }
-                if !self.currentDirectoryPath.isEmpty {
-                    self.requestDirectoryListing(path: self.currentDirectoryPath)
-                }
-            }
-        }
-    }
-
-    func sendMediaAction(_ action: String) {
-        sendEnvelope(LinkEnvelope(
-            type: "MEDIA_ACTION",
-            payload: ["action": action]
-        ))
-    }
-
-    func setStreamMode(_ mode: String) {
-        self.activeStreamMode = mode
-        if mode == "NONE" {
-            self.liveVideoFrame = nil
-        }
-        sendEnvelope(LinkEnvelope(
-            type: "STREAM_CONTROL",
-            payload: ["mode": mode]
-        ))
-    }
-
-    func sendRemoteTap(normalizedX: Double, normalizedY: Double) {
-        // If USB ADB is available, ADBBridge injects zero-latency tap; also send over socket
-        sendEnvelope(LinkEnvelope(
-            type: "STREAM_CONTROL",
-            payload: [
-                "mode": "REMOTE_TAP",
-                "x": String(format: "%.4f", normalizedX),
-                "y": String(format: "%.4f", normalizedY)
-            ]
-        ))
-        ADBBridge.shared.injectTapNormalized(x: normalizedX, y: normalizedY)
-    }
-
-    func sendRemoteKeyEvent(_ keyCode: Int) {
-        sendEnvelope(LinkEnvelope(
-            type: "STREAM_CONTROL",
-            payload: ["mode": "REMOTE_KEY", "keyCode": "\(keyCode)"]
-        ))
-        ADBBridge.shared.injectKeyEvent(keyCode)
-    }
-
-    // MARK: - Live Audio Playback (Android Mic / Cast)
-    private func playPCMFrame(_ pcmData: Data) {
-        if !audioConfigured {
-            let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16000, channels: 1, interleaved: false)!
-            audioEngine.attach(playerNode)
-            audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: format)
-            try? audioEngine.start()
-            playerNode.play()
-            audioConfigured = true
-        }
-        let sampleCount = pcmData.count / 2
-        guard sampleCount > 0,
-              let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16000, channels: 1, interleaved: false),
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(sampleCount)) else { return }
-
-        buffer.frameLength = AVAudioFrameCount(sampleCount)
-        if let floatChannel = buffer.floatChannelData?[0] {
-            pcmData.withUnsafeBytes { rawBuf in
-                let int16Ptr = rawBuf.bindMemory(to: Int16.self)
-                for i in 0..<sampleCount {
-                    floatChannel[i] = Float(int16Ptr[i]) / 32768.0
-                }
-            }
-            playerNode.scheduleBuffer(buffer, completionHandler: nil)
-        }
-    }
-
-    // MARK: - Native macOS Notification Dispatch
-    private func requestMacNotificationPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
-    }
-
-    private func postNativeMacNotification(_ item: AndroidNotificationItem) {
-        let content = UNMutableNotificationContent()
-        content.title = "\(item.appName) • \(item.title)"
-        content.body = item.body
-        content.sound = .default
-        let req = UNNotificationRequest(identifier: item.id, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(req)
-    }
-
-    // MARK: - Wake Reconnect & Local IP
-    private func observeMacWake() {
-        NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.didWakeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.localIPAddress = Self.detectLocalIPAddress() ?? "127.0.0.1"
-                self?.startServer()
-                ADBBridge.shared.pollUSBDevices()
-            }
-        }
-    }
-
-    static func detectLocalIPAddress() -> String? {
-        var address: String?
-        var ifaddr: UnsafeMutablePointer<ifaddrs>?
-        if getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr {
-            for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
-                let interface = ptr.pointee
-                let addrFamily = interface.ifa_addr.pointee.sa_family
-                if addrFamily == UInt8(AF_INET) {
-                    let name = String(cString: interface.ifa_name)
-                    if name == "en0" || name == "en1" || name.hasPrefix("bridge") {
-                        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                        getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
-                                    &hostname, socklen_t(hostname.count),
-                                    nil, socklen_t(0), NI_NUMERICHOST)
-                        let candidate = String(cString: hostname)
-                        if !candidate.hasPrefix("127.") {
-                            address = candidate
-                            break
-                        }
-                    }
-                }
-            }
-            freeifaddrs(ifaddr)
-        }
-        return address
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift
-```swift
-import Foundation
-
-@MainActor
-final class ADBBridge: ObservableObject {
-    static let shared = ADBBridge()
-
-    @Published var isUSBDeviceConnected: Bool = false
-    @Published var usbSerial: String = ""
-    @Published var isScrcpyAvailable: Bool = false
-    @Published var deviceScreenWidth: Int = 1080
-    @Published var deviceScreenHeight: Int = 2400
-
-    private var timer: Timer?
-
-    private init() {
-        checkScrcpyInstalled()
-        startPolling()
-    }
-
-    func startPolling() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.pollUSBDevices()
-            }
-        }
-        pollUSBDevices()
-    }
-
-    private func findBinary(_ name: String) -> String? {
-        let candidates = [
-            "/opt/homebrew/bin/\(name)",
-            "/usr/local/bin/\(name)",
-            "\(NSHomeDirectory())/Library/Android/sdk/platform-tools/\(name)",
-            "/usr/bin/\(name)"
-        ]
-        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
-    }
-
-    func checkScrcpyInstalled() {
-        isScrcpyAvailable = (findBinary("scrcpy") != nil)
-    }
-
-    func pollUSBDevices() {
-        guard let adbPath = findBinary("adb") else { return }
-        Task.detached {
-            let output = Self.runCommand(adbPath, args: ["devices"])
-            let lines = output.components(separatedBy: .newlines)
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty && !$0.hasPrefix("List of devices") && $0.hasSuffix("\tdevice") }
-
-            if let firstLine = lines.first,
-               let serial = firstLine.components(separatedBy: "\t").first {
-                // Ensure port 54921 is reversed so the Android app can connect over USB via 127.0.0.1:54921
-                _ = Self.runCommand(adbPath, args: ["-s", serial, "reverse", "tcp:54921", "tcp:54921"])
-
-                // Query actual screen width/height via adb shell wm size
-                let wmOutput = Self.runCommand(adbPath, args: ["-s", serial, "shell", "wm", "size"])
-                var detectedW = 0
-                var detectedH = 0
-                for line in wmOutput.components(separatedBy: .newlines) {
-                    let trimmed = line.trimmingCharacters(in: .whitespaces)
-                    if trimmed.contains("size:") {
-                        let parts = trimmed.components(separatedBy: "size:")
-                        if parts.count > 1 {
-                            let dims = parts[1].trimmingCharacters(in: .whitespaces).components(separatedBy: "x")
-                            if dims.count == 2, let w = Int(dims[0]), let h = Int(dims[1]) {
-                                detectedW = w
-                                detectedH = h
-                            }
-                        }
-                    }
-                }
-
-                let finalW = detectedW
-                let finalH = detectedH
-
-                await MainActor.run {
-                    let wasConnected = ADBBridge.shared.isUSBDeviceConnected
-                    ADBBridge.shared.isUSBDeviceConnected = true
-                    ADBBridge.shared.usbSerial = serial
-                    if !wasConnected {
-                        ADBBridge.shared.unlockBackgroundClipboardViaADB()
-                    }
-                    if finalW > 0 && finalH > 0 {
-                        ADBBridge.shared.deviceScreenWidth = finalW
-                        ADBBridge.shared.deviceScreenHeight = finalH
-                        ConnectionManager.shared.androidScreenWidth = Double(finalW)
-                        ConnectionManager.shared.androidScreenHeight = Double(finalH)
-                        ConnectionManager.shared.deviceScreenWidth = finalW
-                        ConnectionManager.shared.deviceScreenHeight = finalH
-                    }
-                    if ConnectionManager.shared.isConnected {
-                        ConnectionManager.shared.connectionTransport = "USB"
-                    }
-                }
-            } else {
-                await MainActor.run {
-                    ADBBridge.shared.isUSBDeviceConnected = false
-                    ADBBridge.shared.usbSerial = ""
-                    if ConnectionManager.shared.isConnected && ConnectionManager.shared.connectionTransport == "USB" {
-                        ConnectionManager.shared.connectionTransport = "Local Wi-Fi"
-                    }
-                }
-            }
-        }
-    }
-
-    func launchNativeScrcpy(screenOff: Bool, stayAwake: Bool) {
-        guard let scrcpyPath = findBinary("scrcpy") else { return }
-        var args = ["--window-title", "LinkToMac — \(ConnectionManager.shared.connectedDeviceName)"]
-        if screenOff {
-            args.append("--turn-screen-off")
-        }
-        if stayAwake {
-            args.append("--stay-awake")
-        }
-        Task.detached {
-            let proc = Process()
-            proc.executableURL = URL(fileURLWithPath: scrcpyPath)
-            proc.arguments = args
-            try? proc.run()
-        }
-    }
-
-    func injectTapNormalized(x: Double, y: Double) {
-        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
-        let w = ConnectionManager.shared.androidScreenWidth > 0 ? ConnectionManager.shared.androidScreenWidth : 1080.0
-        let h = ConnectionManager.shared.androidScreenHeight > 0 ? ConnectionManager.shared.androidScreenHeight : 2400.0
-        let px = Int(x * w)
-        let py = Int(y * h)
-        Task.detached {
-            _ = Self.runCommand(adbPath, args: ["shell", "input", "tap", "\(px)", "\(py)"])
-        }
-    }
-
-    func injectKeyEvent(_ keyCode: Int) {
-        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
-        Task.detached {
-            _ = Self.runCommand(adbPath, args: ["shell", "input", "keyevent", "\(keyCode)"])
-        }
-    }
-
-    func unlockBackgroundClipboardViaADB() {
-        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
-        Task.detached {
-            _ = Self.runCommand(adbPath, args: ["shell", "cmd", "appops", "set", "com.linktomac.android", "SYSTEM_ALERT_WINDOW", "allow"])
-            _ = Self.runCommand(adbPath, args: ["shell", "pm", "grant", "com.linktomac.android", "android.permission.READ_LOGS"])
-        }
-    }
-
-    nonisolated private static func runCommand(_ executable: String, args: [String]) -> String {
-        let process = Process()
-        let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = args
-        process.standardOutput = pipe
-        process.standardError = pipe
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            return String(data: data, encoding: .utf8) ?? ""
-        } catch {
-            return ""
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift
-```swift
-import Foundation
-import AppKit
-
-@MainActor
-final class ClipboardSyncManager: ObservableObject {
-    static let shared = ClipboardSyncManager()
-
-    @Published var isSyncEnabled: Bool = true
-    @Published var ignoreConcealedPasswords: Bool = true
-    @Published var history: [ClipboardHistoryItem] = []
-
-    private var lastChangeCount: Int = NSPasteboard.general.changeCount
-    private var lastSyncedString: String = ""
-    private var pollTimer: Timer?
-
-    private init() {
-        startMonitoring()
-    }
-
-    func startMonitoring() {
-        pollTimer?.invalidate()
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.65, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.checkMacPasteboard()
-            }
-        }
-    }
-
-    private func checkMacPasteboard() {
-        guard isSyncEnabled else { return }
-        let pb = NSPasteboard.general
-        guard pb.changeCount != lastChangeCount else { return }
-        lastChangeCount = pb.changeCount
-
-        // Respect password managers (1Password, Bitwarden, Keychain)
-        if ignoreConcealedPasswords {
-            let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
-            if pb.types?.contains(concealedType) == true {
-                return
-            }
-        }
-
-        guard let copied = pb.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !copied.isEmpty,
-              copied != lastSyncedString else { return }
-
-        lastSyncedString = copied
-        let isUrl = copied.hasPrefix("http://") || copied.hasPrefix("https://")
-        recordHistory(content: copied, isUrl: isUrl, source: "This Mac")
-
-        if ConnectionManager.shared.isConnected {
-            ConnectionManager.shared.sendEnvelope(LinkEnvelope(
-                type: "CLIPBOARD_SYNC",
-                payload: [
-                    "content": copied,
-                    "isUrl": isUrl ? "true" : "false"
-                ]
-            ))
-        }
-    }
-
-    func applyIncomingFromAndroid(text: String) {
-        guard isSyncEnabled, text != lastSyncedString else { return }
-        lastSyncedString = text
-
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(text, forType: .string)
-        lastChangeCount = pb.changeCount
-
-        let isUrl = text.hasPrefix("http://") || text.hasPrefix("https://")
-        recordHistory(content: text, isUrl: isUrl, source: "Android")
-    }
-
-    func copyItemToMac(_ item: ClipboardHistoryItem) {
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(item.content, forType: .string)
-        lastChangeCount = pb.changeCount
-        lastSyncedString = item.content
-    }
-
-    func handoffURLToAndroid(_ urlString: String) {
-        ConnectionManager.shared.sendEnvelope(LinkEnvelope(
-            type: "URL_HANDOFF",
-            payload: ["url": urlString]
-        ))
-    }
-
-    private func recordHistory(content: String, isUrl: Bool, source: String) {
-        history.removeAll { $0.content == content }
-        history.insert(ClipboardHistoryItem(
-            content: content,
-            isUrl: isUrl,
-            source: source,
-            timestamp: Date()
-        ), at: 0)
-        if history.count > 40 {
-            history.removeLast()
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift
-```swift
-import SwiftUI
-import CoreImage.CIFilterBuiltins
-
-enum DashboardSection: String, CaseIterable, Identifiable {
-    case overview      = "Dashboard"
-    case messages      = "Messages"
-    case notifications = "Notifications"
-    case files         = "Files"
-    case photos        = "Photos"
-    case clipboard     = "Clipboard"
-    case mirrorCamera  = "Mirror & Camera"
-    case pairSetup     = "Pair Device (QR)"
-
-    var id: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .overview:      return "laptopcomputer.and.iphone"
-        case .messages:      return "message.fill"
-        case .notifications: return "bell.badge.fill"
-        case .files:         return "folder.fill"
-        case .photos:        return "photo.on.rectangle.angled"
-        case .clipboard:     return "doc.on.clipboard.fill"
-        case .mirrorCamera:  return "rectangle.inset.filled.and.person.filled"
-        case .pairSetup:     return "qrcode.viewfinder"
-        }
-    }
-}
-
-struct MainDashboardView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var adb = ADBBridge.shared
-    @ObservedObject var clip = ClipboardSyncManager.shared
-    @LocalState private var selectedSection: DashboardSection = .overview
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            NavigationSplitView {
-                VStack(alignment: .leading, spacing: 12) {
-                    // Brand Header
-                    HStack(spacing: 10) {
-                        Image(systemName: "link.circle.fill")
-                            .font(.system(size: 26))
-                            .foregroundStyle(.green)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("LinkToMac")
-                                .font(.headline.bold())
-                            Text("v1.61 • Local & Private")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-
-                    // Live Connection Pill
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Circle()
-                                .fill(conn.isConnected ? Color.green : Color.orange)
-                                .frame(width: 9, height: 9)
-                            Text(conn.isConnected ? conn.connectedDeviceName : "Waiting for Android")
-                                .font(.subheadline.weight(.semibold))
-                                .lineLimit(1)
-                        }
-                        HStack(spacing: 8) {
-                            Label(conn.isConnected ? conn.connectionTransport : "Port \(conn.listenPort)", systemImage: conn.connectionTransport == "USB" ? "cable.connector" : "wifi")
-                            if conn.isConnected {
-                                Text("•")
-                                Label("\(conn.batteryLevel)%\(conn.isCharging ? " ⚡" : "")", systemImage: "battery.75")
-                            }
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .padding(.horizontal, 10)
-
-                    List(DashboardSection.allCases, id: \.self, selection: $selectedSection) { section in
-                        NavigationLink(value: section) {
-                            HStack {
-                                Label(section.rawValue, systemImage: section.icon)
-                                Spacer()
-                                if section == .notifications && !conn.notifications.isEmpty {
-                                    Text("\(conn.notifications.count)")
-                                        .font(.caption2.bold())
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.green.opacity(0.25))
-                                        .clipShape(Capsule())
-                                }
-                            }
-                        }
-                    }
-                    .listStyle(.sidebar)
-                }
-                .frame(minWidth: 220)
-            } detail: {
-                Group {
-                    switch selectedSection {
-                    case .overview:
-                        OverviewWorkflowView(selectedSection: $selectedSection)
-                    case .messages:
-                        MessagesWorkspaceView()
-                    case .notifications:
-                        NotificationsWorkspaceView()
-                    case .files:
-                        FilesWorkspaceView()
-                    case .photos:
-                        PhotosWorkspaceView()
-                    case .clipboard:
-                        ClipboardWorkspaceView()
-                    case .mirrorCamera:
-                        MirrorAndCameraWorkspaceView()
-                    case .pairSetup:
-                        PairingQRSetupView()
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-
-            // Floating Incoming Call HUD Overlay (Appears automatically when phone rings)
-            if conn.callState.isActive {
-                IncomingCallHUDView()
-                    .padding(20)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(response: 0.3), value: conn.callState.isActive)
-    }
-}
-
-// MARK: - Overview Morning Workflow Dashboard
-struct OverviewWorkflowView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var clip = ClipboardSyncManager.shared
-    @Binding var selectedSection: DashboardSection
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Hero Status Banner
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(conn.isConnected ? "\(conn.connectedDeviceName) is ready." : "Make Android feel at home on your Mac.")
-                            .font(.title.bold())
-                        Text("Messages, notifications, files, photos, clipboard, call controls, camera, and mirroring over USB or private local Wi-Fi. Cellular call audio and the microphone remain on your Android phone.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button {
-                        selectedSection = .pairSetup
-                    } label: {
-                        Label(conn.isConnected ? "Connection Details" : "Scan Pairing QR", systemImage: "qrcode")
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                }
-                .padding(20)
-                .background(Color.primary.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-
-                // 3 Core Workflows Grid
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    WorkflowCard(
-                        number: "01",
-                        title: "Stay in the conversation",
-                        subtitle: "\(conn.notifications.count) active notifications • \(conn.smsThreads.count) SMS threads",
-                        icon: "bubble.left.and.bubble.right.fill",
-                        buttonTitle: "Open Messages & Alerts"
-                    ) {
-                        selectedSection = .messages
-                    }
-
-                    WorkflowCard(
-                        number: "02",
-                        title: "Move the thing you need",
-                        subtitle: "Drag & drop files, browse \(conn.remotePhotos.count) photos, sync clipboard",
-                        icon: "folder.fill.badge.plus",
-                        buttonTitle: "Browse Files & Photos"
-                    ) {
-                        selectedSection = .files
-                    }
-
-                    WorkflowCard(
-                        number: "03",
-                        title: "Use the phone from your desk",
-                        subtitle: "Screen mirroring, screen-off mode, webcam & media remote",
-                        icon: "iphone.smartbatterycase.gen2",
-                        buttonTitle: "Open Mirror & Camera"
-                    ) {
-                        selectedSection = .mirrorCamera
-                    }
-                }
-
-                // Quick Media Remote & Quick Actions Row
-                HStack(spacing: 16) {
-                    // Media Remote Card
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("Android Media Remote", systemImage: "music.note.list")
-                            .font(.headline)
-                        Text(conn.nowPlayingTitle)
-                            .font(.title3.bold())
-                            .lineLimit(1)
-                        Text(conn.nowPlayingArtist)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        HStack(spacing: 12) {
-                            Button { conn.sendMediaAction("PREV") } label: { Image(systemName: "backward.fill") }
-                            Button { conn.sendMediaAction("PLAY_PAUSE") } label: { Image(systemName: "playpause.fill") }
-                            Button { conn.sendMediaAction("NEXT") } label: { Image(systemName: "forward.fill") }
-                            Divider().frame(height: 18)
-                            Button { conn.sendMediaAction("VOL_DOWN") } label: { Image(systemName: "speaker.minus.fill") }
-                            Button { conn.sendMediaAction("VOL_UP") } label: { Image(systemName: "speaker.plus.fill") }
-                            Spacer()
-                            Button("Ring Phone") {
-                                conn.sendMediaAction("RING_PHONE")
-                            }
-                            .tint(.orange)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                    // Latest Clipboard Card
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Label("Universal Clipboard", systemImage: "doc.on.clipboard")
-                                .font(.headline)
-                            Spacer()
-                            Toggle("Sync On", isOn: $clip.isSyncEnabled)
-                                .toggleStyle(.switch)
-                                .controlSize(.small)
-                        }
-                        if let latest = clip.history.first {
-                            Text(latest.content)
-                                .font(.subheadline.monospaced())
-                                .lineLimit(2)
-                            Text("Copied on \(latest.source) • Ready to paste ⌘V")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text("Copy text or links on Android or Mac to sync instantly.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-            }
-            .padding(24)
-        }
-    }
-}
-
-struct WorkflowCard: View {
-    let number: String
-    let title: String
-    let subtitle: String
-    let icon: String
-    let buttonTitle: String
-    let action: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(number)
-                    .font(.caption.monospaced().bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.green.opacity(0.2))
-                    .clipShape(Capsule())
-                Spacer()
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(.green)
-            }
-            Text(title)
-                .font(.headline)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(minHeight: 34, alignment: .topLeading)
-            Button(buttonTitle, action: action)
-                .buttonStyle(.bordered)
-        }
-        .padding(16)
-        .background(Color.primary.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-// MARK: - Pairing QR Code & Guided Setup View
-struct PairingQRSetupView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var adb = ADBBridge.shared
-
-    var qrPayloadString: String {
-        "{\"host\":\"\(conn.localIPAddress)\",\"port\":\(conn.listenPort),\"token\":\"\(conn.pairingToken)\",\"macName\":\"\(Host.current().localizedName ?? "Mac")\"}"
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                Text("Pair once. Then your Android feels nearby.")
-                    .font(.title.bold())
-                Text("Scan this QR code inside the LinkToMac Android companion app, or plug in a USB cable.")
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 32) {
-                    // Generated QR Code
-                    if let qrImg = generateQRCode(from: qrPayloadString) {
-                        Image(nsImage: qrImg)
-                            .interpolation(.none)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 210, height: 210)
-                            .padding(16)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-
-                    // Manual & USB Status Details
-                    VStack(alignment: .leading, spacing: 14) {
-                        GroupBox("01 • Local Wi-Fi Pairing Details") {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Mac IP Address:  \(conn.localIPAddress)")
-                                    .font(.system(.body, design: .monospaced))
-                                Text("Port:            \(conn.listenPort)")
-                                    .font(.system(.body, design: .monospaced))
-                                Text("6-Digit Token:   \(conn.pairingToken)")
-                                    .font(.system(.body, design: .monospaced).bold())
-                                    .foregroundStyle(.green)
-                            }
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-
-                        GroupBox("02 • High-Speed USB (ADB) Bridge") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Circle()
-                                        .fill(adb.isUSBDeviceConnected ? Color.green : Color.secondary)
-                                        .frame(width: 10, height: 10)
-                                    Text(adb.isUSBDeviceConnected ? "USB Phone Detected (\(adb.usbSerial))" : "No USB Android Detected")
-                                        .font(.subheadline.bold())
-                                }
-                                Text("When connected via USB with USB Debugging enabled, port 54921 is automatically bridged for zero-latency transfers and screen-off mirroring.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Button("Refresh USB & Local Network") {
-                                    conn.localIPAddress = ConnectionManager.detectLocalIPAddress() ?? "127.0.0.1"
-                                    conn.startServer()
-                                    adb.pollUSBDevices()
-                                }
-                            }
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .frame(maxWidth: 420)
-                }
-            }
-            .padding(32)
-        }
-    }
-
-    private func generateQRCode(from string: String) -> NSImage? {
-        let context = CIContext()
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(string.utf8)
-        filter.correctionLevel = "M"
-        guard let outputImage = filter.outputImage else { return nil }
-        let transformed = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
-        guard let cgImg = context.createCGImage(transformed, from: transformed.extent) else { return nil }
-        return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift
-```swift
-import SwiftUI
-import UniformTypeIdentifiers
-
-// MARK: - 01 Messages (SMS/MMS + Contacts) Workspace
-struct MessagesWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @LocalState private var selectedThreadId: String?
-    @LocalState private var draftMessage: String = ""
-    @LocalState private var newRecipientNumber: String = ""
-    @LocalState private var searchContactText: String = ""
-
-    var body: some View {
-        HSplitView {
-            // Left Column: SMS Threads & Contacts Search
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Messages & Contacts")
-                        .font(.headline)
-                    Spacer()
-                    Button {
-                        conn.requestSmsAndContacts()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .help("Sync SMS & Contacts from Android")
-                }
-                .padding(.horizontal, 12)
-                .padding(.top, 12)
-
-                HStack {
-                    TextField("Dial or New SMS #...", text: $newRecipientNumber)
-                        .textFieldStyle(.roundedBorder)
-                    Button("Chat") {
-                        let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
-                        guard !trimmed.isEmpty else { return }
-                        if !conn.smsThreads.contains(where: { $0.address == trimmed }) {
-                            conn.smsThreads.insert(SmsThreadItem(
-                                id: trimmed,
-                                contactName: trimmed,
-                                address: trimmed,
-                                lastMessage: "New conversation",
-                                timestamp: Int64(Date().timeIntervalSince1970 * 1000),
-                                messages: []
-                            ), at: 0)
-                        }
-                        selectedThreadId = trimmed
-                        newRecipientNumber = ""
-                    }
-                    Button {
-                        let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
-                        if !trimmed.isEmpty { conn.dialPhoneNumber(trimmed) }
-                    } label: {
-                        Image(systemName: "phone.fill")
-                    }
-                }
-                .padding(.horizontal, 12)
-
-                List(conn.smsThreads, selection: $selectedThreadId) { thread in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(thread.contactName)
-                                .font(.subheadline.bold())
-                            Spacer()
-                            Text(thread.address)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text(thread.lastMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    .padding(.vertical, 4)
-                    .tag(thread.id)
-                }
-            }
-            .frame(minWidth: 250, maxWidth: 320)
-
-            // Right Column: Active Conversation
-            VStack(spacing: 0) {
-                if let threadId = selectedThreadId,
-                   let thread = conn.smsThreads.first(where: { $0.id == threadId }) {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(thread.contactName)
-                                .font(.headline)
-                            Text(thread.address)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button {
-                            conn.dialPhoneNumber(thread.address)
-                        } label: {
-                            Label("Call on Phone", systemImage: "phone.arrow.up.right.fill")
-                        }
-                    }
-                    .padding(14)
-                    .background(Color.primary.opacity(0.05))
-
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 10) {
-                            ForEach(thread.messages) { msg in
-                                HStack {
-                                    if !msg.isIncoming { Spacer() }
-                                    Text(msg.body)
-                                        .padding(10)
-                                        .background(msg.isIncoming ? Color.primary.opacity(0.1) : Color.green.opacity(0.85))
-                                        .foregroundStyle(msg.isIncoming ? Color.primary : Color.black)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    if msg.isIncoming { Spacer() }
-                                }
-                            }
-                        }
-                        .padding(16)
-                    }
-
-                    Divider()
-                    HStack(spacing: 10) {
-                        TextField("Reply via Android SMS...", text: $draftMessage)
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit {
-                                sendCurrentDraft(to: thread.address)
-                            }
-                        Button("Send ↵") {
-                            sendCurrentDraft(to: thread.address)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                    }
-                    .padding(12)
-                } else {
-                    VStack(spacing: 10) {
-                        Image(systemName: "message.and.waveform.fill")
-                            .font(.system(size: 42))
-                            .foregroundStyle(.secondary)
-                        Text("Select a conversation or start a new SMS")
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-        }
-    }
-
-    private func sendCurrentDraft(to address: String) {
-        let text = draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        conn.sendSms(address: address, body: text)
-        draftMessage = ""
-    }
-}
-
-// MARK: - 01 Notifications Mirror & Inline Reply Workspace
-struct NotificationsWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @LocalState private var replyDrafts: [String: String] = [:]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Android Notification Mirroring")
-                    .font(.title2.bold())
-                Spacer()
-                if !conn.mutedApps.isEmpty {
-                    Button("Unmute All Apps (\(conn.mutedApps.count))") {
-                        conn.mutedApps.removeAll()
-                    }
-                }
-                Button("Clear All") {
-                    conn.notifications.removeAll()
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-
-            if conn.notifications.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "bell.slash")
-                        .font(.system(size: 42))
-                        .foregroundStyle(.secondary)
-                    Text("No recent Android notifications")
-                        .font(.headline)
-                    Text("Incoming messages and alerts from your phone will appear here with inline keyboard reply.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List {
-                    ForEach(conn.notifications) { item in
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text(item.appName.uppercased())
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.green)
-                                Text("•")
-                                    .foregroundStyle(.secondary)
-                                Text(item.title)
-                                    .font(.headline)
-                                Spacer()
-                                if let otp = item.otpCode, !otp.isEmpty {
-                                    Button("Copy 2FA: \(otp)") {
-                                        NSPasteboard.general.clearContents()
-                                        NSPasteboard.general.setString(otp, forType: .string)
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.blue)
-                                    .controlSize(.small)
-                                }
-                                Button("Mute App") {
-                                    conn.mutedApps.insert(item.packageName)
-                                    conn.notifications.removeAll { $0.packageName == item.packageName }
-                                }
-                                .controlSize(.small)
-                                Button {
-                                    conn.dismissNotification(notificationId: item.id)
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                }
-                                .buttonStyle(.plain)
-                            }
-
-                            Text(item.body)
-                                .font(.body)
-
-                            if let sent = item.replySentText {
-                                Label("Reply sent: \"\(sent)\"", systemImage: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                            } else if item.canReply {
-                                HStack {
-                                    TextField("Reply from keyboard...", text: Binding(
-                                        get: { replyDrafts[item.id] ?? "" },
-                                        set: { replyDrafts[item.id] = $0 }
-                                    ))
-                                    .textFieldStyle(.roundedBorder)
-                                    .onSubmit {
-                                        let txt = replyDrafts[item.id] ?? ""
-                                        conn.sendNotificationReply(notificationId: item.id, replyText: txt)
-                                        replyDrafts[item.id] = ""
-                                    }
-                                    Button("Reply ↵") {
-                                        let txt = replyDrafts[item.id] ?? ""
-                                        conn.sendNotificationReply(notificationId: item.id, replyText: txt)
-                                        replyDrafts[item.id] = ""
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.green)
-                                }
-                            }
-                        }
-                        .padding(10)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 02 File Browser & Drag-and-Drop Transfer Workspace
-struct FilesWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @LocalState private var isDropTargeted: Bool = false
-
-    let quickBookmarks = [
-        ("Downloads", "/sdcard/Download"),
-        ("Camera (DCIM)", "/sdcard/DCIM/Camera"),
-        ("Pictures", "/sdcard/Pictures"),
-        ("Movies", "/sdcard/Movies"),
-        ("Documents", "/sdcard/Documents"),
-        ("Root /sdcard", "/sdcard")
-    ]
-
-    var body: some View {
-        HSplitView {
-            // Left Pane: Android Storage Browser
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Android Storage")
-                        .font(.title3.bold())
-                    Spacer()
-                    Button("Send File from Mac...") {
-                        pickMacFilesToSend()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                    Button {
-                        conn.requestDirectoryListing(path: conn.currentDirectoryPath)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
-
-                // Quick Folder Bookmarks
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(quickBookmarks, id: \.1) { name, path in
-                            Button(name) {
-                                conn.requestDirectoryListing(path: path)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-
-                // Current Path Bar
-                HStack {
-                    Button {
-                        let parent = (conn.currentDirectoryPath as NSString).deletingLastPathComponent
-                        if !parent.isEmpty {
-                            conn.requestDirectoryListing(path: parent)
-                        }
-                    } label: {
-                        Image(systemName: "chevron.left")
-                    }
-                    Text(conn.currentDirectoryPath)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-
-                List(conn.remoteFiles) { file in
-                    HStack {
-                        Image(systemName: file.isDirectory ? "folder.fill" : "doc.fill")
-                            .foregroundStyle(file.isDirectory ? .yellow : .blue)
-                        VStack(alignment: .leading) {
-                            Text(file.name)
-                                .font(.body)
-                            if !file.isDirectory {
-                                Text(ByteCountFormatter.string(fromByteCount: file.sizeBytes, countStyle: .file))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        Spacer()
-                        if file.isDirectory {
-                            Button("Open") {
-                                conn.requestDirectoryListing(path: file.path)
-                            }
-                            .controlSize(.small)
-                        } else {
-                            Button("Download to Finder") {
-                                conn.pullRemoteFileToMac(remotePath: file.path, fileName: file.name, revealInFinder: true)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                }
-            }
-            .frame(minWidth: 420)
-            .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
-                handleDroppedMacFiles(providers: providers)
-                return true
-            }
-            .overlay {
-                if isDropTargeted {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.green, lineWidth: 3)
-                        .background(Color.green.opacity(0.12))
-                        .overlay {
-                            Label("Drop files to send to \(conn.currentDirectoryPath)", systemImage: "arrow.down.doc.fill")
-                                .font(.title2.bold())
-                        }
-                }
-            }
-
-            // Right Pane: Active & Recent Transfers Queue
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Transfers Queue")
-                    .font(.headline)
-                    .padding(.top, 14)
-                    .padding(.horizontal, 14)
-
-                if conn.transfers.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "arrow.left.arrow.right.square")
-                            .font(.system(size: 34))
-                            .foregroundStyle(.secondary)
-                        Text("Drag files from Finder here to send to Android")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List(conn.transfers) { item in
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(item.fileName)
-                                    .font(.subheadline.bold())
-                                    .lineLimit(1)
-                                Spacer()
-                                Text(item.transport)
-                                    .font(.caption2.bold())
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.green.opacity(0.2))
-                                    .clipShape(Capsule())
-                            }
-                            ProgressView(value: item.progress)
-                                .tint(.green)
-                            HStack {
-                                Text(item.direction)
-                                Spacer()
-                                Text(item.isCompleted ? "Completed ✓" : "\(Int(item.progress * 100))%")
-                            }
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-            .frame(minWidth: 260, maxWidth: 320)
-        }
-    }
-
-    private func pickMacFilesToSend() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        if panel.runModal() == .OK {
-            for url in panel.urls {
-                conn.sendFileToAndroid(fileURL: url, destinationFolder: conn.currentDirectoryPath)
-            }
-        }
-    }
-
-    private func handleDroppedMacFiles(providers: [NSItemProvider]) {
-        for provider in providers {
-            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                if let data = item as? Data,
-                   let url = URL(dataRepresentation: data, relativeTo: nil) {
-                    Task { @MainActor in
-                        ConnectionManager.shared.sendFileToAndroid(
-                            fileURL: url,
-                            destinationFolder: ConnectionManager.shared.currentDirectoryPath
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 02 Photos Browser Workspace
-struct PhotosWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Android Photos & Gallery")
-                    .font(.title2.bold())
-                Spacer()
-                Button {
-                    conn.requestPhotosList()
-                } label: {
-                    Label("Refresh Gallery", systemImage: "arrow.clockwise")
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-
-            if conn.remotePhotos.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "photo.stack")
-                        .font(.system(size: 42))
-                        .foregroundStyle(.secondary)
-                    Text("No photos loaded yet")
-                    Button("Load Recent Android Photos") {
-                        conn.requestPhotosList()
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 14)], spacing: 14) {
-                        ForEach(conn.remotePhotos) { photo in
-                            VStack(alignment: .leading, spacing: 6) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color.primary.opacity(0.08))
-                                        .frame(height: 120)
-
-                                    if let b64 = photo.thumbnailBase64,
-                                       let data = Data(base64Encoded: b64),
-                                       let img = NSImage(data: data) {
-                                        Image(nsImage: img)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(height: 120)
-                                            .clipped()
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    } else {
-                                        Image(systemName: photo.isVideo ? "video.fill" : "photo.fill")
-                                            .font(.largeTitle)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                Text(photo.name)
-                                    .font(.caption.bold())
-                                    .lineLimit(1)
-                                Button("Save to Finder") {
-                                    conn.pullRemoteFileToMac(remotePath: photo.path, fileName: photo.name, revealInFinder: true)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                            }
-                            .padding(8)
-                            .background(Color.primary.opacity(0.04))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                        }
-                    }
-                    .padding(20)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 02 Universal Clipboard & URL Handoff Workspace
-struct ClipboardWorkspaceView: View {
-    @ObservedObject var clip = ClipboardSyncManager.shared
-    @LocalState private var handoffURLInput: String = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Universal Clipboard & URL Handoff")
-                        .font(.title2.bold())
-                    Text("Copy on Android, paste on Mac (⌘V) — and vice versa.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Toggle("Clipboard Sync", isOn: $clip.isSyncEnabled)
-                    .toggleStyle(.switch)
-                Toggle("Ignore Password Managers", isOn: $clip.ignoreConcealedPasswords)
-                    .toggleStyle(.checkbox)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-
-            // URL Handoff Bar
-            HStack {
-                TextField("https://example.com — Open URL directly on Android phone...", text: $handoffURLInput)
-                    .textFieldStyle(.roundedBorder)
-                Button("Send URL to Phone ↗") {
-                    guard !handoffURLInput.isEmpty else { return }
-                    clip.handoffURLToAndroid(handoffURLInput)
-                    handoffURLInput = ""
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
-            }
-            .padding(.horizontal, 20)
-
-            List(clip.history) { item in
-                HStack {
-                    Image(systemName: item.isUrl ? "link.circle.fill" : "doc.on.clipboard")
-                        .foregroundStyle(item.isUrl ? .blue : .green)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.content)
-                            .font(.body.monospaced())
-                            .lineLimit(2)
-                        Text("Copied on \(item.source) • \(item.timestamp.formatted(date: .omitted, time: .standard))")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    if item.isUrl, let url = URL(string: item.content) {
-                        Button("Open on Mac") {
-                            NSWorkspace.shared.open(url)
-                        }
-                        Button("Open on Phone") {
-                            clip.handoffURLToAndroid(item.content)
-                        }
-                    }
-                    Button("Copy ⌘C") {
-                        clip.copyItemToMac(item)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-        }
-    }
-}
-
-// MARK: - 03 Screen Mirroring, Virtual Webcam & Microphone Workspace
-struct MirrorAndCameraWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var adb = ADBBridge.shared
-
-    var body: some View {
-        HSplitView {
-            // Left Control Panel
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Desk Controls")
-                    .font(.title2.bold())
-
-                GroupBox("Screen Mirroring") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Toggle("Turn Android Screen Off while Mirroring", isOn: $conn.isScreenOffMirror)
-                        HStack {
-                            Button("Start Wireless/Socket Mirror") {
-                                conn.setStreamMode("MIRROR")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.green)
-
-                            if adb.isScrcpyAvailable && adb.isUSBDeviceConnected {
-                                Button("Launch Pro USB Mirror (scrcpy)") {
-                                    adb.launchNativeScrcpy(screenOff: conn.isScreenOffMirror, stayAwake: true)
-                                }
-                            }
-                        }
-                        HStack(spacing: 8) {
-                            Button("Home") { conn.sendRemoteKeyEvent(3) }
-                            Button("Back") { conn.sendRemoteKeyEvent(4) }
-                            Button("App Switcher") { conn.sendRemoteKeyEvent(187) }
-                            Button("Lock/Wake") { conn.sendRemoteKeyEvent(26) }
-                        }
-                        .controlSize(.small)
-                    }
-                    .padding(8)
-                }
-
-                GroupBox("Android Camera & Microphone Stream") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Use your Android phone's high-res camera and microphone right from your desk.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        HStack {
-                            Button("Rear Camera") {
-                                conn.setStreamMode("WEBCAM_BACK")
-                            }
-                            Button("Front Camera") {
-                                conn.setStreamMode("WEBCAM_FRONT")
-                            }
-                            Button("Stream Mic Audio") {
-                                conn.setStreamMode("MIC_STREAM")
-                            }
-                        }
-                        Button("Stop All Streams") {
-                            conn.setStreamMode("NONE")
-                        }
-                        .tint(.red)
-                    }
-                    .padding(8)
-                }
-
-                Spacer()
-            }
-            .padding(20)
-            .frame(minWidth: 320, maxWidth: 360)
-
-            // Right Live Video Canvas (Interactive click-to-tap on phone!)
-            VStack {
-                if let frame = conn.liveVideoFrame {
-                    GeometryReader { geo in
-                        Image(nsImage: frame)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .gesture(
-                                SpatialTapGesture()
-                                    .onEnded { event in
-                                        let normX = max(0, min(1, event.location.x / max(1, geo.size.width)))
-                                        let normY = max(0, min(1, event.location.y / max(1, geo.size.height)))
-                                        conn.sendRemoteTap(normalizedX: normX, normalizedY: normY)
-                                    }
-                            )
-                    }
-                    .padding(12)
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "iphone.gen3.radiowaves.left.and.right")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-                        Text("Live Screen Mirror / Camera Feed")
-                            .font(.headline)
-                        Text("Click 'Start Wireless/Socket Mirror' or 'Rear Camera' on the left to stream live video.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .background(Color.black.opacity(0.85))
-        }
-    }
-}
-
-// MARK: - Floating Incoming Call HUD Overlay
-struct IncomingCallHUDView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Image(systemName: "phone.down.waves.left.and.right")
-                    .font(.title)
-                    .foregroundStyle(.green)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(conn.callState.state == "RINGING" ? "Incoming Android Call" : "Active Cellular Call (Audio on Phone)")
-                        .font(.caption.bold())
-                        .foregroundStyle(.green)
-                    Text(conn.callState.contactName)
-                        .font(.headline)
-                    Text(conn.callState.phoneNumber)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            HStack(spacing: 10) {
-                if conn.callState.state == "RINGING" {
-                    Button("Answer") {
-                        conn.sendCallAction("ANSWER")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-
-                    Button("Decline") {
-                        conn.sendCallAction("DECLINE")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-
-                    Button("SMS: In a meeting") {
-                        conn.sendCallAction("DECLINE_WITH_SMS", smsReply: "I'm at my desk right now — I'll call you back shortly.")
-                    }
-                    .buttonStyle(.bordered)
-                } else {
-                    Button(conn.callState.isMuted ? "Unmute" : "Mute") {
-                        conn.sendCallAction("MUTE")
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("End Call") {
-                        conn.sendCallAction("END")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                }
-            }
-        }
-        .padding(16)
-        .background(.ultraThickMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(radius: 16)
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LinkToMacApp.swift
-```swift
-import SwiftUI
-
-@main
-struct LinkToMacApp: App {
-    @ObservedObject private var conn = ConnectionManager.shared
-    @ObservedObject private var clip = ClipboardSyncManager.shared
-
-    var body: some Scene {
-        WindowGroup("LinkToMac") {
-            MainDashboardView()
-                .frame(minWidth: 980, minHeight: 640)
-                .preferredColorScheme(.dark)
-        }
-
-        // Native macOS Menu Bar Companion Popover
-        MenuBarExtra {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Circle()
-                        .fill(conn.isConnected ? Color.green : Color.orange)
-                        .frame(width: 8, height: 8)
-                    Text(conn.isConnected ? "\(conn.connectedDeviceName) (\(conn.connectionTransport))" : "LinkToMac: Waiting for Phone")
-                        .font(.headline)
-                }
-
-                if conn.isConnected {
-                    Text("Battery: \(conn.batteryLevel)% • Notifications: \(conn.notifications.count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Divider()
-
-                Toggle("Universal Clipboard Sync", isOn: $clip.isSyncEnabled)
-
-                Button("Play / Pause Android Media") {
-                    conn.sendMediaAction("PLAY_PAUSE")
-                }
-                Button("Ring My Android Phone") {
-                    conn.sendMediaAction("RING_PHONE")
-                }
-
-                Divider()
-                Button("Quit LinkToMac") {
-                    NSApplication.shared.terminate(nil)
-                }
-            }
-            .padding(12)
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: conn.isConnected ? "iphone.radiowaves.left.and.right" : "iphone.slash")
-                if conn.isConnected {
-                    Text("\(conn.batteryLevel)%")
-                }
-            }
-        }
-    }
-}
-
-
-
-
-
-
-
-```
-
----
-````
-
-<a id="linktomac-master-architecture-parallel-agent-plan-md"></a>
-### `linktomac_master_architecture_parallel_agent_plan.md`
+<a id="docs-ARCHITECTURE-PLAN-md"></a>
+### `docs/ARCHITECTURE_PLAN.md`
 
 ````markdown
 # LinkToMac — Zero-Ambiguity Agent Playbook & Stitching Guide (`allcode/`)
@@ -32692,250 +22318,6 @@ What `build_mac_app.sh` does:
    - **05 Call Controls**: Call your Android phone $\to$ a floating **Incoming Call HUD** pops up on your Mac with **Answer**, **Decline**, **Decline with SMS**, and **End Call** while cellular audio stays on your phone.
    - **06 Webcam, Mic & Media Remote**: Click **Camera & Media** on Mac $\to$ stream your Android Rear/Front camera and microphone live to the Mac, or control Spotify/YouTube Music playback and ring your lost phone.
 ````
-
-<a id="skills-lock-json"></a>
-### `skills-lock.json`
-
-```json
-{
-  "version": 1,
-  "skills": {
-    "ponytail-review": {
-      "source": "DietrichGebert/ponytail",
-      "sourceType": "github",
-      "skillPath": "skills/ponytail-review/SKILL.md",
-      "computedHash": "4646594fcd75455533f7ff1425f4f1c5ba0fa65f88241bf262b1c4fc275f049a"
-    }
-  }
-}
-```
-
-<a id="stitch-allcode-py"></a>
-### `stitch_allcode.py`
-
-````python
-#!/usr/bin/env python3
-"""
-stitch_allcode.py
-Automatically extracts all source files from ALLCODE_MACOS_COMPLETE.md and
-ALLCODE_ANDROID_COMPLETE.md into the ./allcode/ directory.
-"""
-import os
-import re
-import stat
-
-MARKDOWN_FILES = [
-    "ALLCODE_MACOS_COMPLETE.md",
-    "ALLCODE_ANDROID_COMPLETE.md",
-]
-
-# Fallbacks if symlinks are not used
-ALT_NAMES = {
-    "ALLCODE_MACOS_COMPLETE.md": "linktomac_complete_macos_source_code.md",
-    "ALLCODE_ANDROID_COMPLETE.md": "linktomac_complete_android_source_code.md",
-}
-
-FILE_PATTERN = re.compile(
-    r"### FILE:\s*([^\n\r]+)\r?\n```[a-zA-Z0-9_-]*\r?\n(.*?)\r?\n```",
-    re.DOTALL
-)
-
-def extract_from_markdown(md_path: str):
-    target = md_path
-    if not os.path.exists(target):
-        alt = ALT_NAMES.get(md_path)
-        if alt and os.path.exists(alt):
-            target = alt
-        else:
-            print(f"[WARN] {md_path} not found in current directory.")
-            return 0
-
-    with open(target, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    matches = FILE_PATTERN.findall(content)
-    count = 0
-    for rel_path, code in matches:
-        rel_path = rel_path.strip()
-        full_path = os.path.join(".", rel_path)
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        with open(full_path, "w", encoding="utf-8") as out:
-            out.write(code + "\n")
-        if full_path.endswith(".sh"):
-            st = os.stat(full_path)
-            os.chmod(full_path, st.st_mode | stat.S_IEXEC)
-        print(f"[OK] Created: {full_path}")
-        count += 1
-    return count
-
-def main():
-    total = 0
-    for md in MARKDOWN_FILES:
-        total += extract_from_markdown(md)
-    print(f"\nDone! Extracted {total} files into ./allcode/")
-
-    # Ensure Android project has wrapper and local.properties if available
-    android_dir = os.path.join(".", "allcode", "LinkToMac-Android")
-    if os.path.isdir(android_dir):
-        wrapper_sh = os.path.join(android_dir, "gradlew")
-        if not os.path.exists(wrapper_sh):
-            src_gw = os.path.join("android-app", "gradlew")
-            src_gr = os.path.join("android-app", "gradle")
-            if os.path.exists(src_gw):
-                import shutil
-                shutil.copy2(src_gw, wrapper_sh)
-                os.chmod(wrapper_sh, 0o755)
-            if os.path.exists(src_gr):
-                import shutil
-                shutil.copytree(src_gr, os.path.join(android_dir, "gradle"), dirs_exist_ok=True)
-        local_prop = os.path.join(android_dir, "local.properties")
-        if not os.path.exists(local_prop):
-            sdk_cand = os.path.expanduser("~/Library/Android/sdk")
-            if os.path.isdir(sdk_cand):
-                with open(local_prop, "w") as f:
-                    f.write(f"sdk.dir={sdk_cand}\n")
-
-    print("Next steps:")
-    print("  1. Build & Run macOS App: cd allcode/LinkToMac-macOS && ./build_mac_app.sh")
-    print("  2. Build Android App:     cd allcode/LinkToMac-Android && ./gradlew assembleDebug")
-
-if __name__ == "__main__":
-    main()
-````
-
-<a id="update-allcode-bundles-py"></a>
-### `update_allcode_bundles.py`
-
-````python
-#!/usr/bin/env python3
-"""
-update_allcode_bundles.py
-Syncs all source code files from allcode/ directly into
-linktomac_complete_android_source_code.md (ALLCODE_ANDROID_COMPLETE.md) and
-linktomac_complete_macos_source_code.md (ALLCODE_MACOS_COMPLETE.md).
-"""
-
-import os
-from pathlib import Path
-
-EXT_TO_LANG = {
-    ".kt": "kotlin",
-    ".kts": "kotlin",
-    ".swift": "swift",
-    ".xml": "xml",
-    ".plist": "xml",
-    ".properties": "properties",
-    ".sh": "bash",
-}
-
-ANDROID_FILES = [
-    "allcode/LinkToMac-Android/settings.gradle.kts",
-    "allcode/LinkToMac-Android/gradle.properties",
-    "allcode/LinkToMac-Android/gradle/wrapper/gradle-wrapper.properties",
-    "allcode/LinkToMac-Android/build.gradle.kts",
-    "allcode/LinkToMac-Android/app/build.gradle.kts",
-    "allcode/LinkToMac-Android/app/src/main/AndroidManifest.xml",
-    "allcode/LinkToMac-Android/app/src/main/res/values/strings.xml",
-    "allcode/LinkToMac-Android/app/src/main/res/xml/accessibility_service_config.xml",
-    "allcode/LinkToMac-Android/app/src/main/res/xml/link_accessibility_config.xml",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ProtocolModels.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTouchAccessibilityService.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkConnectionService.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkNotificationService.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/SmsContactsCallBridge.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/FilePhotosBridge.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ScreenCameraStreamer.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/MainActivity.kt",
-]
-
-MACOS_FILES = [
-    "allcode/LinkToMac-macOS/Package.swift",
-    "allcode/LinkToMac-macOS/Info.plist",
-    "allcode/LinkToMac-macOS/build_mac_app.sh",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/ConnectionManager.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/LinkToMacApp.swift",
-]
-
-def generate_markdown(title: str, file_list: list[str]) -> str:
-    lines = [
-        f"# {title}",
-        "",
-        f"Every file below belongs inside the codebase. Run `python3 stitch_allcode.py` from `LINKTOMAC_MASTER_PLAN.md` to extract them automatically.",
-        "",
-        "---",
-        ""
-    ]
-    for rel_path in file_list:
-        p = Path(rel_path)
-        if not p.exists():
-            print(f"[WARN] File not found: {rel_path}")
-            continue
-        ext = p.suffix.lower()
-        lang = EXT_TO_LANG.get(ext, "text")
-        content = p.read_text(encoding="utf-8")
-        lines.append(f"### FILE: {rel_path}")
-        lines.append(f"```{lang}")
-        lines.append(content)
-        lines.append("```")
-        lines.append("")
-        lines.append("---")
-        lines.append("")
-    return "\n".join(lines)
-
-def main():
-    android_md = generate_markdown(
-        "LinkToMac — Complete Android Source Code (`allcode/LinkToMac-Android`)",
-        ANDROID_FILES
-    )
-    Path("linktomac_complete_android_source_code.md").write_text(android_md, encoding="utf-8")
-    print(f"[OK] Updated linktomac_complete_android_source_code.md ({len(ANDROID_FILES)} files)")
-
-    macos_md = generate_markdown(
-        "LinkToMac — Complete macOS Source Code (`allcode/LinkToMac-macOS`)",
-        MACOS_FILES
-    )
-    Path("linktomac_complete_macos_source_code.md").write_text(macos_md, encoding="utf-8")
-    print(f"[OK] Updated linktomac_complete_macos_source_code.md ({len(MACOS_FILES)} files)")
-
-if __name__ == "__main__":
-    main()
-````
-
-<a id="vercel-json"></a>
-### `vercel.json`
-
-```json
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "outputDirectory": "public",
-  "buildCommand": null,
-  "cleanUrls": true,
-  "headers": [
-    {
-      "source": "/(.*)\\.apk",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/vnd.android.package-archive"
-        },
-        {
-          "key": "Content-Disposition",
-          "value": "attachment; filename=\"LinkToMac.apk\""
-        }
-      ]
-    }
-  ]
-}
-```
-
-## Scripts, Tests & Documentation
 
 <a id="docs-IMPROVEMENT-PLAN-md"></a>
 ### `docs/IMPROVEMENT_PLAN.md`
@@ -34041,43 +23423,328 @@ TEST(DecoderTest, InitAndDecode) {
 ```markdown
 # Original User Request
 
-## 2026-10-10T09:29:40Z
+## 2026-10-14T03:12:07Z
 
-This is a single self-contained fix; keep it small and focused. Complete the LinktoMac consolidation and connectivity overhaul (R3 and R4) on top of the completed R1 (Streaming Core) and R2 (Input Controls) implementations in the workspace.
+Execute a comprehensive end-to-end stabilization, security hardening, and performance remediation of the LinktoMac application across all three architectural layers: macOS Native Client (C++/Objective-C++/Metal), macOS Orchestrator & Web UI (Python/Pywebview/JavaScript), and Android Companion App (Kotlin).
+
+Working directory: /Users/sanagariudbhav/Udbhav/Projects/LinktoMac
+Integrity mode: development
+
+## Requirements
+
+### R1. Connection Stability & Ghost Connection Elimination
+- **Eliminate TCP Port Probe Race Condition (`orchestrator/linktomac/backend.py` & `MirrorService.kt`)**: Remove the raw TCP `connect_ex` probe on port 27189 that consumes the single-client socket in `MirrorService.runServerMode()`. Direct local subnet/mDNS connections must launch `mirror_client` directly without burning the server socket, eliminating initial handshake contention and dropped keyframes.
+- **Fix Remote Relay Session Recovery (`orchestrator/ui/script.js`)**: Ensure `attemptSessionRecovery()` updates Firestore (`users/{uid}/sessions/current`) with the newly negotiated Pinggy tunnel host and port when `res.mode === "remote"`, preventing Android from infinitely reconnecting to stale ports.
+- **Eliminate Premature Firestore Writes (`orchestrator/ui/script.js`)**: Remove the eager write of `{ active: true, mode: "local" }` before `smart_connect` completes network probing, preventing conflicting state transitions and socket churn on Android.
+- **Enforce Handshake Integrity (`native-client/src/mirror_client.cpp`)**: Require the standard 20-byte v2 handshake header (`HANDSHAKE_SIZE = 20`) and remove the corrupted 16-byte fallback partial-read path.
+
+### R2. Video Pipeline Performance & Adaptive Bitrate (ABR)
+- **Dual-Mode Video Capture (`android-app/.../ScreenEncoder.kt` & `MirrorService.kt`)**: Support hardware `MediaProjection` + `VirtualDisplay` as the primary 60 FPS capture pipeline, while maintaining the accessibility screenshot GPU `HardwareBuffer` rendering as an on-demand fallback when zero-permission mode is selected.
+- **Wire Up ABR Feedback (`native-client/src/mirror_client.cpp` & `ScreenEncoder.kt`)**: Emit `EVENT_TYPE_NETWORK_FEEDBACK` (0x07) periodically from `MirrorClient::decode_thread_func()` based on dropped frame stats and jitter, allowing Android's `ScreenEncoder.onNetworkFeedback()` to dynamically throttle bitrates between 2 Mbps and 8+ Mbps during network congestion.
+- **Auto-Resize Window on Device Rotation (`native-client/src/renderer.mm`)**: Dynamically invoke `SDL_SetWindowSize` inside `Renderer::reallocate_texture()` when the stream aspect ratio flips between portrait and landscape.
+
+### R3. Input Control & Gesture Smoothness
+- **Continuous Drag & Swipe Watchdog (`LinktoMacAccessibilityService.kt`)**: Marshal touch event mutation to the main thread looper, buffer `ACTION_MOVE` coordinates, and chain `continueStroke` executions on `GestureResultCallback.onCompleted()` to prevent gesture cancellation mid-drag.
+- **Trackpad Scroll Delta Coalescing (`native-client/src/input_handler.cpp` & `LinktoMacAccessibilityService.kt`)**: Coalesce high-frequency macOS trackpad `SDL_MOUSEWHEEL` events in `InputHandler` (throttled to 80-100ms intervals) and avoid cancelling in-flight scroll gestures on Android.
+
+### R4. Security Hardening & Multi-Tenant Cloud Isolation
+- **Eradicate Global Account Collisions (`orchestrator/ui/script.js` & `MainActivity.kt`)**: Completely remove reads and writes to global `accounts/latest`. Android authentication must strictly route through loopback web auth (`launchLoopbackWebSignIn()`) or user-scoped documents.
+- **Enforce Client Authorization on Port 27189 (`android-app/.../MirrorService.kt`)**: Remove unconditional `ApprovedClientsStore.approveClient()` auto-approvals on incoming raw sockets. Require valid authorization handshake or paired tokens before streaming.
+
+## Acceptance Criteria
+
+### Automated Build & Test Integrity
+- [ ] `python3 -m unittest discover -s orchestrator -p "test_*.py"` passes 100% of test cases.
+- [ ] `make client` compiles `mirror_client` with zero compilation errors or warnings.
+- [ ] `./gradlew assembleDebug` in `android-app/` builds cleanly.
+
+### Functional & Stability Verification
+- [ ] Direct local connection establishes on the first attempt without ghost probe socket teardown, dropped initial keyframes, or UI flicker.
+- [ ] Remote relay session drops trigger `attemptSessionRecovery()`, which publishes the updated Pinggy host/port to Firestore and successfully reconnects the Android client.
+- [ ] Device rotation immediately updates the native macOS window size to match the new aspect ratio.
+- [ ] Continuous mouse/trackpad drags and scrolling operate smoothly without dropped gestures or stutter.
+- [ ] Multiple users signing in never collide on a shared `accounts/latest` Firestore document.
+
+## 2026-10-14T13:28:36Z
+
+Resolve all remaining real-world runtime bugs, dead/stubbed code, and state-machine traps in LinktoMac across the macOS Native Client (C++/Metal), macOS Orchestrator & Web UI (Python/JS), and Android Companion App (Kotlin) to achieve true 100% production readiness across all user flows.
+
+Working directory: /Users/sanagariudbhav/Udbhav/Projects/LinktoMac
+Integrity mode: development
+
+## Requirements
+
+### R1. Android Capture Flow & Frictionless LAN Auto-Authorization
+- **Eliminate 10 FPS Accessibility Trap (`MainActivity.kt` & `ScreenEncoder.kt`)**: Prevent `MainActivity` from falling back to `accessibilityCaptureLoop()` without user awareness. When starting a stream or receiving remote session triggers, prompt for `MediaProjection` permissions via `requestStreamingPermissionsAndStart()`. If running without projection, ensure the UI exposes an immediate "Upgrade to 60 FPS Capture" action rather than hiding stream controls. Never enter a tight sleep spin when the accessibility service is disabled.
+- **Frictionless Same-Account LAN Auto-Authorization (`MirrorService.kt`, `MainActivity.kt`, `backend.py`, `script.js`)**: Eliminate silent connection drops on first-time local Wi-Fi pairing. When the Mac initiates a connection, write the Mac's local LAN IP to Firestore (`users/{uid}/sessions/current`). `MainActivity`'s session listener will pre-authorize the Mac's IP in `ApprovedClientsStore` before the incoming socket arrives, enabling `MirrorService.isClientAuthorized()` to approve paired devices automatically without blocking or timing out on a foreground `AlertDialog`.
+
+### R2. Mid-Stream Screen Rotation & VideoToolbox Hardware Frame Pool Resilience
+- **Dynamic Resolution & Hardware Frame Pool Reallocation (`native-client/src/decoder.cpp`, `protocol.h`, `MirrorService.kt`)**: Ensure mid-stream orientation flips (portrait <-> landscape) never freeze or stall the VideoToolbox hardware decoding pipeline. In `Decoder::decode()`, detect dimension flips or format change signals before frame submission to prevent `avcodec_receive_frame()` from stalling on a fixed-dimension `hw_frames_ctx`. Reallocate the hardware frame pool cleanly with updated dimensions, maintaining continuous 60 FPS rendering in Metal/SDL2.
+
+### R3. Hardware HEVC Selection & Wire Protocol Alignment
+- **Enable Hardware HEVC (`android-app/.../ScreenEncoder.kt`)**: Update `selectSupportedMimeType()` to query `MediaCodecList` for hardware-accelerated `MIMETYPE_VIDEO_HEVC` encoders before defaulting to AVC. Correctly set `FLAG_CODEC_HEVC` in the 20-byte handshake when HEVC is selected.
+- **Strict Network Feedback Wire Protocol Alignment (`StreamProtocol.kt`)**: Ensure `StreamProtocol.createNetworkFeedbackPacket()` serializes exactly 9 bytes (`0x07` opcode + float32 `loss_rate` + float32 `rtt_ms`), matching the wire format in `MirrorService.readControlEvents()` and `network.cpp`. Eradicate the obsolete 8-byte `timestampUs` field.
+
+### R4. Codebase Sanitization, Menu Bar Modernization & Dead Stub Removal
+- **Prune Cosmetic / Dead QUIC & 0-RTT Stubs (`native-client/src/network.h`, `network.cpp`)**: Remove non-functional QUIC packet header structs and incomplete 0-RTT file reading that transmit nothing over the wire. Keep the networking layer clean, transparent, and focused on robust TCP transport.
+- **Modernize Menu Bar Application (`orchestrator/menubar_app.py`, `linktomac/menubar_app.py`)**: Fix broken method invocations (`pair_device`, `_find_adb_path`), replace missing third-party dependencies (`rumps`, `pyperclip`) with standard macOS utilities (`pbcopy`/`osascript`) or consolidate cleanly into the main orchestrator CLI/app.
+- **Permanently Remove Obsolete Java Modules**: Permanently delete legacy directories `android-server/` and `android-client/` that use outdated 8-byte protocols and cause workspace clutter.
+
+## Acceptance Criteria
+
+### Automated Build & Test Integrity
+- [ ] `python3 -m unittest discover -s orchestrator -p "test_*.py"` passes 100% of test cases.
+- [ ] `make client` and `cmake --build native-client/build --clean-first` compile cleanly with 0 errors and 0 warnings.
+- [ ] `./gradlew clean testDebugUnitTest assembleDebug` in `android-app/` builds cleanly and passes 100% of unit tests.
+
+### Functional & Stability Verification
+- [ ] First-time local Wi-Fi connection succeeds seamlessly when `MainActivity` is in the background without timeout or dropped handshake.
+- [ ] Rotating the Android device mid-stream flips aspect ratio smoothly without VideoToolbox hardware frame pool stalls or Metal rendering corruption.
+- [ ] Devices supporting hardware HEVC stream via H.265 with `FLAG_CODEC_HEVC` properly negotiated in the 20-byte handshake.
+- [ ] `createNetworkFeedbackPacket()` wire serialization is exactly 9 bytes and passes automated fuzzing/validation tests.
+- [ ] Obsolete Java subprojects `android-server/` and `android-client/` are completely removed, and `all_code.md` is refreshed with the clean codebase.
+
+
+## 2026-10-16T09:11:10Z
+
+Comprehensive stabilization, bug resolution, and end-to-end reliability overhaul across the LinktoMac macOS orchestrator, native C++ video/input client, and Android companion to achieve 100% stable mirroring over Wi-Fi, USB ADB, and remote tunnels.
 
 Working directory: /Users/sanagariudbhav/Udbhav/Projects/LinktoMac
 Integrity mode: demo
 
 ## Requirements
 
-### R1. Verify & Preserve Completed Streaming & Input Core (M1 & M2)
-- Preserve the existing thread-safe socket write locks, 4-tier `BoundedFrameQueue` (`NalParser.kt`), dynamic `DisplayMetricsHelper`, and `0x05` IDR keyframe sync in `MirrorService.kt` and `native-client`.
-- Preserve the continuous multi-stroke gesture dragging (`willContinue = true` and `continueStroke`), `EVENT_TYPE_TEXT` (`0x06`) UTF-8 text injection, navigation keycode mapping, and macOS `Cmd` shortcuts (`Cmd+H`, `Cmd+B`, `Cmd+Tab`/`Cmd+S`, `Cmd+P`, `Cmd+V`).
+### R1. macOS Orchestrator & UI Resiliency
+Eliminate all runtime crashes, thread deadlocks, and resource leaks across the macOS Python orchestrator, Web UI, and menu bar application. Pairing, authentication, discovery listener restarts, and process monitors must handle failures gracefully without freezing the UI or leaving orphaned background threads.
 
-### R2. Single-App Architecture & Frictionless Connectivity (M3 — Looks & Flow First)
-- Standardize on `android-app` as the sole Android codebase; deprecate/remove `server.jar` dependencies from `backend.py`, `cli.py`, and build scripts.
-- Implement native Android `NsdManager` broadcast (`_linktomac._tcp`) on port 27189 in `MainActivity.kt` / `MirrorService.kt` for instant local Wi-Fi discovery on Mac.
-- Implement background `UsbDeviceWatcher` in `orchestrator/linktomac/backend.py` polling `adb devices -l` for 1-click USB mirroring, and update `launch_mirror(ip)` to connect `mirror_client` directly to `<ip>:27189` (or `127.0.0.1:27189` with `adb forward tcp:27189 tcp:27189` for USB).
-- Remove the mandatory Google sign-in gate: open both macOS (`orchestrator/ui/index.html` & `script.js`) and Android (`activity_main.xml` & `MainActivity.kt`) directly to the zero-config Connection Hub.
+### R2. Native C++ Streaming Pipeline & Transport Integrity
+Ensure the native mirroring client (`native-client`) correctly processes video frames, multiplexed stream packets, and touch/keyboard input without memory safety violations, socket file descriptor races, or color space inversions (e.g. UV channel swaps). The client must build reliably, cleanly accept arguments, and shut down deterministically.
 
-### R3. Security, Pairing & Package Standardization (M4 — Security Last)
-- Standardize `applicationId` to `com.linktomac.app` across `android-app/app/build.gradle`, `google-services.json`, and `orchestrator/linktomac/adb.py`.
-- Gate port 27189 on Android with client authorization ("Allow this Mac?" prompt and `ApprovedClientsStore` for Wi-Fi clients, auto-allowing `127.0.0.1` USB connections).
-- Secure local HTTP `/callback` in `orchestrator/ui_app.py` with a CSRF state token and disable raw unauthenticated Pinggy tunnel by default.
+### R3. Android Companion & Protocol Concurrency
+Ensure the Android companion and server components reliably capture, encode, and transmit the screen buffer while handling device rotation, network interface selection, and input injection without unhandled exceptions or connection dropouts.
+
+### R4. Comprehensive Automated Test Validation
+All existing and newly created adversarial and regression test suites across Python orchestrator, native client, and Android must execute and pass cleanly under non-interactive automated test runners.
 
 ## Acceptance Criteria
 
-### Build & Test Verification
-- [ ] Android app compiles and all unit tests pass: `cd android-app && ./gradlew :app:assembleDebug testDebugUnitTest`.
-- [ ] Native C++ client compiles cleanly: `cmake -S native-client -B native-client/build && cmake --build native-client/build`.
-- [ ] Python orchestrator test suites pass: `pytest orchestrator/test_backend.py orchestrator/test_ui_app.py orchestrator/test_adversarial_mac.py`.
+### Stability & Error Handling
+- [ ] No unhandled exceptions or thread lockups when starting, switching, or cancelling pairing and remote sessions.
+- [ ] The menu bar app, web dashboard, and CLI mirror processes shut down cleanly with 0 zombie subprocesses and 0 leaked socket descriptors.
+- [ ] TLS certificate generation and pairing handshakes complete successfully without `TypeError` or missing backend method errors.
 
-### Functional Completeness
-- [ ] `MainActivity.kt` registers `_linktomac._tcp` via `NsdManager` on port 27189.
-- [ ] `backend.py` implements `UsbDeviceWatcher` and routes `launch_mirror` directly to port 27189 without `server.jar`.
-- [ ] `orchestrator/ui/index.html` opens directly to `#dashboard-screen` (Connection Hub) without blocking on `#login-screen`.
-- [ ] `applicationId` is standardized to `com.linktomac.app`.
+### Media & Input Streaming Correctness
+- [ ] The C++ native client compiles with zero build errors and handles stream frames and packet demultiplexing without data corruption or memory leaks.
+- [ ] Screen projection renders accurately with correct color channel mapping (no red/blue inversions) and responds to touch and keyboard input across display orientations.
+- [ ] Reconnecting or restarting discovery after a network interruption recovers automatically without requiring an application restart.
+
+### Verification Suite
+- [ ] All unit and adversarial tests under `orchestrator/` pass: `python3 -m unittest discover -s orchestrator`.
+- [ ] All adversarial stress tests under `tests/` pass without timeouts or assertion failures.
+- [ ] Native C++ test harnesses in `tests/adversarial_native/` compile and pass.
+
+## 2026-10-19T14:44:13Z
+
+Fix critical platform bugs, broken packaging, Android 12–15 display capture incompatibilities, and architectural contradictions in LinktoMac to make it a reliable, production-ready, open-source wireless and USB screen mirroring solution for Android and macOS.
+
+Working directory: /Users/sanagariudbhav/Udbhav/Projects/LinktoMac
+Integrity mode: development
+
+## Requirements
+
+### R1. USB ADB Mode & Android 12–15 Display Capture Modernization
+Modernize the ADB headless server (`android-server`) to support Android 12, 13, 14, and 15 without referencing removed reflection APIs (`SurfaceControl.openTransaction`). Ensure the build system automatically resolves the host Android SDK platform, compiles with 0 errors, and runs Dalvik/D8 dexing so that `server.jar` contains a valid `classes.dex` executable via `app_process`.
+
+### R2. Local-First Zero-Config Connection Architecture
+Refactor the connection and UI flow so that local-first mirroring (Wi-Fi mDNS auto-discovery and direct USB cable) is the primary, zero-config default experience. The desktop and mobile apps must launch directly into the local Connection Hub without blocking on Google Sign-In, cloud Firestore, or external internet access. Retain Google/Firebase authentication solely as an optional secondary tab for remote internet relay.
+
+### R3. macOS Application Packaging & Dynamic Linker Hardening
+Fix `build_mac_app.sh` and `backend.py` binary search paths so that `mirror_client` is packaged and located reliably inside the macOS `.app` bundle, preventing `FileNotFoundError` upon launch. Ensure SDL2 dependency resolution is dynamic (supporting both Apple Silicon `/opt/homebrew` and Intel `/usr/local`), and produce a clean `.dmg` installer.
+
+### R4. Video Pipeline & Codec Negotiation Integrity
+Enable genuine dynamic codec negotiation in the Android video encoder (`ScreenEncoder.kt` and `android-server`), selecting hardware HEVC (H.265) when supported by the device and falling back cleanly to AVC (H.264). Eliminate hardcoded single-codec restrictions and remove low-framerate fallback capture loops.
+
+### R5. Codebase Cleanup
+Completely remove the obsolete, legacy `android-client/` directory to eliminate contributor confusion and reduce repo bloat.
+
+### R6. Automated Verification & Regression Guardrails
+Ensure all subprojects (`android-server`, `android-app`, `native-client`, `orchestrator`) compile and pass their automated test suites cleanly, with zero regressions.
+
+---
+
+## Acceptance Criteria
+
+### 1. Android Server (`android-server`)
+- [ ] `./gradlew build` (or `./gradlew jar`) succeeds with 0 compiler errors on modern Android SDK platforms (API 34/35).
+- [ ] Output `server.jar` contains valid Dalvik `classes.dex` verified via `jar tf`.
+- [ ] `ScreenCapture.java` does not call `SurfaceControl.openTransaction()` or `SurfaceControl.closeTransaction()`.
+
+### 2. macOS Packaging (`build_mac_app.sh`)
+- [ ] `./build_mac_app.sh` completes cleanly and produces `dist/LinktoMac.app` and `dist/LinktoMac.dmg`.
+- [ ] `mirror_client` is bundled in the `.app` bundle and matches the path resolved by `LinktoMacBackend`.
+- [ ] Script dynamically resolves `sdl2` without hardcoded `/opt/homebrew` paths and without referencing `sdl3`.
+
+### 3. Connection & UX Architecture
+- [ ] Mac Desktop app (`ui_app.py`) opens directly into the Connection Hub without requiring Google Sign-In or external internet connectivity.
+- [ ] Discovered devices list populates via local mDNS/Zeroconf when phone is on the same Wi-Fi network.
+- [ ] USB mode triggers ADB port forwarding and connects reliably.
+- [ ] Obsolete directory `android-client/` is completely removed from the filesystem.
+
+### 4. Video Pipeline & Codecs
+- [ ] `ScreenEncoder.kt` dynamically inspects encoder capabilities and selects HEVC when available, with AVC fallback.
+- [ ] Native `mirror_client` continues to decode both H.264 and HEVC streams via VideoToolbox/FFmpeg without assertion failures.
+
+### 5. Test Suite & Verification Integrity
+- [ ] All unit tests in `orchestrator` pass: `python3 -m unittest discover -s orchestrator`.
+- [ ] Android companion app builds cleanly: `cd android-app && ./gradlew :app:assembleDebug`.
+- [ ] Native client builds cleanly: `cd native-client && cmake -B build && cmake --build build`.
 ```
+
+<a id="docs-OVERNIGHT-BUILD-REPORT-md"></a>
+### `docs/OVERNIGHT_BUILD_REPORT.md`
+
+````markdown
+# LinkToMac — Overnight Build & Verification Report
+
+**Generated:** 2026-10-20  
+**Status:** ✅ ALL CHECKS PASSED (Zero Errors across macOS and Android)
+
+---
+
+## 1. Executive Summary
+
+This report documents the autonomous overnight audit, unpack, fix, and verification cycle for **LinkToMac** (`v1.61`). Both the macOS native application (`allcode/LinkToMac-macOS`) and the Android companion application (`allcode/LinkToMac-Android`) were unpacked via `stitch_allcode.py`, audited for full feature parity against `LINKTOMAC_MASTER_PLAN.md`, repaired for platform-specific compiler and build toolchain constraints, and compiled with **0 errors**.
+
+### Key Deliverables Produced & Verified
+| Artifact | Path | Status | Verification Detail |
+| :--- | :--- | :--- | :--- |
+| **Extractor Script** | `stitch_allcode.py` | ✅ Verified | Extracts 24 files cleanly into `./allcode/` from Markdown bundles |
+| **macOS Native App** | `allcode/LinkToMac-macOS/build/LinkToMac.app` | ✅ Built & Signed | `build_mac_app.sh` completed with Exit Code 0 |
+| **macOS Binary** | `allcode/LinkToMac-macOS/build/LinkToMac.app/Contents/MacOS/LinkToMac` | ✅ Executable | 1.8 MB native Mach-O arm64 binary, ad-hoc codesigned |
+| **Android Debug APK** | `allcode/LinkToMac-Android/app/build/outputs/apk/debug/app-debug.apk` | ✅ Assembled | 21.1 MB APK compiled with Jetpack Compose & Material 3 |
+| **Source Manifests** | `ALLCODE_MACOS_COMPLETE.md`, `ALLCODE_ANDROID_COMPLETE.md` | ✅ Synchronized | Updated with all compiler fixes for 100% idempotent re-extraction |
+
+---
+
+## 2. Issues Diagnosed & Fixed
+
+### 2.1 macOS Toolchain: `@State` SwiftUIMacros Missing on CLI
+* **Root Cause**: On macOS Command Line Tools (without full Xcode.app installed), Swift 6.x defaults to treating `@State` as an external macro (`#externalMacro(module: "SwiftUIMacros", type: "StateMacro")`). Because `libSwiftUIMacros.dylib` is not distributed with standalone Command Line Tools, any `@State` property failed with `plugin for module 'SwiftUIMacros' not found` and broke projected bindings (`$binding`).
+* **Architectural Fix**: Created `Sources/LinkToMac/LocalState.swift`, a lightweight native `DynamicProperty` property wrapper that backs state with an `ObservableObject` container. It provides identical semantics and projection (`Binding<Value>`) while bypassing macro resolution entirely.
+* **Closure Mutability**: Replaced struct mutating closures in `FeatureViews.swift` (`MessagesWorkspaceView`, `NotificationsWorkspaceView`, `FilesWorkspaceView`, `ClipboardWorkspaceView`) with `@LocalState` non-mutating setters.
+
+### 2.2 macOS Swift 6 Concurrency & Type Inference
+* **`MainDashboardView.swift`**: Disambiguated `List(DashboardSection.allCases, id: \.self, selection: $selectedSection)` to resolve `SelectionValue could not be inferred`.
+* **`ConnectionManager.swift`**: Resolved Swift 6 Sendable closure warnings (`reference to captured var 'self' in concurrently-executing code`) in the file streaming task by capturing `guard let self = self else { return }`. Fixed non-optional conditional binding on `self.currentDirectoryPath`.
+
+### 2.3 Android Toolchain: AndroidX, Gradle & Kotlin Daemon Compatibility
+* **AndroidX Configuration**: Added `gradle.properties` with `android.useAndroidX=true` to satisfy Android Gradle Plugin metadata checks for Compose BoM.
+* **Gradle Wrapper**: Configured Gradle 8.5 (`gradle-8.5-bin.zip`) compatible with AGP 8.3.0 and Kotlin 1.9.22.
+* **Kotlin Compiler Execution**: Added `kotlin.compiler.execution.strategy=in-process` in `gradle.properties` to ensure smooth compilation in headless CLI environments.
+
+---
+
+## 3. Comprehensive Feature Audit
+
+Every feature promised in `LINKTOMAC_MASTER_PLAN.md` was audited across both codebases:
+
+### 01 • Messages & Contacts
+* **Android**: `SmsContactsCallBridge.kt` queries `ContactsContract.CommonDataKinds.Phone` and `Telephony.Sms`, groups incoming/outgoing SMS messages by phone number, and sends outbound SMS via `SmsManager`.
+* **macOS**: `FeatureViews.swift` (`MessagesWorkspaceView`) displays threaded conversations, contact names, dynamic search filtering, instant chat creation, and optimistic message append.
+
+### 02 • Notifications Mirroring & Inline Reply
+* **Android**: `LinkNotificationService.kt` (`NotificationListenerService`) intercepts status bar notifications, resolves app icons/names, automatically extracts 4–8 digit 2FA/OTP codes, and stores `RemoteInput` pending intents.
+* **macOS**: `FeatureViews.swift` (`NotificationsWorkspaceView`) and `ConnectionManager.swift` dispatch native macOS system notifications, provide inline keyboard reply inputs (`Enter ↵`), and route `NOTIFICATION_REPLY` directly back to Android apps (WhatsApp, Telegram, SMS).
+
+### 03 • Files Browser & High-Speed Transfers
+* **Android**: `FilePhotosBridge.kt` reads `/sdcard` directory listings, streams requested files in 64 KB chunks tagged with 36-byte UUID transfer headers, and receives incoming files to `/sdcard/Download/LinkToMac/`.
+* **macOS**: `FeatureViews.swift` (`FilesWorkspaceView`) provides folder navigation, bookmarks (Downloads, Camera, Pictures, Movies), Finder drag-and-drop file upload target (`.onDrop(of: [.fileURL])`), and "Save to Finder" with automatic file reveal (`NSWorkspace.shared.activateFileViewerSelecting`).
+
+### 04 • Photos Gallery
+* **Android**: `FilePhotosBridge.kt` queries `MediaStore.Images.Media`, loads 180×180 thumbnail previews with `loadThumbnail`, encodes JPEG Base64 thumbnails, and handles full-resolution file pulls.
+* **macOS**: `FeatureViews.swift` (`PhotosWorkspaceView`) renders an adaptive lazy grid with photo thumbnails, metadata, and 1-click download to Mac Downloads.
+
+### 05 • Universal Clipboard & URL Handoff
+* **macOS**: `ClipboardSyncManager.swift` monitors `NSPasteboard` every 650 ms, filters out password managers (`org.nspasteboard.ConcealedType`), transmits updates via `CLIPBOARD_SYNC`, and opens incoming URL handoffs in default browser (`NSWorkspace.shared.open`).
+* **Android**: `ClipboardManagerBridge` in `LinkConnectionService.kt` hooks `addPrimaryClipChangedListener`, syncs clipboard strings, and launches incoming `URL_HANDOFF` via `Intent(Intent.ACTION_VIEW)`.
+
+### 06 • Screen Mirroring & Desk Control
+* **Wireless Socket Stream**: `ScreenCameraStreamer.kt` streams JPEG frames over wire protocol `0x03` (`FRAME_VIDEO_JPEG`). `FeatureViews.swift` renders an interactive viewport with `SpatialTapGesture` to send normalized touch events back to Android.
+* **High-Speed USB `scrcpy` Mode**: `ADBBridge.swift` detects connected USB devices, ensures `adb reverse tcp:54921 tcp:54921`, and launches native `scrcpy` with `--turn-screen-off` and `--stay-awake`.
+* **Hardware Key Injection**: Remote Home (3), Back (4), App Switcher (187), and Lock/Wake (26) key injection via ADB and wire protocol.
+
+### 07 • Cellular Call Controls
+* **Android**: `SmsContactsCallBridge.kt` registers `TelephonyManager.ACTION_PHONE_STATE_CHANGED`, maps Ringing/Offhook/Idle states, answers calls via `TelecomManager.acceptRingingCall()`, declines via `endCall()`, and sends auto-decline SMS.
+* **macOS**: `IncomingCallHUDView` displays a floating overlay with Answer, Decline, Mute, and "Decline with SMS" while cellular audio stays on the phone.
+
+### 08 • Virtual Camera & Microphone Stream
+* **Android**: `ScreenCameraStreamer.kt` captures Camera2 frames (`LENS_FACING_BACK` and `LENS_FACING_FRONT`) converted from YUV_420_888 to JPEG, and records 16 kHz 16-bit mono PCM microphone audio via `AudioRecord`.
+* **macOS**: `ConnectionManager.swift` decodes incoming JPEG frames to `NSImage` and plays real-time microphone PCM audio via `AVAudioEngine` / `AVAudioPlayerNode`.
+
+---
+
+## 4. Verification Instructions
+
+### To re-extract all files from scratch:
+```bash
+python3 stitch_allcode.py
+```
+
+### To compile the macOS application:
+```bash
+cd allcode/LinkToMac-macOS
+./build_mac_app.sh
+# Launch app:
+open build/LinkToMac.app
+```
+
+### To compile the Android APK:
+```bash
+cd allcode/LinkToMac-Android
+export JAVA_HOME=/Users/sanagariudbhav/Library/Java/JavaVirtualMachines/jbr-17.0.14/Contents/Home
+./gradlew assembleDebug
+# Generated APK:
+# allcode/LinkToMac-Android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+---
+
+## 5. Production Remediation Pass (Final Verification)
+
+**Completed:** 2026-10-20  
+**Verification Result:** ✅ All 6 remediation tasks completed with 0 errors across macOS and Android.
+
+### 5.1 Fixes Implemented in Production Remediation
+1. **`STREAM_CONTROL` Stream Retention & Action Routing**:
+   - `LinkConnectionService.kt` forwards the complete payload `JSONObject` to `ScreenCameraStreamer.handleStreamControl()`.
+   - `ScreenCameraStreamer.kt` handles `REMOTE_TAP` via `LinkTouchAccessibilityService.instance?.performNormalizedTap(normX, normY)` and `REMOTE_KEY` via `LinkTouchAccessibilityService.instance?.performRemoteKey(keyCode)` without stopping active video streams.
+   - `stopAllStreams()` is strictly reserved for mode switching (`NONE`, `MIRROR`, `WEBCAM_BACK`, `WEBCAM_FRONT`, `MIC_STREAM`).
+2. **`LinkTouchAccessibilityService.kt` Implementation**:
+   - Built full service implementation extending `AccessibilityService` with `instance` singleton lifecycle management.
+   - Implemented `performNormalizedTap(normX, normY)` scaled to device metrics.
+   - Implemented `performRemoteKey(keyCode)` for Home (3), Back (4), Recents (187), Lock (26), and Notifications (83).
+   - Implemented `captureScreenJpeg(callback)` using Android 11+ (`takeScreenshot`) with HardwareBuffer conversion, 540p aspect-ratio downscaling, and quality 70 JPEG compression.
+   - Implemented background clipboard sync on accessibility events (`onAccessibilityEvent`) and integrated `ClipboardManagerBridge.syncFromAccessibilityService`.
+   - Created `@xml/link_accessibility_config` with gesture, screenshot, and typeAllMask permissions and registered in `AndroidManifest.xml`.
+   - Added 1-tap "5. Enable Accessibility (Wireless Touch, Mirror & Background Clipboard)" button in `MainActivity.kt`.
+3. **Real Screen Mirroring Replacing Dummy Canvas**:
+   - `ScreenCameraStreamer.startMirrorStatusPreview()` captures real live screen frames via `captureScreenJpeg()` and streams over `FRAME_VIDEO_JPEG` (`0x03`).
+   - Only displays fallback instructional canvas when Accessibility Service is not yet enabled.
+4. **Android Share Sheet Ingestion**:
+   - `MainActivity.kt` handles `Intent.ACTION_SEND` and `ACTION_SEND_MULTIPLE`.
+   - Text/URLs stream immediately to Mac via `ClipboardManagerBridge.sendClipboardToMac` and `URL_HANDOFF`.
+   - File streams (`EXTRA_STREAM`) copy to `cacheDir` and stream on background coroutine via `FilePhotosBridge.streamFileToMac()`.
+5. **Auto-Unlock ADB Background Clipboard & Dynamic Screen Resolution**:
+   - `LinkConnectionService.kt` includes `screenWidth` and `screenHeight` in `HELLO` and `STATUS_UPDATE`.
+   - `ConnectionManager.swift` exposes `@Published var androidScreenWidth` and `androidScreenHeight` updated dynamically.
+   - `ADBBridge.swift` automatically executes `unlockBackgroundClipboardViaADB()` when USB device connects and scales taps to `androidScreenWidth` / `androidScreenHeight`.
+
+### 5.2 Build Status
+* **Extractor (`stitch_allcode.py`)**: Extracted all 28 files cleanly into `./allcode/`.
+* **macOS Native App (`build_mac_app.sh`)**: **Exit Code 0** (0 errors, 0 warnings).
+* **Android Companion App (`./gradlew assembleDebug`)**: **Exit Code 0** (`BUILD SUCCESSFUL in 5s`, 0 errors).
+* **Codebase Bundles**: `ALLCODE_ANDROID_COMPLETE.md`, `ALLCODE_MACOS_COMPLETE.md`, and `all_code.md` 100% synchronized and verified.
+````
 
 <a id="docs-PROJECT-md"></a>
 ### `docs/PROJECT.md`
@@ -35211,6 +24878,4761 @@ All requirements and acceptance criteria established in `ORIGINAL_REQUEST.md` ha
 **Project Status: PRODUCTION READY / E2E ACCEPTANCE PASSED**
 ````
 
+<a id="docs-bundles-linktomac-complete-android-source-code-md"></a>
+### `docs/bundles/linktomac_complete_android_source_code.md`
+
+````markdown
+# LinkToMac — Complete Android Source Code (`allcode/LinkToMac-Android`)
+
+Every file below belongs inside the codebase. Run `python3 scripts/stitch_allcode.py` to extract them automatically.
+
+---
+
+### FILE: allcode/LinkToMac-Android/settings.gradle.kts
+```kotlin
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "LinkToMacAndroid"
+include(":app")
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/gradle.properties
+```properties
+android.useAndroidX=true
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.builtInKotlin=false
+android.newDsl=false
+kotlin.compiler.execution.strategy=in-process
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/gradle/wrapper/gradle-wrapper.properties
+```properties
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+networkTimeout=10000
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/build.gradle.kts
+```kotlin
+plugins {
+    id("com.android.application") version "8.3.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/build.gradle.kts
+```kotlin
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "com.linktomac.android"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.linktomac.android"
+        minSdk = 29
+        targetSdk = 34
+        versionCode = 161
+        versionName = "1.61"
+    }
+
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.10"
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+dependencies {
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    // ZXing QR Scanner for 1-tap QR code pairing
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/AndroidManifest.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Local Wi-Fi & Foreground Service -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- SMS, Contacts & Call Controls -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+    <!-- Files, Photos, Camera & Microphone -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <application
+        android:allowBackup="true"
+        android:label="LinkToMac"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Share Sheet Target: "Send to Mac (LinkToMac)" -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".LinkConnectionService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice|camera|microphone|mediaProjection" />
+
+        <service
+            android:name=".LinkNotificationService"
+            android:label="LinkToMac Notification &amp; Media Bridge"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".LinkTouchAccessibilityService"
+            android:label="LinkToMac Wireless Touch &amp; Mirror Bridge"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/link_accessibility_config" />
+        </service>
+    </application>
+</manifest>
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/res/values/strings.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LinkToMac</string>
+    <string name="accessibility_service_desc">Enables remote wireless touch input, navigation gestures, and screen capture streaming from your Mac.</string>
+</resources>
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/res/xml/accessibility_service_config.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_service_desc"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="50"
+    android:canPerformGestures="true"
+    android:canRetrieveWindowContent="true"
+    android:canTakeScreenshot="true" />
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/res/xml/link_accessibility_config.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_service_desc"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="100"
+    android:canPerformGestures="true"
+    android:canTakeScreenshot="true"
+    android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows" />
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ProtocolModels.kt
+```kotlin
+package com.linktomac.android
+
+import org.json.JSONArray
+import org.json.JSONObject
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
+object WireProtocol {
+    const val FRAME_JSON: Byte       = 0x01
+    const val FRAME_FILE_CHUNK: Byte = 0x02
+    const val FRAME_VIDEO_JPEG: Byte = 0x03
+    const val FRAME_AUDIO_PCM: Byte  = 0x04
+
+    fun packFrame(frameType: Byte, payload: ByteArray): ByteArray {
+        val buffer = ByteBuffer.allocate(5 + payload.size).order(ByteOrder.BIG_ENDIAN)
+        buffer.putInt(payload.size)
+        buffer.put(frameType)
+        buffer.put(payload)
+        return buffer.array()
+    }
+
+    fun packJson(type: String, payloadMap: Map<String, String> = emptyMap(), extraBlock: (JSONObject.() -> Unit)? = null): ByteArray {
+        val root = JSONObject()
+        root.put("type", type)
+        root.put("timestamp", System.currentTimeMillis())
+        val payloadObj = JSONObject()
+        for ((k, v) in payloadMap) {
+            payloadObj.put(k, v)
+        }
+        root.put("payload", payloadObj)
+        extraBlock?.invoke(root)
+        return packFrame(FRAME_JSON, root.toString().toByteArray(Charsets.UTF_8))
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTouchAccessibilityService.kt
+```kotlin
+package com.linktomac.android
+
+import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.accessibilityservice.GestureDescription
+import android.graphics.Bitmap
+import android.graphics.Path
+import android.os.Build
+import android.util.Log
+import android.view.Display
+import android.view.accessibility.AccessibilityEvent
+import java.io.ByteArrayOutputStream
+
+class LinkTouchAccessibilityService : AccessibilityService() {
+
+    companion object {
+        private const val TAG = "LinkTouchA11y"
+
+        @Volatile
+        var instance: LinkTouchAccessibilityService? = null
+
+        fun getRealScreenSize(context: android.content.Context): Pair<Int, Int> {
+            val metrics = context.resources.displayMetrics
+            return Pair(metrics.widthPixels, metrics.heightPixels)
+        }
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        instance = this
+        try {
+            val info = serviceInfo ?: AccessibilityServiceInfo()
+            info.flags = info.flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+            serviceInfo = info
+        } catch (_: Exception) {}
+        Log.i(TAG, "LinkTouchAccessibilityService connected")
+    }
+
+    fun performNormalizedTap(normX: Float, normY: Float): Boolean {
+        val width = resources.displayMetrics.widthPixels
+        val height = resources.displayMetrics.heightPixels
+        val px = (normX * width).coerceIn(0f, width.toFloat())
+        val py = (normY * height).coerceIn(0f, height.toFloat())
+
+        val path = Path().apply {
+            moveTo(px, py)
+        }
+        val stroke = GestureDescription.StrokeDescription(path, 0L, 50L)
+        val gesture = GestureDescription.Builder().addStroke(stroke).build()
+        return dispatchGesture(gesture, null, null)
+    }
+
+    fun performRemoteKey(keyCode: Int): Boolean {
+        return when (keyCode) {
+            3 -> performGlobalAction(GLOBAL_ACTION_HOME)
+            4 -> performGlobalAction(GLOBAL_ACTION_BACK)
+            187 -> performGlobalAction(GLOBAL_ACTION_RECENTS)
+            26 -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+                } else false
+            }
+            83 -> performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
+            else -> false
+        }
+    }
+
+    fun captureScreenJpeg(callback: (ByteArray?) -> Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            callback(null)
+            return
+        }
+        try {
+            takeScreenshot(Display.DEFAULT_DISPLAY, mainExecutor, object : TakeScreenshotCallback {
+                override fun onSuccess(result: ScreenshotResult) {
+                    val hwBuffer = result.hardwareBuffer
+                    val colorSpace = result.colorSpace
+                    try {
+                        val hwBmp = Bitmap.wrapHardwareBuffer(hwBuffer, colorSpace)
+                        if (hwBmp == null) {
+                            callback(null)
+                            return
+                        }
+                        val origW = hwBmp.width
+                        val origH = hwBmp.height
+                        val targetW = 540
+                        val targetH = ((origH.toFloat() / origW.toFloat()) * targetW).toInt().coerceAtLeast(1)
+
+                        val scaled = Bitmap.createScaledBitmap(hwBmp, targetW, targetH, true)
+                        val baos = ByteArrayOutputStream()
+                        scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos)
+                        scaled.recycle()
+                        hwBmp.recycle()
+                        callback(baos.toByteArray())
+                    } catch (e: Exception) {
+                        Log.w(TAG, "captureScreenJpeg processing failed: ${e.message}")
+                        callback(null)
+                    } finally {
+                        hwBuffer.close()
+                    }
+                }
+
+                override fun onFailure(errorCode: Int) {
+                    Log.w(TAG, "takeScreenshot failed with code: $errorCode")
+                    callback(null)
+                }
+            })
+        } catch (e: Exception) {
+            Log.w(TAG, "captureScreenJpeg invocation failed: ${e.message}")
+            callback(null)
+        }
+    }
+
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event == null) return
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_VIEW_CLICKED,
+            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
+            AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED,
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                ClipboardManagerBridge.syncFromAccessibilityService(this)
+            }
+        }
+    }
+
+    override fun onInterrupt() {
+        Log.w(TAG, "LinkTouchAccessibilityService interrupted")
+    }
+
+    override fun onUnbind(intent: android.content.Intent?): Boolean {
+        instance = null
+        return super.onUnbind(intent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (instance == this) {
+            instance = null
+        }
+        Log.i(TAG, "LinkTouchAccessibilityService destroyed")
+    }
+}
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkConnectionService.kt
+```kotlin
+package com.linktomac.android
+
+import android.app.*
+import android.content.*
+import android.media.AudioManager
+import android.media.RingtoneManager
+import android.net.Uri
+import android.net.nsd.NsdManager
+import android.net.nsd.NsdServiceInfo
+import android.os.*
+import kotlinx.coroutines.*
+import org.json.JSONObject
+import java.io.DataInputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
+import java.net.InetSocketAddress
+import java.net.Socket
+
+class LinkConnectionService : Service() {
+
+    companion object {
+        var instance: LinkConnectionService? = null
+        var isConnectedState: Boolean = false
+        var statusMessage: String = "Disconnected"
+        var discoveredMacHost: String = ""
+        var discoveredMacPort: Int = 54921
+    }
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var socket: Socket? = null
+    private var outputStream: OutputStream? = null
+    private var nsdManager: NsdManager? = null
+    private var discoveryListener: NsdManager.DiscoveryListener? = null
+    private val incomingFiles = mutableMapOf<String, FileOutputStream>()
+
+    override fun onCreate() {
+        super.onCreate()
+        instance = this
+        startForegroundNotification("LinkToMac Ready — Waiting for Mac")
+        startMdnsDiscovery()
+        ClipboardManagerBridge.init(this)
+        SmsContactsCallBridge.registerCallStateReceiver(this)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val action = intent?.action
+        if (action == "CONNECT_HOST") {
+            val host = intent.getStringExtra("host") ?: "127.0.0.1"
+            val port = intent.getIntExtra("port", 54921)
+            val token = intent.getStringExtra("token") ?: ""
+            connectToMac(host, port, token)
+        } else if (action == "DISCONNECT") {
+            closeSocket()
+        }
+        return START_STICKY
+    }
+
+    fun connectToMac(host: String, port: Int, token: String) {
+        serviceScope.launch {
+            closeSocket()
+            try {
+                statusMessage = "Connecting to $host:$port..."
+                val s = Socket()
+                s.tcpNoDelay = true
+                s.connect(InetSocketAddress(host, port), 4000)
+                socket = s
+                outputStream = s.getOutputStream()
+                isConnectedState = true
+                val transport = if (host == "127.0.0.1") "USB" else "Local Wi-Fi"
+                statusMessage = "Connected ($transport • $host)"
+                startForegroundNotification("Connected to Mac ($transport)")
+
+                // Save last successful host
+                getSharedPreferences("linktomac", MODE_PRIVATE).edit()
+                    .putString("lastHost", host)
+                    .putInt("lastPort", port)
+                    .putString("lastToken", token)
+                    .apply()
+
+                sendHelloAndStatus(transport, token)
+                startStatusHeartbeat(transport)
+                readLoop(DataInputStream(s.getInputStream()))
+            } catch (e: Exception) {
+                isConnectedState = false
+                statusMessage = "Connection failed: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun sendRawFrame(frameBytes: ByteArray) {
+        serviceScope.launch {
+            try {
+                synchronized(this@LinkConnectionService) {
+                    outputStream?.write(frameBytes)
+                    outputStream?.flush()
+                }
+            } catch (_: Exception) {
+                closeSocket()
+            }
+        }
+    }
+
+    private fun sendHelloAndStatus(transport: String, token: String) {
+        val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
+        val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val charging = bm.isCharging
+        val model = "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}"
+
+        val bytes = WireProtocol.packJson(
+            type = "HELLO",
+            payloadMap = mapOf(
+                "deviceName" to model,
+                "battery" to battery.toString(),
+                "charging" to charging.toString(),
+                "transport" to transport,
+                "pairToken" to token,
+                "mediaTitle" to LinkNotificationService.currentMediaTitle,
+                "mediaArtist" to LinkNotificationService.currentMediaArtist,
+                "screenWidth" to resources.displayMetrics.widthPixels.toString(),
+                "screenHeight" to resources.displayMetrics.heightPixels.toString()
+            )
+        )
+        sendRawFrame(bytes)
+    }
+
+    private fun startStatusHeartbeat(transport: String) {
+        serviceScope.launch {
+            while (isActive && isConnectedState) {
+                delay(8000)
+                val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
+                val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                val charging = bm.isCharging
+                val bytes = WireProtocol.packJson(
+                    type = "STATUS_UPDATE",
+                    payloadMap = mapOf(
+                        "deviceName" to "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}",
+                        "battery" to battery.toString(),
+                        "charging" to charging.toString(),
+                        "transport" to transport,
+                        "mediaTitle" to LinkNotificationService.currentMediaTitle,
+                        "mediaArtist" to LinkNotificationService.currentMediaArtist,
+                        "screenWidth" to resources.displayMetrics.widthPixels.toString(),
+                        "screenHeight" to resources.displayMetrics.heightPixels.toString()
+                    )
+                )
+                sendRawFrame(bytes)
+            }
+        }
+    }
+
+    private fun readLoop(input: DataInputStream) {
+        try {
+            while (isConnectedState) {
+                val length = input.readInt()
+                val type = input.readByte()
+                if (length <= 0 || length > 30_000_000) continue
+                val payload = ByteArray(length)
+                input.readFully(payload)
+
+                when (type) {
+                    WireProtocol.FRAME_JSON -> handleIncomingJson(String(payload, Charsets.UTF_8))
+                    WireProtocol.FRAME_FILE_CHUNK -> handleIncomingFileChunk(payload)
+                }
+            }
+        } catch (_: Exception) {
+            closeSocket()
+        }
+    }
+
+    private fun handleIncomingJson(jsonStr: String) {
+        val obj = JSONObject(jsonStr)
+        val type = obj.optString("type")
+        val payload = obj.optJSONObject("payload") ?: JSONObject()
+
+        when (type) {
+            "NOTIFICATION_REPLY" -> {
+                val id = payload.optString("id")
+                val replyText = payload.optString("replyText")
+                LinkNotificationService.performInlineReply(this, id, replyText)
+            }
+            "NOTIFICATION_REMOVED" -> {
+                val id = payload.optString("id")
+                LinkNotificationService.dismissNotification(id)
+            }
+            "SMS_THREADS_REQ" -> {
+                SmsContactsCallBridge.syncSmsAndContactsToMac(this)
+            }
+            "SMS_SEND" -> {
+                val addr = payload.optString("address")
+                val body = payload.optString("body")
+                SmsContactsCallBridge.sendSms(this, addr, body)
+            }
+            "CALL_ACTION" -> {
+                val action = payload.optString("action")
+                val number = payload.optString("number")
+                val smsReply = payload.optString("smsReply")
+                SmsContactsCallBridge.handleCallAction(this, action, number, smsReply)
+            }
+            "CLIPBOARD_SYNC" -> {
+                val content = payload.optString("content")
+                ClipboardManagerBridge.applyFromMac(this, content)
+            }
+            "URL_HANDOFF" -> {
+                val url = payload.optString("url")
+                if (url.isNotEmpty()) {
+                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    startActivity(browserIntent)
+                }
+            }
+            "FILE_LIST_REQ" -> {
+                val path = payload.optString("path", "/sdcard/Download")
+                FilePhotosBridge.sendDirectoryListing(path)
+            }
+            "PHOTOS_LIST_REQ" -> {
+                FilePhotosBridge.sendPhotosList(this)
+            }
+            "FILE_PULL_REQ" -> {
+                val path = payload.optString("path")
+                val fileName = payload.optString("fileName")
+                val reveal = payload.optString("revealInFinder", "true")
+                FilePhotosBridge.streamFileToMac(path, fileName, reveal)
+            }
+            "FILE_TRANSFER_START" -> {
+                val tid = payload.optString("transferId")
+                val fileName = payload.optString("fileName")
+                val destFolder = payload.optString("destFolder", "/sdcard/Download/LinkToMac")
+                val dir = File(destFolder)
+                if (!dir.exists()) dir.mkdirs()
+                val outFile = File(dir, fileName)
+                incomingFiles[tid] = FileOutputStream(outFile)
+            }
+            "FILE_TRANSFER_END" -> {
+                val tid = payload.optString("transferId")
+                incomingFiles.remove(tid)?.close()
+            }
+            "MEDIA_ACTION" -> {
+                val action = payload.optString("action")
+                handleMediaAction(action)
+            }
+            "STREAM_CONTROL" -> {
+                ScreenCameraStreamer.handleStreamControl(this, payload)
+            }
+        }
+    }
+
+    private fun handleIncomingFileChunk(payload: ByteArray) {
+        if (payload.size <= 36) return
+        val tid = String(payload, 0, 36, Charsets.UTF_8).trim()
+        val fos = incomingFiles[tid] ?: return
+        fos.write(payload, 36, payload.size - 36)
+    }
+
+    private fun handleMediaAction(action: String) {
+        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        when (action) {
+            "PLAY_PAUSE" -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+            "NEXT"       -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_NEXT)
+            "PREV"       -> dispatchMediaKey( android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+            "VOL_UP"     -> audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+            "VOL_DOWN"   -> audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+            "RING_PHONE" -> {
+                val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                val ringtone = RingtoneManager.getRingtone(applicationContext, uri)
+                ringtone?.play()
+            }
+        }
+    }
+
+    private fun dispatchMediaKey(keyCode: Int) {
+        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, keyCode))
+        audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, keyCode))
+    }
+
+    // MARK: - mDNS Automatic Discovery (_linktomac._tcp)
+    private fun startMdnsDiscovery() {
+        try {
+            nsdManager = getSystemService(NSD_SERVICE) as NsdManager
+            val listener = object : NsdManager.DiscoveryListener {
+                override fun onDiscoveryStarted(regType: String) {}
+                override fun onServiceFound(service: NsdServiceInfo) {
+                    if (service.serviceType.contains("_linktomac._tcp")) {
+                        nsdManager?.resolveService(service, object : NsdManager.ResolveListener {
+                            override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
+                            override fun onServiceResolved(resolved: NsdServiceInfo) {
+                                val host = resolved.host?.hostAddress ?: return
+                                discoveredMacHost = host
+                                discoveredMacPort = resolved.port
+                            }
+                        })
+                    }
+                }
+                override fun onServiceLost(service: NsdServiceInfo) {}
+                override fun onDiscoveryStopped(serviceType: String) {}
+                override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {}
+                override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {}
+            }
+            discoveryListener = listener
+            nsdManager?.discoverServices("_linktomac._tcp.", NsdManager.PROTOCOL_DNS_SD, listener)
+        } catch (_: Exception) {}
+    }
+
+    private fun closeSocket() {
+        isConnectedState = false
+        statusMessage = "Disconnected"
+        try { outputStream?.close() } catch (_: Exception) {}
+        try { socket?.close() } catch (_: Exception) {}
+        outputStream = null
+        socket = null
+    }
+
+    private fun startForegroundNotification(text: String) {
+        val channelId = "linktomac_channel"
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val chan = NotificationChannel(channelId, "LinkToMac Connection", NotificationManager.IMPORTANCE_LOW)
+        nm.createNotificationChannel(chan)
+
+        val notif = Notification.Builder(this, channelId)
+            .setContentTitle("LinkToMac Companion")
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+            .setOngoing(true)
+            .build()
+
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(1001, notif, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        } else {
+            startForeground(1001, notif)
+        }
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+}
+
+// MARK: - Clipboard Bridge Helper
+object ClipboardManagerBridge {
+    private var lastClipboardText = ""
+
+    fun init(context: Context) {
+        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.addPrimaryClipChangedListener {
+            val text = cm.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim() ?: return@addPrimaryClipChangedListener
+            if (text.isNotEmpty() && text != lastClipboardText) {
+                lastClipboardText = text
+                sendClipboardToMac(text)
+            }
+        }
+    }
+
+    fun sendCurrentClipboardToMac(context: Context) {
+        Handler(Looper.getMainLooper()).post {
+            try {
+                val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                val text = cm?.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim() ?: return@post
+                if (text.isNotEmpty() && text != lastClipboardText) {
+                    lastClipboardText = text
+                    sendClipboardToMac(text)
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
+    fun syncFromAccessibilityService(context: Context) {
+        sendCurrentClipboardToMac(context)
+    }
+
+    fun sendClipboardToMac(text: String) {
+        val isUrl = text.startsWith("http://") || text.startsWith("https://")
+        val bytes = WireProtocol.packJson(
+            type = "CLIPBOARD_SYNC",
+            payloadMap = mapOf("content" to text, "isUrl" to isUrl.toString())
+        )
+        LinkConnectionService.instance?.sendRawFrame(bytes)
+    }
+
+    fun applyFromMac(context: Context, text: String) {
+        if (text == lastClipboardText) return
+        lastClipboardText = text
+        Handler(Looper.getMainLooper()).post {
+            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("LinkToMac", text))
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkNotificationService.kt
+```kotlin
+package com.linktomac.android
+
+import android.app.Notification
+import android.app.PendingIntent
+import android.app.RemoteInput
+import android.content.Context
+import android.content.Intent
+import android.media.MediaMetadata
+import android.media.session.MediaSessionManager
+import android.os.Bundle
+import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.concurrent.ConcurrentHashMap
+
+class LinkNotificationService : NotificationListenerService() {
+
+    private data class ReplyActionHolder(
+        val pendingIntent: PendingIntent,
+        val remoteInputs: Array<RemoteInput>
+    )
+
+    companion object {
+        private var instance: LinkNotificationService? = null
+        private val replyActions = ConcurrentHashMap<String, ReplyActionHolder>()
+        var currentMediaTitle: String = "Nothing Playing"
+        var currentMediaArtist: String = "Android Media"
+
+        fun performInlineReply(context: Context, key: String, replyText: String) {
+            val holder = replyActions[key] ?: return
+            val intent = Intent()
+            val bundle = Bundle()
+            for (remoteInput in holder.remoteInputs) {
+                bundle.putCharSequence(remoteInput.resultKey, replyText)
+            }
+            RemoteInput.addResultsToIntent(holder.remoteInputs, intent, bundle)
+            try {
+                holder.pendingIntent.send(context, 0, intent)
+            } catch (_: Exception) {}
+        }
+
+        fun dismissNotification(key: String) {
+            try {
+                instance?.cancelNotification(key)
+            } catch (_: Exception) {}
+        }
+    }
+
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        instance = this
+        updateActiveMediaSession()
+    }
+
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        guardSbn(sbn) ?: return
+        updateActiveMediaSession()
+
+        val notif = sbn!!.notification
+        if ((notif.flags and Notification.FLAG_ONGOING_EVENT) != 0) return
+        if (sbn.packageName == packageName || sbn.packageName == "com.android.systemui") return
+
+        val extras = notif.extras
+        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
+        val body = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+        if (title.isEmpty() && body.isEmpty()) return
+
+        // Check for inline RemoteInput reply actions
+        var canReply = false
+        notif.actions?.forEach { action ->
+            val inputs = action.remoteInputs
+            if (!inputs.isNullOrEmpty() && action.actionIntent != null) {
+                canReply = true
+                replyActions[sbn.key] = ReplyActionHolder(action.actionIntent, inputs)
+            }
+        }
+
+        // Detect 4-8 digit 2FA / OTP codes automatically
+        val otpRegex = Regex("\\b(\\d{4,8})\\b")
+        val otpMatch = otpRegex.find(body)?.value ?: ""
+
+        val pm = applicationContext.packageManager
+        val appName = try {
+            pm.getApplicationLabel(pm.getApplicationInfo(sbn.packageName, 0)).toString()
+        } catch (_: Exception) {
+            sbn.packageName
+        }
+
+        val itemJson = JSONObject().apply {
+            put("id", sbn.key)
+            put("packageName", sbn.packageName)
+            put("appName", appName)
+            put("title", title)
+            put("body", body)
+            put("timestamp", sbn.postTime)
+            put("canReply", canReply)
+            put("otpCode", otpMatch)
+        }
+
+        val arr = JSONArray().apply { put(itemJson) }
+        val bytes = WireProtocol.packJson("NOTIFICATION_POSTED") {
+            put("notifications", arr)
+        }
+        LinkConnectionService.instance?.sendRawFrame(bytes)
+    }
+
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
+        val key = sbn?.key ?: return
+        replyActions.remove(key)
+        val bytes = WireProtocol.packJson(
+            type = "NOTIFICATION_REMOVED",
+            payloadMap = mapOf("id" to key)
+        )
+        LinkConnectionService.instance?.sendRawFrame(bytes)
+    }
+
+    private fun updateActiveMediaSession() {
+        try {
+            val msm = getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+            val controllers = msm.getActiveSessions(
+                android.content.ComponentName(this, LinkNotificationService::class.java)
+            )
+            val first = controllers.firstOrNull()
+            val meta = first?.metadata
+            if (meta != null) {
+                currentMediaTitle = meta.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "Playing Media"
+                currentMediaArtist = meta.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: ""
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun guardSbn(sbn: StatusBarNotification?): StatusBarNotification? = sbn
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/SmsContactsCallBridge.kt
+```kotlin
+package com.linktomac.android
+
+import android.annotation.SuppressLint
+import android.content.*
+import android.net.Uri
+import android.provider.ContactsContract
+import android.provider.Telephony
+import android.telecom.TelecomManager
+import android.telephony.SmsManager
+import android.telephony.TelephonyManager
+import org.json.JSONArray
+import org.json.JSONObject
+
+object SmsContactsCallBridge {
+
+    @SuppressLint("Range")
+    fun syncSmsAndContactsToMac(context: Context) {
+        val contactsMap = mutableMapOf<String, String>()
+        val contactsArray = JSONArray()
+
+        // 1. Load Contacts
+        try {
+            context.contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                ),
+                null, null,
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+            )?.use { cursor ->
+                var count = 0
+                while (cursor.moveToNext() && count < 200) {
+                    val id = cursor.getString(0) ?: ""
+                    val name = cursor.getString(1) ?: ""
+                    val number = cursor.getString(2)?.replace(" ", "") ?: ""
+                    if (number.isNotEmpty()) {
+                        contactsMap[number] = name
+                        contactsArray.put(JSONObject().apply {
+                            put("id", "$id-$number")
+                            put("name", name)
+                            put("phoneNumber", number)
+                        })
+                        count++
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+
+        // 2. Load Recent SMS Messages & Group by Address
+        val threadsMap = linkedMapOf<String, MutableList<JSONObject>>()
+        try {
+            context.contentResolver.query(
+                Telephony.Sms.CONTENT_URI,
+                arrayOf(
+                    Telephony.Sms._ID,
+                    Telephony.Sms.ADDRESS,
+                    Telephony.Sms.BODY,
+                    Telephony.Sms.DATE,
+                    Telephony.Sms.TYPE
+                ),
+                null, null,
+                Telephony.Sms.DATE + " DESC LIMIT 120"
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getString(0) ?: ""
+                    val addr = cursor.getString(1) ?: "Unknown"
+                    val body = cursor.getString(2) ?: ""
+                    val date = cursor.getLong(3)
+                    val type = cursor.getInt(4)
+                    val isIncoming = (type == Telephony.Sms.MESSAGE_TYPE_INBOX)
+
+                    val msgJson = JSONObject().apply {
+                        put("id", id)
+                        put("address", addr)
+                        put("body", body)
+                        put("date", date)
+                        put("isIncoming", isIncoming)
+                    }
+                    threadsMap.getOrPut(addr) { mutableListOf() }.add(0, msgJson)
+                }
+            }
+        } catch (_: Exception) {}
+
+        val threadsArray = JSONArray()
+        for ((addr, messages) in threadsMap) {
+            val lastMsg = messages.lastOrNull()
+            val contactName = contactsMap[addr] ?: addr
+            threadsArray.put(JSONObject().apply {
+                put("id", addr)
+                put("contactName", contactName)
+                put("address", addr)
+                put("lastMessage", lastMsg?.optString("body") ?: "")
+                put("timestamp", lastMsg?.optLong("date") ?: System.currentTimeMillis())
+                put("messages", JSONArray(messages))
+            })
+        }
+
+        val frame = WireProtocol.packJson("SMS_THREADS_SYNC") {
+            put("smsThreads", threadsArray)
+            put("contacts", contactsArray)
+        }
+        LinkConnectionService.instance?.sendRawFrame(frame)
+    }
+
+    fun sendSms(context: Context, address: String, body: String) {
+        try {
+            val smsManager = context.getSystemService(SmsManager::class.java)
+            smsManager.sendTextMessage(address, null, body, null, null)
+        } catch (_: Exception) {}
+    }
+
+    // MARK: - Call Controls (Cellular Audio Remains on Phone)
+    @SuppressLint("MissingPermission")
+    fun handleCallAction(context: Context, action: String, number: String, smsReply: String) {
+        val tm = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+        try {
+            when (action) {
+                "ANSWER" -> tm.acceptRingingCall()
+                "DECLINE", "END" -> tm.endCall()
+                "DECLINE_WITH_SMS" -> {
+                    tm.endCall()
+                    if (number.isNotEmpty() && smsReply.isNotEmpty()) {
+                        sendSms(context, number, smsReply)
+                    }
+                }
+                "DIAL" -> {
+                    if (number.isNotEmpty()) {
+                        val callIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(callIntent)
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+    }
+
+    fun registerCallStateReceiver(context: Context) {
+        val filter = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
+        context.registerReceiver(object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                val stateStr = intent?.getStringExtra(TelephonyManager.EXTRA_STATE) ?: return
+                val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: "Cellular Call"
+                val mappedState = when (stateStr) {
+                    TelephonyManager.EXTRA_STATE_RINGING -> "RINGING"
+                    TelephonyManager.EXTRA_STATE_OFFHOOK -> "OFFHOOK"
+                    else -> "IDLE"
+                }
+                val frame = WireProtocol.packJson(
+                    type = "CALL_STATE",
+                    payloadMap = mapOf(
+                        "state" to mappedState,
+                        "number" to incomingNumber,
+                        "contactName" to incomingNumber
+                    )
+                )
+                LinkConnectionService.instance?.sendRawFrame(frame)
+            }
+        }, filter)
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/FilePhotosBridge.kt
+```kotlin
+package com.linktomac.android
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.provider.MediaStore
+import android.util.Base64
+import android.util.Size
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.util.UUID
+
+object FilePhotosBridge {
+
+    fun sendDirectoryListing(path: String) {
+        val dir = File(path)
+        val arr = JSONArray()
+        dir.listFiles()?.forEach { f ->
+            arr.put(JSONObject().apply {
+                put("name", f.name)
+                put("path", f.absolutePath)
+                put("sizeBytes", if (f.isDirectory) 0L else f.length())
+                put("isDirectory", f.isDirectory)
+                put("lastModified", f.lastModified())
+            })
+        }
+        val frame = WireProtocol.packJson(
+            type = "FILE_LIST_RES",
+            payloadMap = mapOf("path" to path)
+        ) {
+            put("files", arr)
+        }
+        LinkConnectionService.instance?.sendRawFrame(frame)
+    }
+
+    fun sendPhotosList(context: Context) {
+        val arr = JSONArray()
+        try {
+            val projection = arrayOf(
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.DISPLAY_NAME,
+                MediaStore.Images.Media.DATA,
+                MediaStore.Images.Media.DATE_TAKEN,
+                MediaStore.Images.Media.SIZE
+            )
+            context.contentResolver.query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                null, null,
+                MediaStore.Images.Media.DATE_TAKEN + " DESC"
+            )?.use { cursor ->
+                var count = 0
+                while (cursor.moveToNext() && count < 40) {
+                    val id = cursor.getLong(0)
+                    val name = cursor.getString(1) ?: "photo.jpg"
+                    val path = cursor.getString(2) ?: ""
+                    val date = cursor.getLong(3)
+                    val size = cursor.getLong(4)
+
+                    var thumbB64 = ""
+                    try {
+                        val contentUri = android.content.ContentUris.withAppendedId(
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id
+                        )
+                        val bmp = context.contentResolver.loadThumbnail(contentUri, Size(180, 180), null)
+                        val baos = ByteArrayOutputStream()
+                        bmp.compress(Bitmap.CompressFormat.JPEG, 65, baos)
+                        thumbB64 = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP)
+                    } catch (_: Exception) {}
+
+                    arr.put(JSONObject().apply {
+                        put("id", id.toString())
+                        put("name", name)
+                        put("path", path)
+                        put("dateTaken", date)
+                        put("sizeBytes", size)
+                        put("isVideo", false)
+                        put("thumbnailBase64", thumbB64)
+                    })
+                    count++
+                }
+            }
+        } catch (_: Exception) {}
+
+        val frame = WireProtocol.packJson("PHOTOS_LIST_RES") {
+            put("photos", arr)
+        }
+        LinkConnectionService.instance?.sendRawFrame(frame)
+    }
+
+    fun streamFileToMac(path: String, fileName: String, revealInFinder: String = "true") {
+        val file = File(path)
+        if (!file.exists() || !file.isFile) return
+        val tid = UUID.randomUUID().toString() // 36 chars
+
+        val startFrame = WireProtocol.packJson(
+            type = "FILE_TRANSFER_START",
+            payloadMap = mapOf(
+                "transferId" to tid,
+                "fileName" to fileName,
+                "totalBytes" to file.length().toString()
+            )
+        )
+        LinkConnectionService.instance?.sendRawFrame(startFrame)
+
+        val tidBytes = tid.padEnd(36, ' ').toByteArray(Charsets.UTF_8)
+        FileInputStream(file).use { fis ->
+            val buf = ByteArray(65536)
+            while (true) {
+                val read = fis.read(buf)
+                if (read <= 0) break
+                val chunkPayload = ByteArray(36 + read)
+                System.arraycopy(tidBytes, 0, chunkPayload, 0, 36)
+                System.arraycopy(buf, 0, chunkPayload, 36, read)
+                val packed = WireProtocol.packFrame(WireProtocol.FRAME_FILE_CHUNK, chunkPayload)
+                LinkConnectionService.instance?.sendRawFrame(packed)
+                Thread.sleep(2)
+            }
+        }
+
+        val endFrame = WireProtocol.packJson(
+            type = "FILE_TRANSFER_END",
+            payloadMap = mapOf(
+                "transferId" to tid,
+                "fileName" to fileName,
+                "revealInFinder" to revealInFinder
+            )
+        )
+        LinkConnectionService.instance?.sendRawFrame(endFrame)
+    }
+
+    fun streamUriToMac(context: Context, uri: android.net.Uri, fileName: String, revealInFinder: String = "true") {
+        var size = -1L
+        try {
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                if (sizeIndex != -1 && cursor.moveToFirst()) {
+                    size = cursor.getLong(sizeIndex)
+                }
+            }
+        } catch (_: Exception) {}
+        if (size <= 0) {
+            try {
+                context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+                    size = pfd.statSize
+                }
+            } catch (_: Exception) {}
+        }
+        if (size < 0) size = 0L
+
+        val tid = UUID.randomUUID().toString()
+        val startFrame = WireProtocol.packJson(
+            type = "FILE_TRANSFER_START",
+            payloadMap = mapOf(
+                "transferId" to tid,
+                "fileName" to fileName,
+                "totalBytes" to size.toString()
+            )
+        )
+        LinkConnectionService.instance?.sendRawFrame(startFrame)
+
+        val tidBytes = tid.padEnd(36, ' ').toByteArray(Charsets.UTF_8)
+        try {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                val buf = ByteArray(65536)
+                while (true) {
+                    val read = inputStream.read(buf)
+                    if (read <= 0) break
+                    val chunkPayload = ByteArray(36 + read)
+                    System.arraycopy(tidBytes, 0, chunkPayload, 0, 36)
+                    System.arraycopy(buf, 0, chunkPayload, 36, read)
+                    val packed = WireProtocol.packFrame(WireProtocol.FRAME_FILE_CHUNK, chunkPayload)
+                    LinkConnectionService.instance?.sendRawFrame(packed)
+                    Thread.sleep(2)
+                }
+            }
+        } catch (_: Exception) {}
+
+        val endFrame = WireProtocol.packJson(
+            type = "FILE_TRANSFER_END",
+            payloadMap = mapOf(
+                "transferId" to tid,
+                "fileName" to fileName,
+                "revealInFinder" to revealInFinder
+            )
+        )
+        LinkConnectionService.instance?.sendRawFrame(endFrame)
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ScreenCameraStreamer.kt
+```kotlin
+package com.linktomac.android
+
+import android.accessibilityservice.AccessibilityService
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.*
+import android.hardware.camera2.*
+import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.ImageReader
+import android.media.MediaRecorder
+import android.media.projection.MediaProjection
+import android.os.Build
+import android.os.Handler
+import android.os.HandlerThread
+import android.util.Log
+import android.view.Display
+import kotlinx.coroutines.*
+import java.io.ByteArrayOutputStream
+import java.util.concurrent.Executors
+
+object ScreenCameraStreamer {
+    private const val TAG = "ScreenCamStreamer"
+
+    private var streamJob: Job? = null
+    private var cameraDevice: CameraDevice? = null
+    private var imageReader: ImageReader? = null
+    private var workerThread: HandlerThread? = null
+    private var virtualDisplay: VirtualDisplay? = null
+
+    @Volatile
+    var activeMediaProjection: MediaProjection? = null
+
+    fun handleStreamControl(context: Context, mode: String) {
+        handleStreamControl(context, org.json.JSONObject().put("mode", mode))
+    }
+
+    fun handleStreamControl(context: Context, payload: org.json.JSONObject) {
+        val mode = payload.optString("mode")
+        when (mode) {
+            "REMOTE_TAP" -> {
+                val normX = payload.optString("x").toFloatOrNull() ?: return
+                val normY = payload.optString("y").toFloatOrNull() ?: return
+                LinkTouchAccessibilityService.instance?.performNormalizedTap(normX, normY)
+            }
+            "REMOTE_KEY" -> {
+                val keyCode = payload.optString("keyCode").toIntOrNull() ?: return
+                LinkTouchAccessibilityService.instance?.performRemoteKey(keyCode)
+            }
+            "WEBCAM_BACK" -> {
+                stopAllStreams()
+                startCameraStream(context, CameraCharacteristics.LENS_FACING_BACK)
+            }
+            "WEBCAM_FRONT" -> {
+                stopAllStreams()
+                startCameraStream(context, CameraCharacteristics.LENS_FACING_FRONT)
+            }
+            "MIC_STREAM" -> {
+                stopAllStreams()
+                startMicrophoneStream()
+            }
+            "MIRROR" -> {
+                stopAllStreams()
+                startMirrorStatusPreview(context)
+            }
+            "NONE" -> {
+                stopAllStreams()
+            }
+            else -> {
+                // Do NOT call stopAllStreams() for unknown or action commands!
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startCameraStream(context: Context, lensFacing: Int) {
+        val cm = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val cameraId = cm.cameraIdList.firstOrNull { id ->
+            cm.getCameraCharacteristics(id).get(CameraCharacteristics.LENS_FACING) == lensFacing
+        } ?: cm.cameraIdList.firstOrNull() ?: return
+
+        val ht = HandlerThread("LinkToMacCam").apply { start() }
+        workerThread = ht
+        val handler = Handler(ht.looper)
+
+        val reader = ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2)
+        imageReader = reader
+        var lastSent = 0L
+
+        reader.setOnImageAvailableListener({ ir ->
+            val img = ir.acquireLatestImage() ?: return@setOnImageAvailableListener
+            val now = System.currentTimeMillis()
+            if (now - lastSent >= 65) { // ~15 fps over universal socket
+                lastSent = now
+                val jpeg = yuv420ToJpeg(img)
+                if (jpeg != null) {
+                    val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, jpeg)
+                    LinkConnectionService.instance?.sendRawFrame(frame)
+                }
+            }
+            img.close()
+        }, handler)
+
+        try {
+            cm.openCamera(cameraId, object : CameraDevice.StateCallback() {
+                override fun onOpened(camera: CameraDevice) {
+                    cameraDevice = camera
+                    val req = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                        addTarget(reader.surface)
+                    }
+                    camera.createCaptureSession(
+                        listOf(reader.surface),
+                        object : CameraCaptureSession.StateCallback() {
+                            override fun onConfigured(session: CameraCaptureSession) {
+                                session.setRepeatingRequest(req.build(), null, handler)
+                            }
+                            override fun onConfigureFailed(session: CameraCaptureSession) {}
+                        },
+                        handler
+                    )
+                }
+                override fun onDisconnected(camera: CameraDevice) { camera.close() }
+                override fun onError(camera: CameraDevice, error: Int) { camera.close() }
+            }, handler)
+        } catch (_: Exception) {}
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startMicrophoneStream() {
+        streamJob = CoroutineScope(Dispatchers.IO).launch {
+            val sampleRate = 16000
+            val minBuf = AudioRecord.getMinBufferSize(
+                sampleRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT
+            )
+            val recorder = AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                sampleRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                minBuf * 2
+            )
+            val buf = ByteArray(2048)
+            recorder.startRecording()
+            try {
+                while (isActive) {
+                    val read = recorder.read(buf, 0, buf.size)
+                    if (read > 0) {
+                        val chunk = buf.copyOf(read)
+                        val frame = WireProtocol.packFrame(WireProtocol.FRAME_AUDIO_PCM, chunk)
+                        LinkConnectionService.instance?.sendRawFrame(frame)
+                    }
+                }
+            } finally {
+                recorder.stop()
+                recorder.release()
+            }
+        }
+    }
+
+    fun startMirrorStatusPreview(context: Context) {
+        val proj = activeMediaProjection
+        if (proj != null) {
+            startMediaProjectionMirror(context, proj)
+            return
+        }
+
+        val width = context.resources.displayMetrics.widthPixels
+        val height = context.resources.displayMetrics.heightPixels
+        val targetW = 540
+        val targetH = ((height.toFloat() / width.toFloat()) * targetW).toInt().coerceAtLeast(960)
+
+        var inFlight = false
+        streamJob = CoroutineScope(Dispatchers.IO).launch {
+            while (isActive) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && LinkTouchAccessibilityService.instance != null) {
+                    if (!inFlight) {
+                        inFlight = true
+                        LinkTouchAccessibilityService.instance?.captureScreenJpeg { jpegBytes ->
+                            try {
+                                if (jpegBytes != null) {
+                                    val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, jpegBytes)
+                                    LinkConnectionService.instance?.sendRawFrame(frame)
+                                }
+                            } finally {
+                                inFlight = false
+                            }
+                        }
+                    }
+                    delay(55) // ~18 fps
+                } else {
+                    // Fall back to drawing status canvas if LinkTouchAccessibilityService.instance == null
+                    val bmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(bmp)
+                    canvas.drawColor(Color.rgb(18, 22, 28))
+                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = Color.rgb(74, 222, 128)
+                        textSize = 28f
+                    }
+                    canvas.drawText("LinkToMac Screen Mirroring", 50f, (targetH / 2 - 40).toFloat(), paint)
+                    paint.color = Color.WHITE
+                    paint.textSize = 20f
+                    canvas.drawText("Enable LinkToMac Accessibility Service", 50f, (targetH / 2 + 10).toFloat(), paint)
+                    canvas.drawText("on phone for Live Wireless Mirror", 50f, (targetH / 2 + 45).toFloat(), paint)
+
+                    val baos = ByteArrayOutputStream()
+                    bmp.compress(Bitmap.CompressFormat.JPEG, 70, baos)
+                    bmp.recycle()
+                    val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, baos.toByteArray())
+                    LinkConnectionService.instance?.sendRawFrame(frame)
+                    delay(600)
+                }
+            }
+        }
+    }
+
+    private fun startMediaProjectionMirror(context: Context, projection: MediaProjection) {
+        val realW = context.resources.displayMetrics.widthPixels
+        val realH = context.resources.displayMetrics.heightPixels
+        val targetW = 540
+        val targetH = ((realH.toFloat() / realW.toFloat()) * targetW).toInt().coerceAtLeast(960)
+
+        val ht = HandlerThread("LinkToMacProj").apply { start() }
+        workerThread = ht
+        val handler = Handler(ht.looper)
+
+        val reader = ImageReader.newInstance(targetW, targetH, PixelFormat.RGBA_8888, 2)
+        imageReader = reader
+
+        val metrics = context.resources.displayMetrics
+        val vd = projection.createVirtualDisplay(
+            "LinkToMacMirror",
+            targetW, targetH, metrics.densityDpi,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            reader.surface, null, handler
+        )
+        virtualDisplay = vd
+
+        var lastSent = 0L
+        reader.setOnImageAvailableListener({ ir ->
+            val img = ir.acquireLatestImage() ?: return@setOnImageAvailableListener
+            val now = System.currentTimeMillis()
+            if (now - lastSent >= 50) { // ~20 fps
+                lastSent = now
+                val planes = img.planes
+                val buffer = planes[0].buffer
+                val pixelStride = planes[0].pixelStride
+                val rowStride = planes[0].rowStride
+                val rowPadding = rowStride - pixelStride * targetW
+
+                val bmp = Bitmap.createBitmap(targetW + rowPadding / pixelStride, targetH, Bitmap.Config.ARGB_8888)
+                bmp.copyPixelsFromBuffer(buffer)
+                val finalBmp = if (rowPadding > 0) Bitmap.createBitmap(bmp, 0, 0, targetW, targetH) else bmp
+
+                val baos = ByteArrayOutputStream()
+                finalBmp.compress(Bitmap.CompressFormat.JPEG, 65, baos)
+                if (rowPadding > 0) finalBmp.recycle()
+                bmp.recycle()
+
+                val frame = WireProtocol.packFrame(WireProtocol.FRAME_VIDEO_JPEG, baos.toByteArray())
+                LinkConnectionService.instance?.sendRawFrame(frame)
+            }
+            img.close()
+        }, handler)
+    }
+
+    fun stopAllStreams() {
+        streamJob?.cancel()
+        streamJob = null
+
+        try { virtualDisplay?.release() } catch (_: Exception) {}
+        virtualDisplay = null
+
+        try { cameraDevice?.close() } catch (_: Exception) {}
+        cameraDevice = null
+
+        try { imageReader?.close() } catch (_: Exception) {}
+        imageReader = null
+
+        try { workerThread?.quitSafely() } catch (_: Exception) {}
+        workerThread = null
+    }
+
+    private fun yuv420ToJpeg(image: android.media.Image): ByteArray? {
+        return try {
+            val yBuffer = image.planes[0].buffer
+            val uBuffer = image.planes[1].buffer
+            val vBuffer = image.planes[2].buffer
+            val ySize = yBuffer.remaining()
+            val uSize = uBuffer.remaining()
+            val vSize = vBuffer.remaining()
+            val nv21 = ByteArray(ySize + uSize + vSize)
+            yBuffer.get(nv21, 0, ySize)
+            vBuffer.get(nv21, ySize, vSize)
+            uBuffer.get(nv21, ySize + vSize, uSize)
+            val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
+            val out = ByteArrayOutputStream()
+            yuvImage.compressToJpeg(Rect(0, 0, image.width, image.height), 65, out)
+            out.toByteArray()
+        } catch (_: Exception) {
+            null
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/MainActivity.kt
+```kotlin
+package com.linktomac.android
+
+import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.os.PowerManager
+import android.provider.Settings
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.delay
+import org.json.JSONObject
+
+class MainActivity : ComponentActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Start foreground companion service immediately
+        startForegroundService(Intent(this, LinkConnectionService::class.java))
+
+        handleIncomingShareIntent(intent)
+
+        setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                LinkToMacAndroidScreen()
+            }
+        }
+    }
+
+    @Composable
+    fun LinkToMacAndroidScreen() {
+        val prefs = getSharedPreferences("linktomac", MODE_PRIVATE)
+        var hostInput by remember { mutableStateOf(prefs.getString("lastHost", "192.168.1.100") ?: "") }
+        var portInput by remember { mutableStateOf(prefs.getInt("lastPort", 54921).toString()) }
+        var tokenInput by remember { mutableStateOf(prefs.getString("lastToken", "") ?: "") }
+        var statusText by remember { mutableStateOf(LinkConnectionService.statusMessage) }
+        var discoveredHost by remember { mutableStateOf(LinkConnectionService.discoveredMacHost) }
+
+        // Poll connection status every second for UI
+        LaunchedEffect(Unit) {
+            while (true) {
+                statusText = LinkConnectionService.statusMessage
+                discoveredHost = LinkConnectionService.discoveredMacHost
+                delay(1000)
+            }
+        }
+
+        // Runtime Permissions Launcher
+        val permLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { _ -> }
+
+        // QR Code Scanner Launcher
+        val qrLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+            val contents = result.contents ?: return@rememberLauncherForActivityResult
+            try {
+                val json = JSONObject(contents)
+                val h = json.optString("host")
+                val p = json.optInt("port", 54921)
+                val t = json.optString("token")
+                if (h.isNotEmpty()) {
+                    hostInput = h
+                    portInput = p.toString()
+                    tokenInput = t
+                    triggerConnect(h, p, t)
+                }
+            } catch (_: Exception) {}
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF0E1116))
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "LinkToMac",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF4ADE80)
+            )
+            Text(
+                text = "Make Android feel at home on your Mac • v1.61",
+                fontSize = 14.sp,
+                color = Color.LightGray
+            )
+
+            // Status Banner
+            Surface(
+                color = Color(0xFF1A202C),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = if (LinkConnectionService.isConnectedState) "● Connected to Mac" else "○ Not Connected",
+                        color = if (LinkConnectionService.isConnectedState) Color(0xFF4ADE80) else Color(0xFFFBBF24),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    Text(text = statusText, color = Color.White, fontSize = 13.sp)
+
+                    if (discoveredHost.isNotEmpty() && !LinkConnectionService.isConnectedState) {
+                        Button(
+                            onClick = {
+                                hostInput = discoveredHost
+                                triggerConnect(discoveredHost, LinkConnectionService.discoveredMacPort, tokenInput)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4ADE80))
+                        ) {
+                            Text("Auto-Connect Discovered Mac ($discoveredHost)", color = Color.Black)
+                        }
+                    }
+                }
+            }
+
+            // Step 1: Connect via QR, USB, or Wi-Fi
+            Surface(
+                color = Color(0xFF1A202C),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("01 • Pair or Connect", fontWeight = FontWeight.Bold, color = Color.White)
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = {
+                                val options = ScanOptions().apply {
+                                    setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                                    setPrompt("Scan the LinkToMac QR Code on your Mac")
+                                    setBeepEnabled(false)
+                                }
+                                qrLauncher.launch(options)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4ADE80)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Scan Mac QR Code", color = Color.Black, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                // USB ADB reverse maps Mac port 54921 to phone's 127.0.0.1:54921
+                                triggerConnect("127.0.0.1", 54921, tokenInput)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Connect via USB")
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = hostInput,
+                        onValueChange = { hostInput = it },
+                        label = { Text("Mac Local Wi-Fi IP") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = portInput,
+                            onValueChange = { portInput = it },
+                            label = { Text("Port") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = tokenInput,
+                            onValueChange = { tokenInput = it },
+                            label = { Text("6-Digit Token") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = {
+                                triggerConnect(hostInput.trim(), portInput.toIntOrNull() ?: 54921, tokenInput.trim())
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Connect Wi-Fi")
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                startService(Intent(this@MainActivity, LinkConnectionService::class.java).apply {
+                                    action = "DISCONNECT"
+                                })
+                            }
+                        ) {
+                            Text("Disconnect")
+                        }
+                    }
+                }
+            }
+
+            // Step 2: Quick Actions (Send Clipboard & Sync)
+            Surface(
+                color = Color(0xFF1A202C),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("02 • Instant Desk Actions", fontWeight = FontWeight.Bold, color = Color.White)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = { ClipboardManagerBridge.sendCurrentClipboardToMac(this@MainActivity) },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Push Clipboard to Mac")
+                        }
+                        Button(
+                            onClick = { SmsContactsCallBridge.syncSmsAndContactsToMac(this@MainActivity) },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Sync SMS & Contacts")
+                        }
+                    }
+                }
+            }
+
+            // Step 3: 1-Tap Permission Checklist
+            Surface(
+                color = Color(0xFF1A202C),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("03 • One-Time Companion Permissions", fontWeight = FontWeight.Bold, color = Color.White)
+
+                    Button(
+                        onClick = {
+                            val perms = mutableListOf(
+                                Manifest.permission.READ_SMS,
+                                Manifest.permission.SEND_SMS,
+                                Manifest.permission.RECEIVE_SMS,
+                                Manifest.permission.READ_CONTACTS,
+                                Manifest.permission.READ_PHONE_STATE,
+                                Manifest.permission.READ_CALL_LOG,
+                                Manifest.permission.ANSWER_PHONE_CALLS,
+                                Manifest.permission.CALL_PHONE,
+                                Manifest.permission.CAMERA,
+                                Manifest.permission.RECORD_AUDIO
+                            )
+                            if (Build.VERSION.SDK_INT >= 33) {
+                                perms.add(Manifest.permission.POST_NOTIFICATIONS)
+                                perms.add(Manifest.permission.READ_MEDIA_IMAGES)
+                                perms.add(Manifest.permission.READ_MEDIA_VIDEO)
+                            } else {
+                                perms.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                            }
+                            permLauncher.launch(perms.toTypedArray())
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("1. Grant SMS, Call, Contacts, Camera & Mic")
+                    }
+
+                    Button(
+                        onClick = {
+                            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("2. Enable Notification Mirroring & Replies")
+                    }
+
+                    Button(
+                        onClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+                                val intent = Intent(
+                                    Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                    android.net.Uri.parse("package:$packageName")
+                                )
+                                startActivity(intent)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("3. Enable Full Storage Access (Files Transfer)")
+                    }
+
+                    Button(
+                        onClick = {
+                            val pm = getSystemService(POWER_SERVICE) as PowerManager
+                            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                                val intent = Intent(
+                                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                    android.net.Uri.parse("package:$packageName")
+                                )
+                                startActivity(intent)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("4. Allow Unrestricted Battery (Stay Connected)")
+                    }
+
+                    Button(
+                        onClick = {
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("5. Enable Accessibility (Wireless Touch, Mirror & Background Clipboard)")
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingShareIntent(intent)
+    }
+
+    private fun handleIncomingShareIntent(intent: Intent?) {
+        if (intent == null) return
+        val action = intent.action ?: return
+
+        when (action) {
+            Intent.ACTION_SEND -> {
+                val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+                if (!sharedText.isNullOrBlank()) {
+                    ClipboardManagerBridge.sendClipboardToMac(sharedText)
+                    val trimmed = sharedText.trim()
+                    if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
+                        val frame = WireProtocol.packJson(
+                            type = "URL_HANDOFF",
+                            payloadMap = mapOf("url" to trimmed)
+                        )
+                        LinkConnectionService.instance?.sendRawFrame(frame)
+                    }
+                }
+
+                val streamUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
+                }
+
+                if (streamUri != null) {
+                    shareUriToMac(streamUri)
+                }
+            }
+
+            Intent.ACTION_SEND_MULTIPLE -> {
+                val streamUris = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableArrayListExtra<android.net.Uri>(Intent.EXTRA_STREAM)
+                }
+
+                if (!streamUris.isNullOrEmpty()) {
+                    for (uri in streamUris) {
+                        shareUriToMac(uri)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun shareUriToMac(uri: android.net.Uri) {
+        Thread {
+            try {
+                var fileName = "shared_${System.currentTimeMillis()}"
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val nameIdx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (nameIdx != -1 && cursor.moveToFirst()) {
+                        cursor.getString(nameIdx)?.let { fileName = it }
+                    }
+                }
+                val tempFile = java.io.File(cacheDir, fileName)
+                contentResolver.openInputStream(uri)?.use { input ->
+                    java.io.FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                FilePhotosBridge.streamFileToMac(tempFile.absolutePath, fileName, "true")
+            } catch (e: Exception) {
+                android.util.Log.w("MainActivity", "Failed to share URI to Mac: ${e.message}")
+            }
+        }.start()
+    }
+
+    private fun triggerConnect(host: String, port: Int, token: String) {
+        startService(Intent(this, LinkConnectionService::class.java).apply {
+            action = "CONNECT_HOST"
+            putExtra("host", host)
+            putExtra("port", port)
+            putExtra("token", token)
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+````
+
+<a id="docs-bundles-linktomac-complete-macos-source-code-md"></a>
+### `docs/bundles/linktomac_complete_macos_source_code.md`
+
+````markdown
+# LinkToMac — Complete macOS Source Code (`allcode/LinkToMac-macOS`)
+
+Every file below belongs inside the codebase. Run `python3 scripts/stitch_allcode.py` to extract them automatically.
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Package.swift
+```swift
+// swift-tools-version: 5.9
+import PackageDescription
+
+let package = Package(
+    name: "LinkToMac",
+    platforms: [
+        .macOS(.v13)
+    ],
+    products: [
+        .executable(name: "LinkToMac", targets: ["LinkToMac"])
+    ],
+    targets: [
+        .executableTarget(
+            name: "LinkToMac",
+            path: "Sources/LinkToMac"
+        )
+    ]
+)
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Info.plist
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>LinkToMac</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.linktomac.mac</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>LinkToMac</string>
+    <key>CFBundleDisplayName</key>
+    <string>LinkToMac</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.61</string>
+    <key>CFBundleVersion</key>
+    <string>161</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>LinkToMac connects directly to your Android phone over local Wi-Fi and USB without cloud servers.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_linktomac._tcp</string>
+    </array>
+</dict>
+</plist>
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/build_mac_app.sh
+```bash
+#!/usr/bin/env bash
+set -e
+
+echo "=========================================="
+echo " Building LinkToMac for macOS (v1.61)..."
+echo "=========================================="
+
+swift build -c release
+
+APP_DIR="build/LinkToMac.app"
+CONTENTS_DIR="$APP_DIR/Contents"
+MACOS_DIR="$CONTENTS_DIR/MacOS"
+RESOURCES_DIR="$CONTENTS_DIR/Resources"
+
+rm -rf "$APP_DIR"
+mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
+
+cp ".build/release/LinkToMac" "$MACOS_DIR/LinkToMac"
+cp "Info.plist" "$CONTENTS_DIR/Info.plist"
+chmod +x "$MACOS_DIR/LinkToMac"
+
+# Ad-hoc sign so macOS Local Network & Notification permissions work smoothly
+codesign --force --deep --sign - "$APP_DIR"
+
+echo "=========================================="
+echo " SUCCESS: Built $APP_DIR"
+echo " Run with: open $APP_DIR"
+echo "=========================================="
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift
+```swift
+import Foundation
+
+// MARK: - Binary Wire Frame Constants
+enum WireFrameType: UInt8 {
+    case jsonControl = 0x01
+    case fileChunk   = 0x02
+    case videoFrame  = 0x03
+    case audioFrame  = 0x04
+}
+
+// MARK: - Top-Level JSON Envelope
+struct LinkEnvelope: Codable {
+    var type: String
+    var timestamp: Int64 = Int64(Date().timeIntervalSince1970 * 1000)
+    var payload: [String: String] = [:]
+    var notifications: [AndroidNotificationItem]? = nil
+    var smsThreads: [SmsThreadItem]? = nil
+    var contacts: [AndroidContactItem]? = nil
+    var files: [RemoteFileItem]? = nil
+    var photos: [RemotePhotoItem]? = nil
+}
+
+// MARK: - Feature Models
+struct AndroidNotificationItem: Identifiable, Codable, Hashable {
+    var id: String
+    var packageName: String
+    var appName: String
+    var title: String
+    var body: String
+    var timestamp: Int64
+    var canReply: Bool
+    var otpCode: String?
+    var replySentText: String?
+}
+
+struct SmsMessageItem: Identifiable, Codable, Hashable {
+    var id: String
+    var address: String
+    var body: String
+    var date: Int64
+    var isIncoming: Bool
+}
+
+struct SmsThreadItem: Identifiable, Codable, Hashable {
+    var id: String // phone number / address
+    var contactName: String
+    var address: String
+    var lastMessage: String
+    var timestamp: Int64
+    var messages: [SmsMessageItem]
+}
+
+struct AndroidContactItem: Identifiable, Codable, Hashable {
+    var id: String
+    var name: String
+    var phoneNumber: String
+}
+
+struct RemoteFileItem: Identifiable, Codable, Hashable {
+    var id: String { path }
+    var name: String
+    var path: String
+    var sizeBytes: Int64
+    var isDirectory: Bool
+    var lastModified: Int64
+}
+
+struct RemotePhotoItem: Identifiable, Codable, Hashable {
+    var id: String
+    var name: String
+    var path: String
+    var dateTaken: Int64
+    var sizeBytes: Int64
+    var isVideo: Bool
+    var thumbnailBase64: String?
+}
+
+struct ClipboardHistoryItem: Identifiable, Hashable {
+    let id = UUID()
+    let content: String
+    let isUrl: Bool
+    let source: String // "Android" or "This Mac"
+    let timestamp: Date
+}
+
+struct ActiveTransferItem: Identifiable {
+    let id: String
+    var fileName: String
+    var direction: String // "Sending to Android" or "Receiving from Android"
+    var totalBytes: Int64
+    var transferredBytes: Int64
+    var transport: String
+    var isCompleted: Bool = false
+
+    var progress: Double {
+        guard totalBytes > 0 else { return 0 }
+        return min(1.0, Double(transferredBytes) / Double(totalBytes))
+    }
+}
+
+struct IncomingCallState: Equatable {
+    var isActive: Bool = false
+    var state: String = "IDLE" // "RINGING", "OFFHOOK", "IDLE"
+    var phoneNumber: String = ""
+    var contactName: String = ""
+    var isMuted: Bool = false
+}
+
+// MARK: - Wire Framing Helper
+enum WireFramer {
+    static func packJSON(_ envelope: LinkEnvelope) -> Data? {
+        guard let jsonData = try? JSONEncoder().encode(envelope) else { return nil }
+        return packFrame(type: .jsonControl, payload: jsonData)
+    }
+
+    static func packFrame(type: WireFrameType, payload: Data) -> Data {
+        var lengthBE = UInt32(payload.count).bigEndian
+        var header = Data(bytes: &lengthBE, count: 4)
+        header.append(type.rawValue)
+        header.append(payload)
+        return header
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift
+```swift
+import SwiftUI
+
+@propertyWrapper
+public struct LocalState<Value>: DynamicProperty {
+    @StateObject private var container: Container
+
+    final class Container: ObservableObject {
+        @Published var value: Value
+        init(_ value: Value) { self.value = value }
+    }
+
+    public init(wrappedValue: Value) {
+        _container = StateObject(wrappedValue: Container(wrappedValue))
+    }
+
+    public init() where Value: ExpressibleByNilLiteral {
+        self.init(wrappedValue: nil)
+    }
+
+    public var wrappedValue: Value {
+        get { container.value }
+        nonmutating set { container.value = newValue }
+    }
+
+    public var projectedValue: Binding<Value> {
+        Binding(
+            get: { self.container.value },
+            set: { self.container.value = $0 }
+        )
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ConnectionManager.swift
+```swift
+import Foundation
+import Network
+import AppKit
+import UserNotifications
+import AVFoundation
+
+@MainActor
+final class ConnectionManager: ObservableObject {
+    static let shared = ConnectionManager()
+
+    // Connection State
+    @Published var isConnected: Bool = false
+    @Published var connectedDeviceName: String = "No Android Connected"
+    @Published var connectionTransport: String = "Waiting..." // "USB" or "Local Wi-Fi"
+    @Published var batteryLevel: Int = 0
+    @Published var isCharging: Bool = false
+    @Published var ringerMode: String = "Normal"
+    @Published var localIPAddress: String = "127.0.0.1"
+    @Published var listenPort: UInt16 = 54921
+    @Published var pairingToken: String = ""
+
+    // Feature State
+    @Published var notifications: [AndroidNotificationItem] = []
+    @Published var mutedApps: Set<String> = []
+    @Published var smsThreads: [SmsThreadItem] = []
+    @Published var contacts: [AndroidContactItem] = []
+    @Published var currentDirectoryPath: String = "/sdcard/Download"
+    @Published var remoteFiles: [RemoteFileItem] = []
+    @Published var remotePhotos: [RemotePhotoItem] = []
+    @Published var transfers: [ActiveTransferItem] = []
+    @Published var callState: IncomingCallState = IncomingCallState()
+
+    // Media & Live Stream State
+    @Published var nowPlayingTitle: String = "Nothing Playing"
+    @Published var nowPlayingArtist: String = "Android Media Remote"
+    @Published var liveVideoFrame: NSImage? = nil
+    @Published var activeStreamMode: String = "NONE" // "NONE", "MIRROR", "WEBCAM_BACK", "WEBCAM_FRONT"
+    @Published var isScreenOffMirror: Bool = false
+    @Published var androidScreenWidth: Double = 1080.0
+    @Published var androidScreenHeight: Double = 2400.0
+    @Published var deviceScreenWidth: Int = 1080
+    @Published var deviceScreenHeight: Int = 2400
+
+    private var listener: NWListener?
+    private var activeConnection: NWConnection?
+    private var receiveBuffer = Data()
+    private var incomingFileHandles: [String: (url: URL, handle: FileHandle, expectedBytes: Int64)] = [:]
+
+    // Audio player for live microphone/cast PCM frames
+    private let audioEngine = AVAudioEngine()
+    private let playerNode = AVAudioPlayerNode()
+    private var audioConfigured = false
+
+    private init() {
+        self.localIPAddress = Self.detectLocalIPAddress() ?? "127.0.0.1"
+        if let savedToken = UserDefaults.standard.string(forKey: "LinkToMacPairingToken"), !savedToken.isEmpty {
+            self.pairingToken = savedToken
+        } else {
+            let newToken = String(format: "%06d", Int.random(in: 100000...999999))
+            UserDefaults.standard.set(newToken, forKey: "LinkToMacPairingToken")
+            self.pairingToken = newToken
+        }
+
+        requestMacNotificationPermission()
+        startServer()
+        observeMacWake()
+    }
+
+    // MARK: - Server & Bonjour mDNS
+    func startServer() {
+        listener?.cancel()
+        do {
+            let params = NWParameters.tcp
+            params.allowLocalEndpointReuse = true
+            let nwPort = NWEndpoint.Port(rawValue: listenPort)!
+            let newListener = try NWListener(using: params, on: nwPort)
+
+            // Advertise Bonjour _linktomac._tcp so Android discovers Mac automatically
+            let hostName = Host.current().localizedName ?? "Mac"
+            newListener.service = NWListener.Service(
+                name: "LinkToMac-\(hostName)",
+                type: "_linktomac._tcp"
+            )
+
+            newListener.newConnectionHandler = { [weak self] connection in
+                Task { @MainActor in
+                    self?.acceptConnection(connection)
+                }
+            }
+
+            newListener.start(queue: .main)
+            self.listener = newListener
+        } catch {
+            print("[LinkToMac] Failed to start listener: \(error)")
+        }
+    }
+
+    private func acceptConnection(_ connection: NWConnection) {
+        activeConnection?.cancel()
+        activeConnection = connection
+        receiveBuffer.removeAll()
+
+        connection.stateUpdateHandler = { [weak self] state in
+            Task { @MainActor in
+                guard let self = self else { return }
+                switch state {
+                case .ready:
+                    self.isConnected = true
+                    self.sendHello()
+                    self.readNextChunk(from: connection)
+                case .failed, .cancelled:
+                    if self.activeConnection === connection {
+                        self.isConnected = false
+                        self.connectionTransport = "Disconnected"
+                    }
+                default:
+                    break
+                }
+            }
+        }
+        connection.start(queue: .main)
+    }
+
+    private func readNextChunk(from connection: NWConnection) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 131072) { [weak self] data, _, isComplete, error in
+            Task { @MainActor in
+                guard let self = self else { return }
+                if let data = data, !data.isEmpty {
+                    self.receiveBuffer.append(data)
+                    self.processReceiveBuffer()
+                }
+                if isComplete || error != nil {
+                    if self.activeConnection === connection {
+                        self.isConnected = false
+                    }
+                    return
+                }
+                self.readNextChunk(from: connection)
+            }
+        }
+    }
+
+    private func processReceiveBuffer() {
+        while receiveBuffer.count >= 5 {
+            let lengthBytes = receiveBuffer.subdata(in: 0..<4)
+            let length = lengthBytes.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
+            let frameTypeByte = receiveBuffer[4]
+            let totalFrameSize = 5 + Int(length)
+
+            guard receiveBuffer.count >= totalFrameSize else { break }
+            let payload = receiveBuffer.subdata(in: 5..<totalFrameSize)
+            receiveBuffer.removeSubrange(0..<totalFrameSize)
+
+            guard let frameType = WireFrameType(rawValue: frameTypeByte) else { continue }
+            switch frameType {
+            case .jsonControl:
+                handleJSONPayload(payload)
+            case .fileChunk:
+                handleBinaryFileChunk(payload)
+            case .videoFrame:
+                if let img = NSImage(data: payload) {
+                    self.liveVideoFrame = img
+                }
+            case .audioFrame:
+                playPCMFrame(payload)
+            }
+        }
+    }
+
+    // MARK: - Handle Incoming JSON Commands
+    private func handleJSONPayload(_ data: Data) {
+        guard let env = try? JSONDecoder().decode(LinkEnvelope.self, from: data) else { return }
+
+        switch env.type {
+        case "HELLO", "STATUS_UPDATE":
+            if let name = env.payload["deviceName"] { self.connectedDeviceName = name }
+            if let batStr = env.payload["battery"], let bat = Int(batStr) { self.batteryLevel = bat }
+            if let chg = env.payload["charging"] { self.isCharging = (chg == "true") }
+            if let trans = env.payload["transport"] {
+                self.connectionTransport = ADBBridge.shared.isUSBDeviceConnected ? "USB" : trans
+            }
+            if let ringer = env.payload["ringerMode"] { self.ringerMode = ringer }
+            if let track = env.payload["mediaTitle"], !track.isEmpty {
+                self.nowPlayingTitle = track
+                self.nowPlayingArtist = env.payload["mediaArtist"] ?? "Android Media"
+            }
+            if let wStr = env.payload["screenWidth"], let w = Double(wStr), w > 0 {
+                self.androidScreenWidth = w
+                self.deviceScreenWidth = Int(w)
+                ADBBridge.shared.deviceScreenWidth = Int(w)
+            }
+            if let hStr = env.payload["screenHeight"], let h = Double(hStr), h > 0 {
+                self.androidScreenHeight = h
+                self.deviceScreenHeight = Int(h)
+                ADBBridge.shared.deviceScreenHeight = Int(h)
+            }
+            if env.type == "HELLO" {
+                requestDirectoryListing(path: currentDirectoryPath)
+                requestPhotosList()
+                requestSmsAndContacts()
+            }
+
+        case "NOTIFICATION_POSTED":
+            if let items = env.notifications {
+                for item in items {
+                    guard !mutedApps.contains(item.packageName) else { continue }
+                    notifications.removeAll { $0.id == item.id }
+                    notifications.insert(item, at: 0)
+                    postNativeMacNotification(item)
+                }
+            }
+
+        case "NOTIFICATION_REMOVED":
+            if let id = env.payload["id"] {
+                notifications.removeAll { $0.id == id }
+            }
+
+        case "SMS_THREADS_SYNC":
+            if let threads = env.smsThreads {
+                self.smsThreads = threads
+            }
+            if let contactList = env.contacts {
+                self.contacts = contactList
+            }
+
+        case "CALL_STATE":
+            let state = env.payload["state"] ?? "IDLE"
+            let number = env.payload["number"] ?? "Unknown"
+            let name = env.payload["contactName"] ?? number
+            self.callState = IncomingCallState(
+                isActive: state != "IDLE",
+                state: state,
+                phoneNumber: number,
+                contactName: name,
+                isMuted: env.payload["isMuted"] == "true"
+            )
+
+        case "CLIPBOARD_SYNC":
+            if let text = env.payload["content"], !text.isEmpty {
+                ClipboardSyncManager.shared.applyIncomingFromAndroid(text: text)
+            }
+
+        case "URL_HANDOFF":
+            if let urlStr = env.payload["url"], let url = URL(string: urlStr) {
+                NSWorkspace.shared.open(url)
+            }
+
+        case "FILE_LIST_RES":
+            if let path = env.payload["path"] {
+                self.currentDirectoryPath = path
+            }
+            if let files = env.files {
+                self.remoteFiles = files.sorted {
+                    if $0.isDirectory != $1.isDirectory { return $0.isDirectory && !$1.isDirectory }
+                    return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                }
+            }
+
+        case "PHOTOS_LIST_RES":
+            if let photos = env.photos {
+                self.remotePhotos = photos
+            }
+
+        case "FILE_TRANSFER_START":
+            guard let tid = env.payload["transferId"],
+                  let fileName = env.payload["fileName"],
+                  let sizeStr = env.payload["totalBytes"],
+                  let totalBytes = Int64(sizeStr) else { return }
+
+            let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+                .appendingPathComponent("LinkToMac", isDirectory: true)
+            try? FileManager.default.createDirectory(at: downloadsDir, withIntermediateDirectories: true)
+            let destURL = downloadsDir.appendingPathComponent(fileName)
+            FileManager.default.createFile(atPath: destURL.path, contents: nil)
+            if let handle = try? FileHandle(forWritingTo: destURL) {
+                incomingFileHandles[tid] = (destURL, handle, totalBytes)
+                transfers.insert(ActiveTransferItem(
+                    id: tid,
+                    fileName: fileName,
+                    direction: "Receiving from Android",
+                    totalBytes: totalBytes,
+                    transferredBytes: 0,
+                    transport: connectionTransport
+                ), at: 0)
+            }
+
+        case "FILE_TRANSFER_END":
+            guard let tid = env.payload["transferId"] else { return }
+            if let entry = incomingFileHandles.removeValue(forKey: tid) {
+                try? entry.handle.close()
+                if let idx = transfers.firstIndex(where: { $0.id == tid }) {
+                    transfers[idx].transferredBytes = transfers[idx].totalBytes
+                    transfers[idx].isCompleted = true
+                }
+                // Reveal in Finder if requested
+                if env.payload["revealInFinder"] == "true" {
+                    NSWorkspace.shared.activateFileViewerSelecting([entry.url])
+                }
+            }
+
+        default:
+            break
+        }
+    }
+
+    // MARK: - Handle Incoming Binary File Chunks
+    private func handleBinaryFileChunk(_ payload: Data) {
+        guard payload.count > 36 else { return }
+        let tidData = payload.subdata(in: 0..<36)
+        guard let tid = String(data: tidData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+        let chunkData = payload.subdata(in: 36..<payload.count)
+
+        if let entry = incomingFileHandles[tid] {
+            try? entry.handle.write(contentsOf: chunkData)
+            if let idx = transfers.firstIndex(where: { $0.id == tid }) {
+                transfers[idx].transferredBytes += Int64(chunkData.count)
+            }
+        }
+    }
+
+    // MARK: - Outgoing Commands
+    func sendEnvelope(_ env: LinkEnvelope) {
+        guard let connection = activeConnection,
+              let data = WireFramer.packJSON(env) else { return }
+        connection.send(content: data, completion: .contentProcessed { _ in })
+    }
+
+    func sendHello() {
+        let hostName = Host.current().localizedName ?? "Mac"
+        sendEnvelope(LinkEnvelope(
+            type: "HELLO",
+            payload: [
+                "deviceName": hostName,
+                "pairToken": pairingToken
+            ]
+        ))
+    }
+
+    func sendNotificationReply(notificationId: String, replyText: String) {
+        guard !replyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        sendEnvelope(LinkEnvelope(
+            type: "NOTIFICATION_REPLY",
+            payload: [
+                "id": notificationId,
+                "replyText": replyText
+            ]
+        ))
+        if let idx = notifications.firstIndex(where: { $0.id == notificationId }) {
+            notifications[idx].replySentText = replyText
+        }
+    }
+
+    func dismissNotification(notificationId: String) {
+        notifications.removeAll { $0.id == notificationId }
+        sendEnvelope(LinkEnvelope(
+            type: "NOTIFICATION_REMOVED",
+            payload: ["id": notificationId]
+        ))
+    }
+
+    func sendSms(address: String, body: String) {
+        guard !body.isEmpty else { return }
+        sendEnvelope(LinkEnvelope(
+            type: "SMS_SEND",
+            payload: [
+                "address": address,
+                "body": body
+            ]
+        ))
+        // Optimistically append to local thread
+        let newMsg = SmsMessageItem(
+            id: UUID().uuidString,
+            address: address,
+            body: body,
+            date: Int64(Date().timeIntervalSince1970 * 1000),
+            isIncoming: false
+        )
+        if let idx = smsThreads.firstIndex(where: { $0.address == address }) {
+            smsThreads[idx].messages.append(newMsg)
+            smsThreads[idx].lastMessage = body
+        } else {
+            smsThreads.insert(SmsThreadItem(
+                id: address,
+                contactName: address,
+                address: address,
+                lastMessage: body,
+                timestamp: newMsg.date,
+                messages: [newMsg]
+            ), at: 0)
+        }
+    }
+
+    func sendCallAction(_ action: String, smsReply: String? = nil) {
+        var payload = ["action": action]
+        if let smsReply = smsReply {
+            payload["smsReply"] = smsReply
+            payload["number"] = callState.phoneNumber
+        }
+        sendEnvelope(LinkEnvelope(type: "CALL_ACTION", payload: payload))
+        if action == "DECLINE" || action == "END" || action == "DECLINE_WITH_SMS" {
+            callState.isActive = false
+            callState.state = "IDLE"
+        } else if action == "MUTE" {
+            callState.isMuted.toggle()
+        }
+    }
+
+    func dialPhoneNumber(_ number: String) {
+        sendEnvelope(LinkEnvelope(
+            type: "CALL_ACTION",
+            payload: ["action": "DIAL", "number": number]
+        ))
+    }
+
+    func requestDirectoryListing(path: String) {
+        sendEnvelope(LinkEnvelope(
+            type: "FILE_LIST_REQ",
+            payload: ["path": path]
+        ))
+    }
+
+    func requestPhotosList() {
+        sendEnvelope(LinkEnvelope(type: "PHOTOS_LIST_REQ"))
+    }
+
+    func requestSmsAndContacts() {
+        sendEnvelope(LinkEnvelope(type: "SMS_THREADS_REQ"))
+    }
+
+    func pullRemoteFileToMac(remotePath: String, fileName: String, revealInFinder: Bool = true) {
+        sendEnvelope(LinkEnvelope(
+            type: "FILE_PULL_REQ",
+            payload: [
+                "path": remotePath,
+                "fileName": fileName,
+                "revealInFinder": revealInFinder ? "true" : "false"
+            ]
+        ))
+    }
+
+    // MARK: - Send File from Mac Finder to Android (Chunked High-Speed Stream)
+    func sendFileToAndroid(fileURL: URL, destinationFolder: String = "/sdcard/Download/LinkToMac") {
+        guard let connection = activeConnection else { return }
+        let fileName = fileURL.lastPathComponent
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+              let fileSize = attrs[.size] as? Int64 else { return }
+
+        let transferId = UUID().uuidString // 36 chars
+        let transportLabel = connectionTransport
+
+        transfers.insert(ActiveTransferItem(
+            id: transferId,
+            fileName: fileName,
+            direction: "Sending to Android",
+            totalBytes: fileSize,
+            transferredBytes: 0,
+            transport: transportLabel
+        ), at: 0)
+
+        sendEnvelope(LinkEnvelope(
+            type: "FILE_TRANSFER_START",
+            payload: [
+                "transferId": transferId,
+                "fileName": fileName,
+                "totalBytes": "\(fileSize)",
+                "destFolder": destinationFolder
+            ]
+        ))
+
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self = self else { return }
+            guard let handle = try? FileHandle(forReadingFrom: fileURL) else { return }
+            defer { try? handle.close() }
+
+            let tidBytes = transferId.padding(toLength: 36, withPad: " ", startingAt: 0).data(using: .utf8)!
+            var sent: Int64 = 0
+            let chunkSize = 65536
+
+            while true {
+                let chunk = (try? handle.read(upToCount: chunkSize)) ?? Data()
+                if chunk.isEmpty { break }
+
+                var framePayload = Data(tidBytes)
+                framePayload.append(chunk)
+                let packed = WireFramer.packFrame(type: .fileChunk, payload: framePayload)
+                connection.send(content: packed, completion: .contentProcessed { _ in })
+
+                sent += Int64(chunk.count)
+                let currentSent = sent
+                await MainActor.run {
+                    if let idx = self.transfers.firstIndex(where: { $0.id == transferId }) {
+                        self.transfers[idx].transferredBytes = currentSent
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 1_500_000) // Smooth socket pacing
+            }
+
+            await MainActor.run {
+                self.sendEnvelope(LinkEnvelope(
+                    type: "FILE_TRANSFER_END",
+                    payload: ["transferId": transferId, "fileName": fileName]
+                ))
+                if let idx = self.transfers.firstIndex(where: { $0.id == transferId }) {
+                    self.transfers[idx].isCompleted = true
+                }
+                if !self.currentDirectoryPath.isEmpty {
+                    self.requestDirectoryListing(path: self.currentDirectoryPath)
+                }
+            }
+        }
+    }
+
+    func sendMediaAction(_ action: String) {
+        sendEnvelope(LinkEnvelope(
+            type: "MEDIA_ACTION",
+            payload: ["action": action]
+        ))
+    }
+
+    func setStreamMode(_ mode: String) {
+        self.activeStreamMode = mode
+        if mode == "NONE" {
+            self.liveVideoFrame = nil
+        }
+        sendEnvelope(LinkEnvelope(
+            type: "STREAM_CONTROL",
+            payload: ["mode": mode]
+        ))
+    }
+
+    func sendRemoteTap(normalizedX: Double, normalizedY: Double) {
+        // If USB ADB is available, ADBBridge injects zero-latency tap; also send over socket
+        sendEnvelope(LinkEnvelope(
+            type: "STREAM_CONTROL",
+            payload: [
+                "mode": "REMOTE_TAP",
+                "x": String(format: "%.4f", normalizedX),
+                "y": String(format: "%.4f", normalizedY)
+            ]
+        ))
+        ADBBridge.shared.injectTapNormalized(x: normalizedX, y: normalizedY)
+    }
+
+    func sendRemoteKeyEvent(_ keyCode: Int) {
+        sendEnvelope(LinkEnvelope(
+            type: "STREAM_CONTROL",
+            payload: ["mode": "REMOTE_KEY", "keyCode": "\(keyCode)"]
+        ))
+        ADBBridge.shared.injectKeyEvent(keyCode)
+    }
+
+    // MARK: - Live Audio Playback (Android Mic / Cast)
+    private func playPCMFrame(_ pcmData: Data) {
+        if !audioConfigured {
+            let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16000, channels: 1, interleaved: false)!
+            audioEngine.attach(playerNode)
+            audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: format)
+            try? audioEngine.start()
+            playerNode.play()
+            audioConfigured = true
+        }
+        let sampleCount = pcmData.count / 2
+        guard sampleCount > 0,
+              let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16000, channels: 1, interleaved: false),
+              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(sampleCount)) else { return }
+
+        buffer.frameLength = AVAudioFrameCount(sampleCount)
+        if let floatChannel = buffer.floatChannelData?[0] {
+            pcmData.withUnsafeBytes { rawBuf in
+                let int16Ptr = rawBuf.bindMemory(to: Int16.self)
+                for i in 0..<sampleCount {
+                    floatChannel[i] = Float(int16Ptr[i]) / 32768.0
+                }
+            }
+            playerNode.scheduleBuffer(buffer, completionHandler: nil)
+        }
+    }
+
+    // MARK: - Native macOS Notification Dispatch
+    private func requestMacNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    private func postNativeMacNotification(_ item: AndroidNotificationItem) {
+        let content = UNMutableNotificationContent()
+        content.title = "\(item.appName) • \(item.title)"
+        content.body = item.body
+        content.sound = .default
+        let req = UNNotificationRequest(identifier: item.id, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(req)
+    }
+
+    // MARK: - Wake Reconnect & Local IP
+    private func observeMacWake() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.localIPAddress = Self.detectLocalIPAddress() ?? "127.0.0.1"
+                self?.startServer()
+                ADBBridge.shared.pollUSBDevices()
+            }
+        }
+    }
+
+    static func detectLocalIPAddress() -> String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        if getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr {
+            for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
+                let interface = ptr.pointee
+                let addrFamily = interface.ifa_addr.pointee.sa_family
+                if addrFamily == UInt8(AF_INET) {
+                    let name = String(cString: interface.ifa_name)
+                    if name == "en0" || name == "en1" || name.hasPrefix("bridge") {
+                        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                        getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                                    &hostname, socklen_t(hostname.count),
+                                    nil, socklen_t(0), NI_NUMERICHOST)
+                        let candidate = String(cString: hostname)
+                        if !candidate.hasPrefix("127.") {
+                            address = candidate
+                            break
+                        }
+                    }
+                }
+            }
+            freeifaddrs(ifaddr)
+        }
+        return address
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift
+```swift
+import Foundation
+
+@MainActor
+final class ADBBridge: ObservableObject {
+    static let shared = ADBBridge()
+
+    @Published var isUSBDeviceConnected: Bool = false
+    @Published var usbSerial: String = ""
+    @Published var isScrcpyAvailable: Bool = false
+    @Published var deviceScreenWidth: Int = 1080
+    @Published var deviceScreenHeight: Int = 2400
+
+    private var timer: Timer?
+
+    private init() {
+        checkScrcpyInstalled()
+        startPolling()
+    }
+
+    func startPolling() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.pollUSBDevices()
+            }
+        }
+        pollUSBDevices()
+    }
+
+    private func findBinary(_ name: String) -> String? {
+        let candidates = [
+            "/opt/homebrew/bin/\(name)",
+            "/usr/local/bin/\(name)",
+            "\(NSHomeDirectory())/Library/Android/sdk/platform-tools/\(name)",
+            "/usr/bin/\(name)"
+        ]
+        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
+    }
+
+    func checkScrcpyInstalled() {
+        isScrcpyAvailable = (findBinary("scrcpy") != nil)
+    }
+
+    func pollUSBDevices() {
+        guard let adbPath = findBinary("adb") else { return }
+        Task.detached {
+            let output = Self.runCommand(adbPath, args: ["devices"])
+            let lines = output.components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty && !$0.hasPrefix("List of devices") && $0.hasSuffix("\tdevice") }
+
+            if let firstLine = lines.first,
+               let serial = firstLine.components(separatedBy: "\t").first {
+                // Ensure port 54921 is reversed so the Android app can connect over USB via 127.0.0.1:54921
+                _ = Self.runCommand(adbPath, args: ["-s", serial, "reverse", "tcp:54921", "tcp:54921"])
+
+                // Query actual screen width/height via adb shell wm size
+                let wmOutput = Self.runCommand(adbPath, args: ["-s", serial, "shell", "wm", "size"])
+                var detectedW = 0
+                var detectedH = 0
+                for line in wmOutput.components(separatedBy: .newlines) {
+                    let trimmed = line.trimmingCharacters(in: .whitespaces)
+                    if trimmed.contains("size:") {
+                        let parts = trimmed.components(separatedBy: "size:")
+                        if parts.count > 1 {
+                            let dims = parts[1].trimmingCharacters(in: .whitespaces).components(separatedBy: "x")
+                            if dims.count == 2, let w = Int(dims[0]), let h = Int(dims[1]) {
+                                detectedW = w
+                                detectedH = h
+                            }
+                        }
+                    }
+                }
+
+                let finalW = detectedW
+                let finalH = detectedH
+
+                await MainActor.run {
+                    let wasConnected = ADBBridge.shared.isUSBDeviceConnected
+                    ADBBridge.shared.isUSBDeviceConnected = true
+                    ADBBridge.shared.usbSerial = serial
+                    if !wasConnected {
+                        ADBBridge.shared.unlockBackgroundClipboardViaADB()
+                    }
+                    if finalW > 0 && finalH > 0 {
+                        ADBBridge.shared.deviceScreenWidth = finalW
+                        ADBBridge.shared.deviceScreenHeight = finalH
+                        ConnectionManager.shared.androidScreenWidth = Double(finalW)
+                        ConnectionManager.shared.androidScreenHeight = Double(finalH)
+                        ConnectionManager.shared.deviceScreenWidth = finalW
+                        ConnectionManager.shared.deviceScreenHeight = finalH
+                    }
+                    if ConnectionManager.shared.isConnected {
+                        ConnectionManager.shared.connectionTransport = "USB"
+                    }
+                }
+            } else {
+                await MainActor.run {
+                    ADBBridge.shared.isUSBDeviceConnected = false
+                    ADBBridge.shared.usbSerial = ""
+                    if ConnectionManager.shared.isConnected && ConnectionManager.shared.connectionTransport == "USB" {
+                        ConnectionManager.shared.connectionTransport = "Local Wi-Fi"
+                    }
+                }
+            }
+        }
+    }
+
+    func launchNativeScrcpy(screenOff: Bool, stayAwake: Bool) {
+        guard let scrcpyPath = findBinary("scrcpy") else { return }
+        var args = ["--window-title", "LinkToMac — \(ConnectionManager.shared.connectedDeviceName)"]
+        if screenOff {
+            args.append("--turn-screen-off")
+        }
+        if stayAwake {
+            args.append("--stay-awake")
+        }
+        Task.detached {
+            let proc = Process()
+            proc.executableURL = URL(fileURLWithPath: scrcpyPath)
+            proc.arguments = args
+            try? proc.run()
+        }
+    }
+
+    func injectTapNormalized(x: Double, y: Double) {
+        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
+        let w = ConnectionManager.shared.androidScreenWidth > 0 ? ConnectionManager.shared.androidScreenWidth : 1080.0
+        let h = ConnectionManager.shared.androidScreenHeight > 0 ? ConnectionManager.shared.androidScreenHeight : 2400.0
+        let px = Int(x * w)
+        let py = Int(y * h)
+        Task.detached {
+            _ = Self.runCommand(adbPath, args: ["shell", "input", "tap", "\(px)", "\(py)"])
+        }
+    }
+
+    func injectKeyEvent(_ keyCode: Int) {
+        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
+        Task.detached {
+            _ = Self.runCommand(adbPath, args: ["shell", "input", "keyevent", "\(keyCode)"])
+        }
+    }
+
+    func unlockBackgroundClipboardViaADB() {
+        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
+        Task.detached {
+            _ = Self.runCommand(adbPath, args: ["shell", "cmd", "appops", "set", "com.linktomac.android", "SYSTEM_ALERT_WINDOW", "allow"])
+            _ = Self.runCommand(adbPath, args: ["shell", "pm", "grant", "com.linktomac.android", "android.permission.READ_LOGS"])
+        }
+    }
+
+    nonisolated private static func runCommand(_ executable: String, args: [String]) -> String {
+        let process = Process()
+        let pipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = args
+        process.standardOutput = pipe
+        process.standardError = pipe
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            return String(data: data, encoding: .utf8) ?? ""
+        } catch {
+            return ""
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift
+```swift
+import Foundation
+import AppKit
+
+@MainActor
+final class ClipboardSyncManager: ObservableObject {
+    static let shared = ClipboardSyncManager()
+
+    @Published var isSyncEnabled: Bool = true
+    @Published var ignoreConcealedPasswords: Bool = true
+    @Published var history: [ClipboardHistoryItem] = []
+
+    private var lastChangeCount: Int = NSPasteboard.general.changeCount
+    private var lastSyncedString: String = ""
+    private var pollTimer: Timer?
+
+    private init() {
+        startMonitoring()
+    }
+
+    func startMonitoring() {
+        pollTimer?.invalidate()
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.65, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.checkMacPasteboard()
+            }
+        }
+    }
+
+    private func checkMacPasteboard() {
+        guard isSyncEnabled else { return }
+        let pb = NSPasteboard.general
+        guard pb.changeCount != lastChangeCount else { return }
+        lastChangeCount = pb.changeCount
+
+        // Respect password managers (1Password, Bitwarden, Keychain)
+        if ignoreConcealedPasswords {
+            let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+            if pb.types?.contains(concealedType) == true {
+                return
+            }
+        }
+
+        guard let copied = pb.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !copied.isEmpty,
+              copied != lastSyncedString else { return }
+
+        lastSyncedString = copied
+        let isUrl = copied.hasPrefix("http://") || copied.hasPrefix("https://")
+        recordHistory(content: copied, isUrl: isUrl, source: "This Mac")
+
+        if ConnectionManager.shared.isConnected {
+            ConnectionManager.shared.sendEnvelope(LinkEnvelope(
+                type: "CLIPBOARD_SYNC",
+                payload: [
+                    "content": copied,
+                    "isUrl": isUrl ? "true" : "false"
+                ]
+            ))
+        }
+    }
+
+    func applyIncomingFromAndroid(text: String) {
+        guard isSyncEnabled, text != lastSyncedString else { return }
+        lastSyncedString = text
+
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(text, forType: .string)
+        lastChangeCount = pb.changeCount
+
+        let isUrl = text.hasPrefix("http://") || text.hasPrefix("https://")
+        recordHistory(content: text, isUrl: isUrl, source: "Android")
+    }
+
+    func copyItemToMac(_ item: ClipboardHistoryItem) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(item.content, forType: .string)
+        lastChangeCount = pb.changeCount
+        lastSyncedString = item.content
+    }
+
+    func handoffURLToAndroid(_ urlString: String) {
+        ConnectionManager.shared.sendEnvelope(LinkEnvelope(
+            type: "URL_HANDOFF",
+            payload: ["url": urlString]
+        ))
+    }
+
+    private func recordHistory(content: String, isUrl: Bool, source: String) {
+        history.removeAll { $0.content == content }
+        history.insert(ClipboardHistoryItem(
+            content: content,
+            isUrl: isUrl,
+            source: source,
+            timestamp: Date()
+        ), at: 0)
+        if history.count > 40 {
+            history.removeLast()
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift
+```swift
+import SwiftUI
+import CoreImage.CIFilterBuiltins
+
+enum DashboardSection: String, CaseIterable, Identifiable {
+    case overview      = "Dashboard"
+    case messages      = "Messages"
+    case notifications = "Notifications"
+    case files         = "Files"
+    case photos        = "Photos"
+    case clipboard     = "Clipboard"
+    case mirrorCamera  = "Mirror & Camera"
+    case pairSetup     = "Pair Device (QR)"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .overview:      return "laptopcomputer.and.iphone"
+        case .messages:      return "message.fill"
+        case .notifications: return "bell.badge.fill"
+        case .files:         return "folder.fill"
+        case .photos:        return "photo.on.rectangle.angled"
+        case .clipboard:     return "doc.on.clipboard.fill"
+        case .mirrorCamera:  return "rectangle.inset.filled.and.person.filled"
+        case .pairSetup:     return "qrcode.viewfinder"
+        }
+    }
+}
+
+struct MainDashboardView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var adb = ADBBridge.shared
+    @ObservedObject var clip = ClipboardSyncManager.shared
+    @LocalState private var selectedSection: DashboardSection = .overview
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            NavigationSplitView {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Brand Header
+                    HStack(spacing: 10) {
+                        Image(systemName: "link.circle.fill")
+                            .font(.system(size: 26))
+                            .foregroundStyle(.green)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("LinkToMac")
+                                .font(.headline.bold())
+                            Text("v1.61 • Local & Private")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+
+                    // Live Connection Pill
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Circle()
+                                .fill(conn.isConnected ? Color.green : Color.orange)
+                                .frame(width: 9, height: 9)
+                            Text(conn.isConnected ? conn.connectedDeviceName : "Waiting for Android")
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(1)
+                        }
+                        HStack(spacing: 8) {
+                            Label(conn.isConnected ? conn.connectionTransport : "Port \(conn.listenPort)", systemImage: conn.connectionTransport == "USB" ? "cable.connector" : "wifi")
+                            if conn.isConnected {
+                                Text("•")
+                                Label("\(conn.batteryLevel)%\(conn.isCharging ? " ⚡" : "")", systemImage: "battery.75")
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.primary.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal, 10)
+
+                    List(DashboardSection.allCases, id: \.self, selection: $selectedSection) { section in
+                        NavigationLink(value: section) {
+                            HStack {
+                                Label(section.rawValue, systemImage: section.icon)
+                                Spacer()
+                                if section == .notifications && !conn.notifications.isEmpty {
+                                    Text("\(conn.notifications.count)")
+                                        .font(.caption2.bold())
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.green.opacity(0.25))
+                                        .clipShape(Capsule())
+                                }
+                            }
+                        }
+                    }
+                    .listStyle(.sidebar)
+                }
+                .frame(minWidth: 220)
+            } detail: {
+                Group {
+                    switch selectedSection {
+                    case .overview:
+                        OverviewWorkflowView(selectedSection: $selectedSection)
+                    case .messages:
+                        MessagesWorkspaceView()
+                    case .notifications:
+                        NotificationsWorkspaceView()
+                    case .files:
+                        FilesWorkspaceView()
+                    case .photos:
+                        PhotosWorkspaceView()
+                    case .clipboard:
+                        ClipboardWorkspaceView()
+                    case .mirrorCamera:
+                        MirrorAndCameraWorkspaceView()
+                    case .pairSetup:
+                        PairingQRSetupView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            // Floating Incoming Call HUD Overlay (Appears automatically when phone rings)
+            if conn.callState.isActive {
+                IncomingCallHUDView()
+                    .padding(20)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.3), value: conn.callState.isActive)
+    }
+}
+
+// MARK: - Overview Morning Workflow Dashboard
+struct OverviewWorkflowView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var clip = ClipboardSyncManager.shared
+    @Binding var selectedSection: DashboardSection
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Hero Status Banner
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(conn.isConnected ? "\(conn.connectedDeviceName) is ready." : "Make Android feel at home on your Mac.")
+                            .font(.title.bold())
+                        Text("Messages, notifications, files, photos, clipboard, call controls, camera, and mirroring over USB or private local Wi-Fi. Cellular call audio and the microphone remain on your Android phone.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button {
+                        selectedSection = .pairSetup
+                    } label: {
+                        Label(conn.isConnected ? "Connection Details" : "Scan Pairing QR", systemImage: "qrcode")
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                }
+                .padding(20)
+                .background(Color.primary.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                // 3 Core Workflows Grid
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    WorkflowCard(
+                        number: "01",
+                        title: "Stay in the conversation",
+                        subtitle: "\(conn.notifications.count) active notifications • \(conn.smsThreads.count) SMS threads",
+                        icon: "bubble.left.and.bubble.right.fill",
+                        buttonTitle: "Open Messages & Alerts"
+                    ) {
+                        selectedSection = .messages
+                    }
+
+                    WorkflowCard(
+                        number: "02",
+                        title: "Move the thing you need",
+                        subtitle: "Drag & drop files, browse \(conn.remotePhotos.count) photos, sync clipboard",
+                        icon: "folder.fill.badge.plus",
+                        buttonTitle: "Browse Files & Photos"
+                    ) {
+                        selectedSection = .files
+                    }
+
+                    WorkflowCard(
+                        number: "03",
+                        title: "Use the phone from your desk",
+                        subtitle: "Screen mirroring, screen-off mode, webcam & media remote",
+                        icon: "iphone.smartbatterycase.gen2",
+                        buttonTitle: "Open Mirror & Camera"
+                    ) {
+                        selectedSection = .mirrorCamera
+                    }
+                }
+
+                // Quick Media Remote & Quick Actions Row
+                HStack(spacing: 16) {
+                    // Media Remote Card
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Android Media Remote", systemImage: "music.note.list")
+                            .font(.headline)
+                        Text(conn.nowPlayingTitle)
+                            .font(.title3.bold())
+                            .lineLimit(1)
+                        Text(conn.nowPlayingArtist)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 12) {
+                            Button { conn.sendMediaAction("PREV") } label: { Image(systemName: "backward.fill") }
+                            Button { conn.sendMediaAction("PLAY_PAUSE") } label: { Image(systemName: "playpause.fill") }
+                            Button { conn.sendMediaAction("NEXT") } label: { Image(systemName: "forward.fill") }
+                            Divider().frame(height: 18)
+                            Button { conn.sendMediaAction("VOL_DOWN") } label: { Image(systemName: "speaker.minus.fill") }
+                            Button { conn.sendMediaAction("VOL_UP") } label: { Image(systemName: "speaker.plus.fill") }
+                            Spacer()
+                            Button("Ring Phone") {
+                                conn.sendMediaAction("RING_PHONE")
+                            }
+                            .tint(.orange)
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.primary.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    // Latest Clipboard Card
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Label("Universal Clipboard", systemImage: "doc.on.clipboard")
+                                .font(.headline)
+                            Spacer()
+                            Toggle("Sync On", isOn: $clip.isSyncEnabled)
+                                .toggleStyle(.switch)
+                                .controlSize(.small)
+                        }
+                        if let latest = clip.history.first {
+                            Text(latest.content)
+                                .font(.subheadline.monospaced())
+                                .lineLimit(2)
+                            Text("Copied on \(latest.source) • Ready to paste ⌘V")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Copy text or links on Android or Mac to sync instantly.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.primary.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .padding(24)
+        }
+    }
+}
+
+struct WorkflowCard: View {
+    let number: String
+    let title: String
+    let subtitle: String
+    let icon: String
+    let buttonTitle: String
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(number)
+                    .font(.caption.monospaced().bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.green.opacity(0.2))
+                    .clipShape(Capsule())
+                Spacer()
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(.green)
+            }
+            Text(title)
+                .font(.headline)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(minHeight: 34, alignment: .topLeading)
+            Button(buttonTitle, action: action)
+                .buttonStyle(.bordered)
+        }
+        .padding(16)
+        .background(Color.primary.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+// MARK: - Pairing QR Code & Guided Setup View
+struct PairingQRSetupView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var adb = ADBBridge.shared
+
+    var qrPayloadString: String {
+        "{\"host\":\"\(conn.localIPAddress)\",\"port\":\(conn.listenPort),\"token\":\"\(conn.pairingToken)\",\"macName\":\"\(Host.current().localizedName ?? "Mac")\"}"
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Text("Pair once. Then your Android feels nearby.")
+                    .font(.title.bold())
+                Text("Scan this QR code inside the LinkToMac Android companion app, or plug in a USB cable.")
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 32) {
+                    // Generated QR Code
+                    if let qrImg = generateQRCode(from: qrPayloadString) {
+                        Image(nsImage: qrImg)
+                            .interpolation(.none)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 210, height: 210)
+                            .padding(16)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+
+                    // Manual & USB Status Details
+                    VStack(alignment: .leading, spacing: 14) {
+                        GroupBox("01 • Local Wi-Fi Pairing Details") {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Mac IP Address:  \(conn.localIPAddress)")
+                                    .font(.system(.body, design: .monospaced))
+                                Text("Port:            \(conn.listenPort)")
+                                    .font(.system(.body, design: .monospaced))
+                                Text("6-Digit Token:   \(conn.pairingToken)")
+                                    .font(.system(.body, design: .monospaced).bold())
+                                    .foregroundStyle(.green)
+                            }
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        GroupBox("02 • High-Speed USB (ADB) Bridge") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Circle()
+                                        .fill(adb.isUSBDeviceConnected ? Color.green : Color.secondary)
+                                        .frame(width: 10, height: 10)
+                                    Text(adb.isUSBDeviceConnected ? "USB Phone Detected (\(adb.usbSerial))" : "No USB Android Detected")
+                                        .font(.subheadline.bold())
+                                }
+                                Text("When connected via USB with USB Debugging enabled, port 54921 is automatically bridged for zero-latency transfers and screen-off mirroring.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Button("Refresh USB & Local Network") {
+                                    conn.localIPAddress = ConnectionManager.detectLocalIPAddress() ?? "127.0.0.1"
+                                    conn.startServer()
+                                    adb.pollUSBDevices()
+                                }
+                            }
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .frame(maxWidth: 420)
+                }
+            }
+            .padding(32)
+        }
+    }
+
+    private func generateQRCode(from string: String) -> NSImage? {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(string.utf8)
+        filter.correctionLevel = "M"
+        guard let outputImage = filter.outputImage else { return nil }
+        let transformed = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+        guard let cgImg = context.createCGImage(transformed, from: transformed.extent) else { return nil }
+        return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift
+```swift
+import SwiftUI
+import UniformTypeIdentifiers
+
+// MARK: - 01 Messages (SMS/MMS + Contacts) Workspace
+struct MessagesWorkspaceView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @LocalState private var selectedThreadId: String?
+    @LocalState private var draftMessage: String = ""
+    @LocalState private var newRecipientNumber: String = ""
+    @LocalState private var searchContactText: String = ""
+
+    var body: some View {
+        HSplitView {
+            // Left Column: SMS Threads & Contacts Search
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Messages & Contacts")
+                        .font(.headline)
+                    Spacer()
+                    Button {
+                        conn.requestSmsAndContacts()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .help("Sync SMS & Contacts from Android")
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 12)
+
+                HStack {
+                    TextField("Dial or New SMS #...", text: $newRecipientNumber)
+                        .textFieldStyle(.roundedBorder)
+                    Button("Chat") {
+                        let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
+                        guard !trimmed.isEmpty else { return }
+                        if !conn.smsThreads.contains(where: { $0.address == trimmed }) {
+                            conn.smsThreads.insert(SmsThreadItem(
+                                id: trimmed,
+                                contactName: trimmed,
+                                address: trimmed,
+                                lastMessage: "New conversation",
+                                timestamp: Int64(Date().timeIntervalSince1970 * 1000),
+                                messages: []
+                            ), at: 0)
+                        }
+                        selectedThreadId = trimmed
+                        newRecipientNumber = ""
+                    }
+                    Button {
+                        let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
+                        if !trimmed.isEmpty { conn.dialPhoneNumber(trimmed) }
+                    } label: {
+                        Image(systemName: "phone.fill")
+                    }
+                }
+                .padding(.horizontal, 12)
+
+                List(conn.smsThreads, selection: $selectedThreadId) { thread in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(thread.contactName)
+                                .font(.subheadline.bold())
+                            Spacer()
+                            Text(thread.address)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(thread.lastMessage)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    .padding(.vertical, 4)
+                    .tag(thread.id)
+                }
+            }
+            .frame(minWidth: 250, maxWidth: 320)
+
+            // Right Column: Active Conversation
+            VStack(spacing: 0) {
+                if let threadId = selectedThreadId,
+                   let thread = conn.smsThreads.first(where: { $0.id == threadId }) {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(thread.contactName)
+                                .font(.headline)
+                            Text(thread.address)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button {
+                            conn.dialPhoneNumber(thread.address)
+                        } label: {
+                            Label("Call on Phone", systemImage: "phone.arrow.up.right.fill")
+                        }
+                    }
+                    .padding(14)
+                    .background(Color.primary.opacity(0.05))
+
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 10) {
+                            ForEach(thread.messages) { msg in
+                                HStack {
+                                    if !msg.isIncoming { Spacer() }
+                                    Text(msg.body)
+                                        .padding(10)
+                                        .background(msg.isIncoming ? Color.primary.opacity(0.1) : Color.green.opacity(0.85))
+                                        .foregroundStyle(msg.isIncoming ? Color.primary : Color.black)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    if msg.isIncoming { Spacer() }
+                                }
+                            }
+                        }
+                        .padding(16)
+                    }
+
+                    Divider()
+                    HStack(spacing: 10) {
+                        TextField("Reply via Android SMS...", text: $draftMessage)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit {
+                                sendCurrentDraft(to: thread.address)
+                            }
+                        Button("Send ↵") {
+                            sendCurrentDraft(to: thread.address)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                    }
+                    .padding(12)
+                } else {
+                    VStack(spacing: 10) {
+                        Image(systemName: "message.and.waveform.fill")
+                            .font(.system(size: 42))
+                            .foregroundStyle(.secondary)
+                        Text("Select a conversation or start a new SMS")
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
+    }
+
+    private func sendCurrentDraft(to address: String) {
+        let text = draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        conn.sendSms(address: address, body: text)
+        draftMessage = ""
+    }
+}
+
+// MARK: - 01 Notifications Mirror & Inline Reply Workspace
+struct NotificationsWorkspaceView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @LocalState private var replyDrafts: [String: String] = [:]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Android Notification Mirroring")
+                    .font(.title2.bold())
+                Spacer()
+                if !conn.mutedApps.isEmpty {
+                    Button("Unmute All Apps (\(conn.mutedApps.count))") {
+                        conn.mutedApps.removeAll()
+                    }
+                }
+                Button("Clear All") {
+                    conn.notifications.removeAll()
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+
+            if conn.notifications.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "bell.slash")
+                        .font(.system(size: 42))
+                        .foregroundStyle(.secondary)
+                    Text("No recent Android notifications")
+                        .font(.headline)
+                    Text("Incoming messages and alerts from your phone will appear here with inline keyboard reply.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(conn.notifications) { item in
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text(item.appName.uppercased())
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.green)
+                                Text("•")
+                                    .foregroundStyle(.secondary)
+                                Text(item.title)
+                                    .font(.headline)
+                                Spacer()
+                                if let otp = item.otpCode, !otp.isEmpty {
+                                    Button("Copy 2FA: \(otp)") {
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(otp, forType: .string)
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.blue)
+                                    .controlSize(.small)
+                                }
+                                Button("Mute App") {
+                                    conn.mutedApps.insert(item.packageName)
+                                    conn.notifications.removeAll { $0.packageName == item.packageName }
+                                }
+                                .controlSize(.small)
+                                Button {
+                                    conn.dismissNotification(notificationId: item.id)
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            Text(item.body)
+                                .font(.body)
+
+                            if let sent = item.replySentText {
+                                Label("Reply sent: \"\(sent)\"", systemImage: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            } else if item.canReply {
+                                HStack {
+                                    TextField("Reply from keyboard...", text: Binding(
+                                        get: { replyDrafts[item.id] ?? "" },
+                                        set: { replyDrafts[item.id] = $0 }
+                                    ))
+                                    .textFieldStyle(.roundedBorder)
+                                    .onSubmit {
+                                        let txt = replyDrafts[item.id] ?? ""
+                                        conn.sendNotificationReply(notificationId: item.id, replyText: txt)
+                                        replyDrafts[item.id] = ""
+                                    }
+                                    Button("Reply ↵") {
+                                        let txt = replyDrafts[item.id] ?? ""
+                                        conn.sendNotificationReply(notificationId: item.id, replyText: txt)
+                                        replyDrafts[item.id] = ""
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.green)
+                                }
+                            }
+                        }
+                        .padding(10)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 02 File Browser & Drag-and-Drop Transfer Workspace
+struct FilesWorkspaceView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @LocalState private var isDropTargeted: Bool = false
+
+    let quickBookmarks = [
+        ("Downloads", "/sdcard/Download"),
+        ("Camera (DCIM)", "/sdcard/DCIM/Camera"),
+        ("Pictures", "/sdcard/Pictures"),
+        ("Movies", "/sdcard/Movies"),
+        ("Documents", "/sdcard/Documents"),
+        ("Root /sdcard", "/sdcard")
+    ]
+
+    var body: some View {
+        HSplitView {
+            // Left Pane: Android Storage Browser
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("Android Storage")
+                        .font(.title3.bold())
+                    Spacer()
+                    Button("Send File from Mac...") {
+                        pickMacFilesToSend()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    Button {
+                        conn.requestDirectoryListing(path: conn.currentDirectoryPath)
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+
+                // Quick Folder Bookmarks
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(quickBookmarks, id: \.1) { name, path in
+                            Button(name) {
+                                conn.requestDirectoryListing(path: path)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+
+                // Current Path Bar
+                HStack {
+                    Button {
+                        let parent = (conn.currentDirectoryPath as NSString).deletingLastPathComponent
+                        if !parent.isEmpty {
+                            conn.requestDirectoryListing(path: parent)
+                        }
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                    Text(conn.currentDirectoryPath)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+
+                List(conn.remoteFiles) { file in
+                    HStack {
+                        Image(systemName: file.isDirectory ? "folder.fill" : "doc.fill")
+                            .foregroundStyle(file.isDirectory ? .yellow : .blue)
+                        VStack(alignment: .leading) {
+                            Text(file.name)
+                                .font(.body)
+                            if !file.isDirectory {
+                                Text(ByteCountFormatter.string(fromByteCount: file.sizeBytes, countStyle: .file))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        Spacer()
+                        if file.isDirectory {
+                            Button("Open") {
+                                conn.requestDirectoryListing(path: file.path)
+                            }
+                            .controlSize(.small)
+                        } else {
+                            Button("Download to Finder") {
+                                conn.pullRemoteFileToMac(remotePath: file.path, fileName: file.name, revealInFinder: true)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                    }
+                }
+            }
+            .frame(minWidth: 420)
+            .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+                handleDroppedMacFiles(providers: providers)
+                return true
+            }
+            .overlay {
+                if isDropTargeted {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.green, lineWidth: 3)
+                        .background(Color.green.opacity(0.12))
+                        .overlay {
+                            Label("Drop files to send to \(conn.currentDirectoryPath)", systemImage: "arrow.down.doc.fill")
+                                .font(.title2.bold())
+                        }
+                }
+            }
+
+            // Right Pane: Active & Recent Transfers Queue
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Transfers Queue")
+                    .font(.headline)
+                    .padding(.top, 14)
+                    .padding(.horizontal, 14)
+
+                if conn.transfers.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "arrow.left.arrow.right.square")
+                            .font(.system(size: 34))
+                            .foregroundStyle(.secondary)
+                        Text("Drag files from Finder here to send to Android")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List(conn.transfers) { item in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(item.fileName)
+                                    .font(.subheadline.bold())
+                                    .lineLimit(1)
+                                Spacer()
+                                Text(item.transport)
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.green.opacity(0.2))
+                                    .clipShape(Capsule())
+                            }
+                            ProgressView(value: item.progress)
+                                .tint(.green)
+                            HStack {
+                                Text(item.direction)
+                                Spacer()
+                                Text(item.isCompleted ? "Completed ✓" : "\(Int(item.progress * 100))%")
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .frame(minWidth: 260, maxWidth: 320)
+        }
+    }
+
+    private func pickMacFilesToSend() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        if panel.runModal() == .OK {
+            for url in panel.urls {
+                conn.sendFileToAndroid(fileURL: url, destinationFolder: conn.currentDirectoryPath)
+            }
+        }
+    }
+
+    private func handleDroppedMacFiles(providers: [NSItemProvider]) {
+        for provider in providers {
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                if let data = item as? Data,
+                   let url = URL(dataRepresentation: data, relativeTo: nil) {
+                    Task { @MainActor in
+                        ConnectionManager.shared.sendFileToAndroid(
+                            fileURL: url,
+                            destinationFolder: ConnectionManager.shared.currentDirectoryPath
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 02 Photos Browser Workspace
+struct PhotosWorkspaceView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Android Photos & Gallery")
+                    .font(.title2.bold())
+                Spacer()
+                Button {
+                    conn.requestPhotosList()
+                } label: {
+                    Label("Refresh Gallery", systemImage: "arrow.clockwise")
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+
+            if conn.remotePhotos.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "photo.stack")
+                        .font(.system(size: 42))
+                        .foregroundStyle(.secondary)
+                    Text("No photos loaded yet")
+                    Button("Load Recent Android Photos") {
+                        conn.requestPhotosList()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 14)], spacing: 14) {
+                        ForEach(conn.remotePhotos) { photo in
+                            VStack(alignment: .leading, spacing: 6) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.primary.opacity(0.08))
+                                        .frame(height: 120)
+
+                                    if let b64 = photo.thumbnailBase64,
+                                       let data = Data(base64Encoded: b64),
+                                       let img = NSImage(data: data) {
+                                        Image(nsImage: img)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(height: 120)
+                                            .clipped()
+                                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    } else {
+                                        Image(systemName: photo.isVideo ? "video.fill" : "photo.fill")
+                                            .font(.largeTitle)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                Text(photo.name)
+                                    .font(.caption.bold())
+                                    .lineLimit(1)
+                                Button("Save to Finder") {
+                                    conn.pullRemoteFileToMac(remotePath: photo.path, fileName: photo.name, revealInFinder: true)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
+                            .padding(8)
+                            .background(Color.primary.opacity(0.04))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
+                    .padding(20)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 02 Universal Clipboard & URL Handoff Workspace
+struct ClipboardWorkspaceView: View {
+    @ObservedObject var clip = ClipboardSyncManager.shared
+    @LocalState private var handoffURLInput: String = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Universal Clipboard & URL Handoff")
+                        .font(.title2.bold())
+                    Text("Copy on Android, paste on Mac (⌘V) — and vice versa.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle("Clipboard Sync", isOn: $clip.isSyncEnabled)
+                    .toggleStyle(.switch)
+                Toggle("Ignore Password Managers", isOn: $clip.ignoreConcealedPasswords)
+                    .toggleStyle(.checkbox)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+
+            // URL Handoff Bar
+            HStack {
+                TextField("https://example.com — Open URL directly on Android phone...", text: $handoffURLInput)
+                    .textFieldStyle(.roundedBorder)
+                Button("Send URL to Phone ↗") {
+                    guard !handoffURLInput.isEmpty else { return }
+                    clip.handoffURLToAndroid(handoffURLInput)
+                    handoffURLInput = ""
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+            }
+            .padding(.horizontal, 20)
+
+            List(clip.history) { item in
+                HStack {
+                    Image(systemName: item.isUrl ? "link.circle.fill" : "doc.on.clipboard")
+                        .foregroundStyle(item.isUrl ? .blue : .green)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.content)
+                            .font(.body.monospaced())
+                            .lineLimit(2)
+                        Text("Copied on \(item.source) • \(item.timestamp.formatted(date: .omitted, time: .standard))")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if item.isUrl, let url = URL(string: item.content) {
+                        Button("Open on Mac") {
+                            NSWorkspace.shared.open(url)
+                        }
+                        Button("Open on Phone") {
+                            clip.handoffURLToAndroid(item.content)
+                        }
+                    }
+                    Button("Copy ⌘C") {
+                        clip.copyItemToMac(item)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+}
+
+// MARK: - 03 Screen Mirroring, Virtual Webcam & Microphone Workspace
+struct MirrorAndCameraWorkspaceView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var adb = ADBBridge.shared
+
+    var body: some View {
+        HSplitView {
+            // Left Control Panel
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Desk Controls")
+                    .font(.title2.bold())
+
+                GroupBox("Screen Mirroring") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Toggle("Turn Android Screen Off while Mirroring", isOn: $conn.isScreenOffMirror)
+                        HStack {
+                            Button("Start Wireless/Socket Mirror") {
+                                conn.setStreamMode("MIRROR")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green)
+
+                            if adb.isScrcpyAvailable && adb.isUSBDeviceConnected {
+                                Button("Launch Pro USB Mirror (scrcpy)") {
+                                    adb.launchNativeScrcpy(screenOff: conn.isScreenOffMirror, stayAwake: true)
+                                }
+                            }
+                        }
+                        HStack(spacing: 8) {
+                            Button("Home") { conn.sendRemoteKeyEvent(3) }
+                            Button("Back") { conn.sendRemoteKeyEvent(4) }
+                            Button("App Switcher") { conn.sendRemoteKeyEvent(187) }
+                            Button("Lock/Wake") { conn.sendRemoteKeyEvent(26) }
+                        }
+                        .controlSize(.small)
+                    }
+                    .padding(8)
+                }
+
+                GroupBox("Android Camera & Microphone Stream") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Use your Android phone's high-res camera and microphone right from your desk.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack {
+                            Button("Rear Camera") {
+                                conn.setStreamMode("WEBCAM_BACK")
+                            }
+                            Button("Front Camera") {
+                                conn.setStreamMode("WEBCAM_FRONT")
+                            }
+                            Button("Stream Mic Audio") {
+                                conn.setStreamMode("MIC_STREAM")
+                            }
+                        }
+                        Button("Stop All Streams") {
+                            conn.setStreamMode("NONE")
+                        }
+                        .tint(.red)
+                    }
+                    .padding(8)
+                }
+
+                Spacer()
+            }
+            .padding(20)
+            .frame(minWidth: 320, maxWidth: 360)
+
+            // Right Live Video Canvas (Interactive click-to-tap on phone!)
+            VStack {
+                if let frame = conn.liveVideoFrame {
+                    GeometryReader { geo in
+                        Image(nsImage: frame)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .gesture(
+                                SpatialTapGesture()
+                                    .onEnded { event in
+                                        let normX = max(0, min(1, event.location.x / max(1, geo.size.width)))
+                                        let normY = max(0, min(1, event.location.y / max(1, geo.size.height)))
+                                        conn.sendRemoteTap(normalizedX: normX, normalizedY: normY)
+                                    }
+                            )
+                    }
+                    .padding(12)
+                } else {
+                    VStack(spacing: 12) {
+                        Image(systemName: "iphone.gen3.radiowaves.left.and.right")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.secondary)
+                        Text("Live Screen Mirror / Camera Feed")
+                            .font(.headline)
+                        Text("Click 'Start Wireless/Socket Mirror' or 'Rear Camera' on the left to stream live video.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .background(Color.black.opacity(0.85))
+        }
+    }
+}
+
+// MARK: - Floating Incoming Call HUD Overlay
+struct IncomingCallHUDView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "phone.down.waves.left.and.right")
+                    .font(.title)
+                    .foregroundStyle(.green)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(conn.callState.state == "RINGING" ? "Incoming Android Call" : "Active Cellular Call (Audio on Phone)")
+                        .font(.caption.bold())
+                        .foregroundStyle(.green)
+                    Text(conn.callState.contactName)
+                        .font(.headline)
+                    Text(conn.callState.phoneNumber)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            HStack(spacing: 10) {
+                if conn.callState.state == "RINGING" {
+                    Button("Answer") {
+                        conn.sendCallAction("ANSWER")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+
+                    Button("Decline") {
+                        conn.sendCallAction("DECLINE")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+
+                    Button("SMS: In a meeting") {
+                        conn.sendCallAction("DECLINE_WITH_SMS", smsReply: "I'm at my desk right now — I'll call you back shortly.")
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Button(conn.callState.isMuted ? "Unmute" : "Mute") {
+                        conn.sendCallAction("MUTE")
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("End Call") {
+                        conn.sendCallAction("END")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                }
+            }
+        }
+        .padding(16)
+        .background(.ultraThickMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(radius: 16)
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LinkToMacApp.swift
+```swift
+import SwiftUI
+
+@main
+struct LinkToMacApp: App {
+    @ObservedObject private var conn = ConnectionManager.shared
+    @ObservedObject private var clip = ClipboardSyncManager.shared
+
+    var body: some Scene {
+        WindowGroup("LinkToMac") {
+            MainDashboardView()
+                .frame(minWidth: 980, minHeight: 640)
+                .preferredColorScheme(.dark)
+        }
+
+        // Native macOS Menu Bar Companion Popover
+        MenuBarExtra {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Circle()
+                        .fill(conn.isConnected ? Color.green : Color.orange)
+                        .frame(width: 8, height: 8)
+                    Text(conn.isConnected ? "\(conn.connectedDeviceName) (\(conn.connectionTransport))" : "LinkToMac: Waiting for Phone")
+                        .font(.headline)
+                }
+
+                if conn.isConnected {
+                    Text("Battery: \(conn.batteryLevel)% • Notifications: \(conn.notifications.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                Toggle("Universal Clipboard Sync", isOn: $clip.isSyncEnabled)
+
+                Button("Play / Pause Android Media") {
+                    conn.sendMediaAction("PLAY_PAUSE")
+                }
+                Button("Ring My Android Phone") {
+                    conn.sendMediaAction("RING_PHONE")
+                }
+
+                Divider()
+                Button("Quit LinkToMac") {
+                    NSApplication.shared.terminate(nil)
+                }
+            }
+            .padding(12)
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: conn.isConnected ? "iphone.radiowaves.left.and.right" : "iphone.slash")
+                if conn.isConnected {
+                    Text("\(conn.batteryLevel)%")
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+```
+
+---
+````
+
 <a id="docs-mac-flow-storyboard-md"></a>
 ### `docs/mac_flow_storyboard.md`
 
@@ -35503,6 +29925,177 @@ chmod +x bundled/platform-tools/adb
 rm /tmp/platform-tools.zip
 echo "✅ ADB bundled successfully at bundled/platform-tools/adb"
 ```
+
+<a id="scripts-stitch-allcode-py"></a>
+### `scripts/stitch_allcode.py`
+
+````python
+#!/usr/bin/env python3
+"""
+stitch_allcode.py
+Automatically extracts all source files from docs/bundles/ manifests into the ./allcode/ directory.
+"""
+import os
+import re
+import stat
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+MARKDOWN_FILES = [
+    REPO_ROOT / "docs" / "bundles" / "linktomac_complete_macos_source_code.md",
+    REPO_ROOT / "docs" / "bundles" / "linktomac_complete_android_source_code.md",
+]
+
+FILE_PATTERN = re.compile(
+    r"### FILE:\s*([^\n\r]+)\r?\n```[a-zA-Z0-9_-]*\r?\n(.*?)\r?\n```",
+    re.DOTALL
+)
+
+def extract_from_markdown(target: Path):
+    if not target.exists():
+        print(f"[WARN] {target} not found.")
+        return 0
+
+    content = target.read_text(encoding="utf-8")
+    matches = FILE_PATTERN.findall(content)
+    count = 0
+    for rel_path, code in matches:
+        rel_path = rel_path.strip()
+        full_path = REPO_ROOT / rel_path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(code.rstrip() + "\n", encoding="utf-8")
+        if str(full_path).endswith(".sh"):
+            st = os.stat(full_path)
+            os.chmod(full_path, st.st_mode | stat.S_IEXEC)
+        print(f"[OK] Created: {rel_path}")
+        count += 1
+    return count
+
+def main():
+    total = 0
+    for md_file in MARKDOWN_FILES:
+        total += extract_from_markdown(md_file)
+
+    print(f"\nDone! Extracted {total} files into ./allcode/")
+    print("Next steps:")
+    print("  1. Build & Run macOS App: cd allcode/LinkToMac-macOS && ./build_mac_app.sh")
+    print("  2. Build Android App:     cd allcode/LinkToMac-Android && ./gradlew assembleDebug")
+
+if __name__ == "__main__":
+    main()
+````
+
+<a id="scripts-update-allcode-bundles-py"></a>
+### `scripts/update_allcode_bundles.py`
+
+````python
+#!/usr/bin/env python3
+"""
+update_allcode_bundles.py
+Syncs all source code files from allcode/ directly into
+docs/bundles/linktomac_complete_android_source_code.md and
+docs/bundles/linktomac_complete_macos_source_code.md.
+"""
+
+import os
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+EXT_TO_LANG = {
+    ".kt": "kotlin",
+    ".kts": "kotlin",
+    ".swift": "swift",
+    ".xml": "xml",
+    ".plist": "xml",
+    ".properties": "properties",
+    ".sh": "bash",
+}
+
+ANDROID_FILES = [
+    "allcode/LinkToMac-Android/settings.gradle.kts",
+    "allcode/LinkToMac-Android/gradle.properties",
+    "allcode/LinkToMac-Android/gradle/wrapper/gradle-wrapper.properties",
+    "allcode/LinkToMac-Android/build.gradle.kts",
+    "allcode/LinkToMac-Android/app/build.gradle.kts",
+    "allcode/LinkToMac-Android/app/src/main/AndroidManifest.xml",
+    "allcode/LinkToMac-Android/app/src/main/res/values/strings.xml",
+    "allcode/LinkToMac-Android/app/src/main/res/xml/accessibility_service_config.xml",
+    "allcode/LinkToMac-Android/app/src/main/res/xml/link_accessibility_config.xml",
+    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ProtocolModels.kt",
+    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTouchAccessibilityService.kt",
+    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkConnectionService.kt",
+    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkNotificationService.kt",
+    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/SmsContactsCallBridge.kt",
+    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/FilePhotosBridge.kt",
+    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ScreenCameraStreamer.kt",
+    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/MainActivity.kt",
+]
+
+MACOS_FILES = [
+    "allcode/LinkToMac-macOS/Package.swift",
+    "allcode/LinkToMac-macOS/Info.plist",
+    "allcode/LinkToMac-macOS/build_mac_app.sh",
+    "allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift",
+    "allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift",
+    "allcode/LinkToMac-macOS/Sources/LinkToMac/ConnectionManager.swift",
+    "allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift",
+    "allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift",
+    "allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift",
+    "allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift",
+    "allcode/LinkToMac-macOS/Sources/LinkToMac/LinkToMacApp.swift",
+]
+
+def generate_markdown(title: str, file_list: list[str]) -> str:
+    lines = [
+        f"# {title}",
+        "",
+        f"Every file below belongs inside the codebase. Run `python3 scripts/stitch_allcode.py` to extract them automatically.",
+        "",
+        "---",
+        ""
+    ]
+    for rel_path in file_list:
+        p = REPO_ROOT / rel_path
+        if not p.exists():
+            print(f"[WARN] File not found: {rel_path}")
+            continue
+        ext = p.suffix.lower()
+        lang = EXT_TO_LANG.get(ext, "text")
+        content = p.read_text(encoding="utf-8")
+        lines.append(f"### FILE: {rel_path}")
+        lines.append(f"```{lang}")
+        lines.append(content)
+        lines.append("```")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+    return "\n".join(lines)
+
+def main():
+    bundles_dir = REPO_ROOT / "docs" / "bundles"
+    bundles_dir.mkdir(parents=True, exist_ok=True)
+
+    android_md = generate_markdown(
+        "LinkToMac — Complete Android Source Code (`allcode/LinkToMac-Android`)",
+        ANDROID_FILES
+    )
+    android_target = bundles_dir / "linktomac_complete_android_source_code.md"
+    android_target.write_text(android_md, encoding="utf-8")
+    print(f"[OK] Updated {android_target.relative_to(REPO_ROOT)} ({len(ANDROID_FILES)} files)")
+
+    macos_md = generate_markdown(
+        "LinkToMac — Complete macOS Source Code (`allcode/LinkToMac-macOS`)",
+        MACOS_FILES
+    )
+    macos_target = bundles_dir / "linktomac_complete_macos_source_code.md"
+    macos_target.write_text(macos_md, encoding="utf-8")
+    print(f"[OK] Updated {macos_target.relative_to(REPO_ROOT)} ({len(MACOS_FILES)} files)")
+
+if __name__ == "__main__":
+    main()
+````
 
 <a id="tests-adversarial-m1-test-firestore-schema-and-preauth-js"></a>
 ### `tests/adversarial_m1/test_firestore_schema_and_preauth.js`

@@ -14,10 +14,3 @@ dependencyResolutionManagement {
 }
 rootProject.name = "LinkToMacAndroid"
 include(":app")
-
-
-
-
-
-
-

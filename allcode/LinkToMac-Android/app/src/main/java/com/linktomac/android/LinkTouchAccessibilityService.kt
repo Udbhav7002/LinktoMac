@@ -140,9 +140,3 @@ class LinkTouchAccessibilityService : AccessibilityService() {
         Log.i(TAG, "LinkTouchAccessibilityService destroyed")
     }
 }
-
-
-
-
-
-

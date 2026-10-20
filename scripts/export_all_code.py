@@ -8,7 +8,7 @@ and excludes git metadata, build artifacts, binaries, and deleted obsolete modul
 import os
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # File extension to syntax highlight mapping
 EXT_MAP = {
@@ -241,7 +241,8 @@ def generate_all_code():
             lines.append(content.rstrip())
             lines.append(f"{fence}\n")
 
-    out_file = REPO_ROOT / "all_code.md"
+    out_file = REPO_ROOT / "docs" / "bundles" / "all_code.md"
+    out_file.parent.mkdir(parents=True, exist_ok=True)
     out_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Successfully exported {total_files} files to {out_file} ({out_file.stat().st_size:,} bytes)")
 

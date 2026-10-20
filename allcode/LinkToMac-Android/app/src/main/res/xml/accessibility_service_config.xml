@@ -8,10 +8,3 @@
     android:canPerformGestures="true"
     android:canRetrieveWindowContent="true"
     android:canTakeScreenshot="true" />
-
-
-
-
-
-
-

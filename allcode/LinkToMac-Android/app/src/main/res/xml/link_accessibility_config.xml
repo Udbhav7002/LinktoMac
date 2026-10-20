@@ -7,9 +7,3 @@
     android:canPerformGestures="true"
     android:canTakeScreenshot="true"
     android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows" />
-
-
-
-
-
-

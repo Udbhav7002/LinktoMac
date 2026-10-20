@@ -32,10 +32,3 @@ object WireProtocol {
         return packFrame(FRAME_JSON, root.toString().toByteArray(Charsets.UTF_8))
     }
 }
-
-
-
-
-
-
-

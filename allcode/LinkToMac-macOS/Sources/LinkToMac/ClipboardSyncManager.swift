@@ -100,10 +100,3 @@ final class ClipboardSyncManager: ObservableObject {
         }
     }
 }
-
-
-
-
-
-
-

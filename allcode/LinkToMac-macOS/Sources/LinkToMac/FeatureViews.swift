@@ -761,10 +761,3 @@ struct IncomingCallHUDView: View {
         .shadow(radius: 16)
     }
 }
-
-
-
-
-
-
-

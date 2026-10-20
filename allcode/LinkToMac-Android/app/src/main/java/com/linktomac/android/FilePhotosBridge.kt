@@ -189,10 +189,3 @@ object FilePhotosBridge {
         LinkConnectionService.instance?.sendRawFrame(endFrame)
     }
 }
-
-
-
-
-
-
-

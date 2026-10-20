@@ -305,10 +305,3 @@ object ScreenCameraStreamer {
         }
     }
 }
-
-
-
-
-
-
-

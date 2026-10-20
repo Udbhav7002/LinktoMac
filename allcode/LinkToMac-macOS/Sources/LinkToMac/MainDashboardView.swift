@@ -387,10 +387,3 @@ struct PairingQRSetupView: View {
         return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
     }
 }
-
-
-
-
-
-
-

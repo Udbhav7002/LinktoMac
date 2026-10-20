@@ -56,10 +56,3 @@ struct LinkToMacApp: App {
         }
     }
 }
-
-
-
-
-
-
-

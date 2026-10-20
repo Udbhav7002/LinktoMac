@@ -121,10 +121,3 @@ enum WireFramer {
         return header
     }
 }
-
-
-
-
-
-
-

@@ -386,10 +386,3 @@ object ClipboardManagerBridge {
         }
     }
 }
-
-
-
-
-
-
-
