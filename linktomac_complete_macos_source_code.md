@@ -30,6 +30,7 @@ let package = Package(
 
 
 
+
 ```
 
 ---
@@ -76,6 +77,7 @@ let package = Package(
 
 
 
+
 ```
 
 ---
@@ -110,6 +112,7 @@ echo "=========================================="
 echo " SUCCESS: Built $APP_DIR"
 echo " Run with: open $APP_DIR"
 echo "=========================================="
+
 
 
 
@@ -251,6 +254,7 @@ enum WireFramer {
 
 
 
+
 ```
 
 ---
@@ -288,6 +292,7 @@ public struct LocalState<Value>: DynamicProperty {
         )
     }
 }
+
 
 
 
@@ -940,6 +945,7 @@ final class ConnectionManager: ObservableObject {
 
 
 
+
 ```
 
 ---
@@ -1120,6 +1126,7 @@ final class ADBBridge: ObservableObject {
 
 
 
+
 ```
 
 ---
@@ -1228,6 +1235,7 @@ final class ClipboardSyncManager: ObservableObject {
         }
     }
 }
+
 
 
 
@@ -1629,6 +1637,7 @@ struct PairingQRSetupView: View {
         return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
     }
 }
+
 
 
 
@@ -2410,6 +2419,7 @@ struct IncomingCallHUDView: View {
 
 
 
+
 ```
 
 ---
@@ -2474,6 +2484,7 @@ struct LinkToMacApp: App {
         }
     }
 }
+
 
 
 

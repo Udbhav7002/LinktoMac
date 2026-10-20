@@ -1,6 +1,6 @@
 # LinktoMac — Complete Codebase
 
-This document consolidates all 174 source and configuration files of the LinktoMac project in a clean, structured format.
+This document consolidates all 176 source and configuration files of the LinktoMac project in a clean, structured format.
 
 ---
 
@@ -147,6 +147,7 @@ This document consolidates all 174 source and configuration files of the LinktoM
 - [`.github/workflows/build-mac.yml`](#-github-workflows-build-mac-yml)
 - [`.github/workflows/build.yml`](#-github-workflows-build-yml)
 - [`.gitignore`](#-gitignore)
+- [`.vercelignore`](#-vercelignore)
 - [`ALLCODE_ANDROID_COMPLETE.md`](#ALLCODE-ANDROID-COMPLETE-md)
 - [`ALLCODE_MACOS_COMPLETE.md`](#ALLCODE-MACOS-COMPLETE-md)
 - [`LINKTOMAC_MASTER_PLAN.md`](#LINKTOMAC-MASTER-PLAN-md)
@@ -156,12 +157,14 @@ This document consolidates all 174 source and configuration files of the LinktoM
 - [`OVERNIGHT_BUILD_REPORT.md`](#OVERNIGHT-BUILD-REPORT-md)
 - [`README.md`](#README-md)
 - [`build_mac_app.sh`](#build-mac-app-sh)
+- [`index.html`](#index-html)
 - [`linktomac_complete_android_source_code.md`](#linktomac-complete-android-source-code-md)
 - [`linktomac_complete_macos_source_code.md`](#linktomac-complete-macos-source-code-md)
 - [`linktomac_master_architecture_parallel_agent_plan.md`](#linktomac-master-architecture-parallel-agent-plan-md)
 - [`skills-lock.json`](#skills-lock-json)
 - [`stitch_allcode.py`](#stitch-allcode-py)
 - [`update_allcode_bundles.py`](#update-allcode-bundles-py)
+- [`vercel.json`](#vercel-json)
 
 ### Scripts, Tests & Documentation
 
@@ -195,14 +198,16 @@ This document consolidates all 174 source and configuration files of the LinktoM
 - [`tests/adversarial_native/run_all_m2_stress_tests.sh`](#tests-adversarial-native-run-all-m2-stress-tests-sh)
 - [`tests/adversarial_native/test_decoder_rotation.cpp`](#tests-adversarial-native-test-decoder-rotation-cpp)
 - [`tests/adversarial_native/test_decoder_stress.cpp`](#tests-adversarial-native-test-decoder-stress-cpp)
-- [`tests/adversarial_native/test_decoder_stress.dSYM/Contents/Info.plist`](#tests-adversarial-native-test-decoder-stress-dSYM-Contents-Info-plist)
-- [`tests/adversarial_native/test_decoder_stress.dSYM/Contents/Resources/Relocations/aarch64/test_decoder_stress.yml`](#tests-adversarial-native-test-decoder-stress-dSYM-Contents-Resources-Relocations-aarch64-test-decoder-stress-yml)
 - [`tests/adversarial_native/test_handshake_stress.py`](#tests-adversarial-native-test-handshake-stress-py)
 - [`tests/adversarial_native/test_m2_decoder_resilience_stress.cpp`](#tests-adversarial-native-test-m2-decoder-resilience-stress-cpp)
 - [`tests/adversarial_native/test_m2_renderer_rapid_flips.mm`](#tests-adversarial-native-test-m2-renderer-rapid-flips-mm)
 - [`tests/adversarial_native/test_python_bindings_stream.py`](#tests-adversarial-native-test-python-bindings-stream-py)
 - [`tests/adversarial_native/test_resize_stress.cpp`](#tests-adversarial-native-test-resize-stress-cpp)
 - [`tests/adversarial_native/test_scroll_stress.cpp`](#tests-adversarial-native-test-scroll-stress-cpp)
+
+### Other Project Files
+
+- [`public/index.html`](#public-index-html)
 
 ---
 
@@ -21587,6 +21592,7 @@ dist/
 env/
 venv/
 .venv/
+**/.build/
 
 # IDEs
 .idea/
@@ -21599,10 +21605,20 @@ venv/
 **/build/
 **/bin/
 *.apk
+!public/LinkToMac.apk
+!public/downloads/LinkToMac.apk
+!downloads/LinkToMac.apk
 *.ap_
 
 
 # C++ Build
+*.dSYM/
+tests/adversarial_native/test_decoder_rotation
+tests/adversarial_native/test_decoder_stress
+tests/adversarial_native/test_m2_decoder_resilience_stress
+tests/adversarial_native/test_m2_renderer_rapid_flips
+tests/adversarial_native/test_resize_stress
+tests/adversarial_native/test_scroll_stress
 native-client/build/
 native-client/CMakeCache.txt
 native-client/CMakeFiles/
@@ -21622,6 +21638,30 @@ test_pinggy.py
 .claude/
 skills-lock.json
 bundled/
+```
+
+<a id="-vercelignore"></a>
+### `.vercelignore`
+
+```text
+# Ignore all backend and platform code so Vercel treats this purely as a static website
+pyproject.toml
+requirements.txt
+Pipfile
+Pipfile.lock
+*.py
+__pycache__/
+orchestrator/
+allcode/
+android-app/
+android-server/
+native-client/
+bundled/
+build/
+dist/
+tests/
+docs/
+scripts/
 ```
 
 <a id="ALLCODE-ANDROID-COMPLETE-md"></a>
@@ -21658,6 +21698,7 @@ include(":app")
 
 
 
+
 ```
 
 ---
@@ -21669,6 +21710,7 @@ org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
 android.builtInKotlin=false
 android.newDsl=false
 kotlin.compiler.execution.strategy=in-process
+
 
 
 
@@ -21693,6 +21735,7 @@ zipStorePath=wrapper/dists
 
 
 
+
 ```
 
 ---
@@ -21703,6 +21746,7 @@ plugins {
     id("com.android.application") version "8.3.0" apply false
     id("org.jetbrains.kotlin.android") version "1.9.22" apply false
 }
+
 
 
 
@@ -21758,6 +21802,7 @@ dependencies {
     // ZXing QR Scanner for 1-tap QR code pairing
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }
+
 
 
 
@@ -21868,6 +21913,7 @@ dependencies {
 
 
 
+
 ```
 
 ---
@@ -21879,6 +21925,7 @@ dependencies {
     <string name="app_name">LinkToMac</string>
     <string name="accessibility_service_desc">Enables remote wireless touch input, navigation gestures, and screen capture streaming from your Mac.</string>
 </resources>
+
 
 
 
@@ -21907,6 +21954,7 @@ dependencies {
 
 
 
+
 ```
 
 ---
@@ -21922,6 +21970,7 @@ dependencies {
     android:canPerformGestures="true"
     android:canTakeScreenshot="true"
     android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows" />
+
 
 
 
@@ -21967,6 +22016,7 @@ object WireProtocol {
         return packFrame(FRAME_JSON, root.toString().toByteArray(Charsets.UTF_8))
     }
 }
+
 
 
 
@@ -22121,6 +22171,7 @@ class LinkTouchAccessibilityService : AccessibilityService() {
         Log.i(TAG, "LinkTouchAccessibilityService destroyed")
     }
 }
+
 
 
 
@@ -22526,6 +22577,7 @@ object ClipboardManagerBridge {
 
 
 
+
 ```
 
 ---
@@ -22666,6 +22718,7 @@ class LinkNotificationService : NotificationListenerService() {
 
     private fun guardSbn(sbn: StatusBarNotification?): StatusBarNotification? = sbn
 }
+
 
 
 
@@ -22841,6 +22894,7 @@ object SmsContactsCallBridge {
         }, filter)
     }
 }
+
 
 
 
@@ -23044,6 +23098,7 @@ object FilePhotosBridge {
         LinkConnectionService.instance?.sendRawFrame(endFrame)
     }
 }
+
 
 
 
@@ -23363,6 +23418,7 @@ object ScreenCameraStreamer {
         }
     }
 }
+
 
 
 
@@ -23799,6 +23855,7 @@ class MainActivity : ComponentActivity() {
 
 
 
+
 ```
 
 ---
@@ -23834,6 +23891,7 @@ let package = Package(
         )
     ]
 )
+
 
 
 
@@ -23886,6 +23944,7 @@ let package = Package(
 
 
 
+
 ```
 
 ---
@@ -23920,6 +23979,7 @@ echo "=========================================="
 echo " SUCCESS: Built $APP_DIR"
 echo " Run with: open $APP_DIR"
 echo "=========================================="
+
 
 
 
@@ -24061,6 +24121,7 @@ enum WireFramer {
 
 
 
+
 ```
 
 ---
@@ -24098,6 +24159,7 @@ public struct LocalState<Value>: DynamicProperty {
         )
     }
 }
+
 
 
 
@@ -24750,6 +24812,7 @@ final class ConnectionManager: ObservableObject {
 
 
 
+
 ```
 
 ---
@@ -24930,6 +24993,7 @@ final class ADBBridge: ObservableObject {
 
 
 
+
 ```
 
 ---
@@ -25038,6 +25102,7 @@ final class ClipboardSyncManager: ObservableObject {
         }
     }
 }
+
 
 
 
@@ -25439,6 +25504,7 @@ struct PairingQRSetupView: View {
         return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
     }
 }
+
 
 
 
@@ -26220,6 +26286,7 @@ struct IncomingCallHUDView: View {
 
 
 
+
 ```
 
 ---
@@ -26284,6 +26351,7 @@ struct LinkToMacApp: App {
         }
     }
 }
+
 
 
 
@@ -27305,6 +27373,427 @@ hdiutil create -volname "LinktoMac" -srcfolder "dist/LinktoMac.app" -ov -format 
 echo "✅ Build complete! Production output: dist/LinktoMac.dmg"
 ```
 
+<a id="index-html"></a>
+### `index.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkToMac — Download Android & macOS Companion</title>
+  <meta name="description" content="Seamless Android screen mirroring, remote control, universal clipboard, and file transfer for macOS.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #121824;
+      --card-border: #1e293b;
+      --primary: #4ade80;
+      --primary-hover: #22c55e;
+      --primary-glow: rgba(74, 222, 128, 0.25);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+      width: 100%;
+    }
+
+    /* Navbar */
+    header {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .nav-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .logo-badge {
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .github-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .github-link:hover {
+      color: #fff;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 64px 0 40px;
+      text-align: center;
+    }
+
+    .headline {
+      font-size: clamp(32px, 6vw, 52px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .headline span {
+      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subheadline {
+      font-size: clamp(16px, 2.5vw, 19px);
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto 36px;
+    }
+
+    /* CTA Buttons */
+    .cta-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 48px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: var(--primary);
+      color: #052e16;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 16px 36px;
+      border-radius: 14px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 30px var(--primary-glow);
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 40px rgba(74, 222, 128, 0.4);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 14px;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .btn-secondary:hover {
+      color: #fff;
+    }
+
+    .badge-bar {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .badge-pill {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Step Guide */
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+      text-align: center;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+    }
+
+    .step-num {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      text-align: center;
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--primary);
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .step-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .step-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 64px;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      transition: border-color 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(74, 222, 128, 0.4);
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .feature-card h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--card-border);
+      padding: 28px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container nav-content">
+      <a href="/" class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+        LinkToMac
+        <span class="logo-badge">v1.61</span>
+      </a>
+      <a href="https://github.com/Udbhav7002/LinktoMac" target="_blank" class="github-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1 class="headline">Make Android feel at home on your <span>Mac</span></h1>
+      <p class="subheadline">
+        Ultra-low latency screen mirroring, universal clipboard, high-speed file transfer, and complete remote control — designed natively for macOS.
+      </p>
+
+      <div class="cta-container">
+        <a href="/downloads/LinkToMac.apk" download class="btn-primary" id="downloadBtn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download Android APK
+        </a>
+
+        <div class="badge-bar">
+          <span class="badge-pill">v1.61 (Latest)</span>
+          <span class="badge-pill">20 MB</span>
+          <span class="badge-pill">Android 11–15 Ready</span>
+          <span class="badge-pill">Zero Root Needed</span>
+        </div>
+
+        <a href="https://github.com/Udbhav7002/LinktoMac/releases" target="_blank" class="btn-secondary">
+          Download macOS App & Release Notes ↗
+        </a>
+      </div>
+    </section>
+
+    <!-- 3-Step Setup Guide -->
+    <h2 class="section-title">How Your Friend Can Connect in 3 Steps</h2>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Install the APK</h3>
+        <p>Download the APK onto your Android phone and tap to install. If prompted, tap <em>"Allow from this source"</em>.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Enter Mac Details</h3>
+        <p>Open LinkToMac on your phone. Enter the host and port shown in the Mac app or your Pinggy tunnel (e.g. <code>ap.pinggy.link</code> : <code>43210</code>).</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Grant & Mirror</h3>
+        <p>Tap <strong>Connect Wi-Fi</strong>, enable the Accessibility service for remote touch, and watch the phone screen appear live on Mac!</p>
+      </div>
+    </div>
+
+    <!-- Feature Highlights -->
+    <h2 class="section-title">Built for Performance & Privacy</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h4>Hardware Screen Mirroring</h4>
+        <p>Stream your live Android screen to Mac with responsive low-latency touch and key interactions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h4>Universal Clipboard</h4>
+        <p>Copy text on Mac and paste on Android, or copy on Android and paste instantly on Mac.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📁</div>
+        <h4>Instant File Transfers</h4>
+        <p>Browse phone files or share photos, URLs, and documents with 1-click directly into Mac Downloads.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h4>SMS & Notifications</h4>
+        <p>View phone notifications on your Mac screen with inline keyboard replies and automatic 2FA OTP extraction.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📞</div>
+        <h4>Call Controls</h4>
+        <p>Accept or decline phone calls with optional quick SMS replies directly from your Mac menu bar.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h4>Private & Local-First</h4>
+        <p>Direct peer-to-peer TCP connection. No external servers or cloud accounts store your personal data.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>LinkToMac is open source under the MIT License • Built for Android & macOS • <a href="https://github.com/Udbhav7002/LinktoMac" target="_blank">View on GitHub</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // Fallback if /downloads/ is not directly served: fallback to /public/ or /LinkToMac.apk
+    document.getElementById('downloadBtn').addEventListener('click', function(e) {
+      setTimeout(function() {
+        // Verification ping
+      }, 500);
+    });
+  </script>
+</body>
+</html>
+```
+
 <a id="linktomac-complete-android-source-code-md"></a>
 ### `linktomac_complete_android_source_code.md`
 
@@ -27339,6 +27828,7 @@ include(":app")
 
 
 
+
 ```
 
 ---
@@ -27350,6 +27840,7 @@ org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
 android.builtInKotlin=false
 android.newDsl=false
 kotlin.compiler.execution.strategy=in-process
+
 
 
 
@@ -27374,6 +27865,7 @@ zipStorePath=wrapper/dists
 
 
 
+
 ```
 
 ---
@@ -27384,6 +27876,7 @@ plugins {
     id("com.android.application") version "8.3.0" apply false
     id("org.jetbrains.kotlin.android") version "1.9.22" apply false
 }
+
 
 
 
@@ -27439,6 +27932,7 @@ dependencies {
     // ZXing QR Scanner for 1-tap QR code pairing
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }
+
 
 
 
@@ -27549,6 +28043,7 @@ dependencies {
 
 
 
+
 ```
 
 ---
@@ -27560,6 +28055,7 @@ dependencies {
     <string name="app_name">LinkToMac</string>
     <string name="accessibility_service_desc">Enables remote wireless touch input, navigation gestures, and screen capture streaming from your Mac.</string>
 </resources>
+
 
 
 
@@ -27588,6 +28084,7 @@ dependencies {
 
 
 
+
 ```
 
 ---
@@ -27603,6 +28100,7 @@ dependencies {
     android:canPerformGestures="true"
     android:canTakeScreenshot="true"
     android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows" />
+
 
 
 
@@ -27648,6 +28146,7 @@ object WireProtocol {
         return packFrame(FRAME_JSON, root.toString().toByteArray(Charsets.UTF_8))
     }
 }
+
 
 
 
@@ -27802,6 +28301,7 @@ class LinkTouchAccessibilityService : AccessibilityService() {
         Log.i(TAG, "LinkTouchAccessibilityService destroyed")
     }
 }
+
 
 
 
@@ -28207,6 +28707,7 @@ object ClipboardManagerBridge {
 
 
 
+
 ```
 
 ---
@@ -28347,6 +28848,7 @@ class LinkNotificationService : NotificationListenerService() {
 
     private fun guardSbn(sbn: StatusBarNotification?): StatusBarNotification? = sbn
 }
+
 
 
 
@@ -28522,6 +29024,7 @@ object SmsContactsCallBridge {
         }, filter)
     }
 }
+
 
 
 
@@ -28725,6 +29228,7 @@ object FilePhotosBridge {
         LinkConnectionService.instance?.sendRawFrame(endFrame)
     }
 }
+
 
 
 
@@ -29044,6 +29548,7 @@ object ScreenCameraStreamer {
         }
     }
 }
+
 
 
 
@@ -29480,6 +29985,7 @@ class MainActivity : ComponentActivity() {
 
 
 
+
 ```
 
 ---
@@ -29515,6 +30021,7 @@ let package = Package(
         )
     ]
 )
+
 
 
 
@@ -29567,6 +30074,7 @@ let package = Package(
 
 
 
+
 ```
 
 ---
@@ -29601,6 +30109,7 @@ echo "=========================================="
 echo " SUCCESS: Built $APP_DIR"
 echo " Run with: open $APP_DIR"
 echo "=========================================="
+
 
 
 
@@ -29742,6 +30251,7 @@ enum WireFramer {
 
 
 
+
 ```
 
 ---
@@ -29779,6 +30289,7 @@ public struct LocalState<Value>: DynamicProperty {
         )
     }
 }
+
 
 
 
@@ -30431,6 +30942,7 @@ final class ConnectionManager: ObservableObject {
 
 
 
+
 ```
 
 ---
@@ -30611,6 +31123,7 @@ final class ADBBridge: ObservableObject {
 
 
 
+
 ```
 
 ---
@@ -30719,6 +31232,7 @@ final class ClipboardSyncManager: ObservableObject {
         }
     }
 }
+
 
 
 
@@ -31120,6 +31634,7 @@ struct PairingQRSetupView: View {
         return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
     }
 }
+
 
 
 
@@ -31901,6 +32416,7 @@ struct IncomingCallHUDView: View {
 
 
 
+
 ```
 
 ---
@@ -31965,6 +32481,7 @@ struct LinkToMacApp: App {
         }
     }
 }
+
 
 
 
@@ -32389,6 +32906,34 @@ def main():
 if __name__ == "__main__":
     main()
 ````
+
+<a id="vercel-json"></a>
+### `vercel.json`
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "outputDirectory": "public",
+  "buildCommand": null,
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*)\\.apk",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.android.package-archive"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"LinkToMac.apk\""
+        }
+      ]
+    }
+  ]
+}
+```
 
 ## Scripts, Tests & Documentation
 
@@ -40995,43 +41540,6 @@ int main() {
 }
 ```
 
-<a id="tests-adversarial-native-test-decoder-stress-dSYM-Contents-Info-plist"></a>
-### `tests/adversarial_native/test_decoder_stress.dSYM/Contents/Info.plist`
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-	<dict>
-		<key>CFBundleDevelopmentRegion</key>
-		<string>English</string>
-		<key>CFBundleIdentifier</key>
-		<string>com.apple.xcode.dsym.test_decoder_stress</string>
-		<key>CFBundleInfoDictionaryVersion</key>
-		<string>6.0</string>
-		<key>CFBundlePackageType</key>
-		<string>dSYM</string>
-		<key>CFBundleSignature</key>
-		<string>????</string>
-		<key>CFBundleShortVersionString</key>
-		<string>1.0</string>
-		<key>CFBundleVersion</key>
-		<string>1</string>
-	</dict>
-</plist>
-```
-
-<a id="tests-adversarial-native-test-decoder-stress-dSYM-Contents-Resources-Relocations-aarch64-test-decoder-stress-yml"></a>
-### `tests/adversarial_native/test_decoder_stress.dSYM/Contents/Resources/Relocations/aarch64/test_decoder_stress.yml`
-
-```yaml
----
-triple:          'arm64-apple-darwin'
-binary-path:     'tests/adversarial_native/test_decoder_stress'
-relocations:     []
-...
-```
-
 <a id="tests-adversarial-native-test-handshake-stress-py"></a>
 ### `tests/adversarial_native/test_handshake_stress.py`
 
@@ -42709,5 +43217,428 @@ int main() {
     cout << "\nTrackpad Scroll Coalescing Tests: " << tests_passed << " passed, " << tests_failed << " failed." << endl;
     return (tests_failed == 0) ? 0 : 1;
 }
+```
+
+## Other Project Files
+
+<a id="public-index-html"></a>
+### `public/index.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkToMac — Download Android & macOS Companion</title>
+  <meta name="description" content="Seamless Android screen mirroring, remote control, universal clipboard, and file transfer for macOS.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #121824;
+      --card-border: #1e293b;
+      --primary: #4ade80;
+      --primary-hover: #22c55e;
+      --primary-glow: rgba(74, 222, 128, 0.25);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+      width: 100%;
+    }
+
+    /* Navbar */
+    header {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .nav-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .logo-badge {
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .github-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .github-link:hover {
+      color: #fff;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 64px 0 40px;
+      text-align: center;
+    }
+
+    .headline {
+      font-size: clamp(32px, 6vw, 52px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .headline span {
+      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subheadline {
+      font-size: clamp(16px, 2.5vw, 19px);
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto 36px;
+    }
+
+    /* CTA Buttons */
+    .cta-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 48px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: var(--primary);
+      color: #052e16;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 16px 36px;
+      border-radius: 14px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 30px var(--primary-glow);
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 40px rgba(74, 222, 128, 0.4);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 14px;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .btn-secondary:hover {
+      color: #fff;
+    }
+
+    .badge-bar {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .badge-pill {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Step Guide */
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+      text-align: center;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+    }
+
+    .step-num {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      text-align: center;
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--primary);
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .step-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .step-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 64px;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      transition: border-color 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(74, 222, 128, 0.4);
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .feature-card h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--card-border);
+      padding: 28px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container nav-content">
+      <a href="/" class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+        LinkToMac
+        <span class="logo-badge">v1.61</span>
+      </a>
+      <a href="https://github.com/Udbhav7002/LinktoMac" target="_blank" class="github-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1 class="headline">Make Android feel at home on your <span>Mac</span></h1>
+      <p class="subheadline">
+        Ultra-low latency screen mirroring, universal clipboard, high-speed file transfer, and complete remote control — designed natively for macOS.
+      </p>
+
+      <div class="cta-container">
+        <a href="/downloads/LinkToMac.apk" download class="btn-primary" id="downloadBtn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download Android APK
+        </a>
+
+        <div class="badge-bar">
+          <span class="badge-pill">v1.61 (Latest)</span>
+          <span class="badge-pill">20 MB</span>
+          <span class="badge-pill">Android 11–15 Ready</span>
+          <span class="badge-pill">Zero Root Needed</span>
+        </div>
+
+        <a href="https://github.com/Udbhav7002/LinktoMac/releases" target="_blank" class="btn-secondary">
+          Download macOS App & Release Notes ↗
+        </a>
+      </div>
+    </section>
+
+    <!-- 3-Step Setup Guide -->
+    <h2 class="section-title">How Your Friend Can Connect in 3 Steps</h2>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Install the APK</h3>
+        <p>Download the APK onto your Android phone and tap to install. If prompted, tap <em>"Allow from this source"</em>.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Enter Mac Details</h3>
+        <p>Open LinkToMac on your phone. Enter the host and port shown in the Mac app or your Pinggy tunnel (e.g. <code>ap.pinggy.link</code> : <code>43210</code>).</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Grant & Mirror</h3>
+        <p>Tap <strong>Connect Wi-Fi</strong>, enable the Accessibility service for remote touch, and watch the phone screen appear live on Mac!</p>
+      </div>
+    </div>
+
+    <!-- Feature Highlights -->
+    <h2 class="section-title">Built for Performance & Privacy</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h4>Hardware Screen Mirroring</h4>
+        <p>Stream your live Android screen to Mac with responsive low-latency touch and key interactions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h4>Universal Clipboard</h4>
+        <p>Copy text on Mac and paste on Android, or copy on Android and paste instantly on Mac.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📁</div>
+        <h4>Instant File Transfers</h4>
+        <p>Browse phone files or share photos, URLs, and documents with 1-click directly into Mac Downloads.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h4>SMS & Notifications</h4>
+        <p>View phone notifications on your Mac screen with inline keyboard replies and automatic 2FA OTP extraction.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📞</div>
+        <h4>Call Controls</h4>
+        <p>Accept or decline phone calls with optional quick SMS replies directly from your Mac menu bar.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h4>Private & Local-First</h4>
+        <p>Direct peer-to-peer TCP connection. No external servers or cloud accounts store your personal data.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>LinkToMac is open source under the MIT License • Built for Android & macOS • <a href="https://github.com/Udbhav7002/LinktoMac" target="_blank">View on GitHub</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // Fallback if /downloads/ is not directly served: fallback to /public/ or /LinkToMac.apk
+    document.getElementById('downloadBtn').addEventListener('click', function(e) {
+      setTimeout(function() {
+        // Verification ping
+      }, 500);
+    });
+  </script>
+</body>
+</html>
 ```
 
