@@ -2,7 +2,7 @@
 set -e
 
 echo "=========================================="
-echo " Building LinkToMac for macOS (v1.61)..."
+echo " Building LinkToMac for macOS (v1.62)..."
 echo "=========================================="
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

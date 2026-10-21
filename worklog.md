@@ -56,7 +56,12 @@ Extending LinktoMac screen-mirror and remote-control ecosystem to operate seamle
   - Extended `tests/adversarial_m4/test_handshake_malformed_fuzzer.py` with section 7 fuzzing 36-byte auth tokens against `mirror_client` (truncated tokens, corrupt payloads, slow byte-by-byte delivery)
   - Created `docs/REMOTE_SECURITY.md` documenting the WAN threat model (TLS 1.3 AEAD, 144-bit entropy token handshake, ADB hardware isolation, and TOFU vs pinned CA trust model)
   - Verified 100% pass across all security and adversarial test suites
-- [ ] **Phase 10 — Release (v1.62)**
+- [x] **Phase 10 — Release (v1.62)**
+  - Bumped version numbers to 162 / 1.62 across `allcode/LinkToMac-Android/app/build.gradle.kts`, `android-app/app/build.gradle`, `allcode/LinkToMac-macOS/Info.plist`, `build_mac_app.sh`, and `public/index.html`
+  - Updated `release/INSTALL.md` with complete "Remote Mode (Cross-Network / Cellular / WAN)" documentation
+  - Built production binaries: `LinkToMac.dmg` and `LinkToMac.apk` (both in `release/` and `public/downloads/`)
+  - Computed SHA-256 release checksums in `release/SHA256SUMS.txt`
+  - Created Git tag `v1.62-remote`
 
 ---
 
