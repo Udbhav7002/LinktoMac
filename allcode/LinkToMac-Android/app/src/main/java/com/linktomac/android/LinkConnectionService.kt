@@ -46,6 +46,7 @@ class LinkConnectionService : Service() {
         startMdnsDiscovery()
         ClipboardManagerBridge.init(this)
         SmsContactsCallBridge.registerCallStateReceiver(this)
+        CloudSessionSync.get(this).initialize()
 
         // Automatically connect to remembered device on startup
         connectedMacName = getSharedPreferences("linktomac", MODE_PRIVATE).getString("lastMacName", "") ?: ""
@@ -86,6 +87,14 @@ class LinkConnectionService : Service() {
         return START_STICKY
     }
 
+    /**
+     * Initiates a TCP connection to the specified Mac host and port, performing
+     * token verification and launching read/heartbeat loops.
+     *
+     * @param host Target IP address or hostname of the Mac host or Pinggy relay.
+     * @param port Target TCP port.
+     * @param token Authentication / pairing token.
+     */
     fun connectToMac(host: String, port: Int, token: String) {
         userRequestedDisconnect = false
         reconnectJob?.cancel()
@@ -125,6 +134,17 @@ class LinkConnectionService : Service() {
         }
     }
 
+    /**
+     * Gracefully disconnects the current socket session, suppresses automatic
+     * reconnects, and updates foreground notifications.
+     */
+    fun disconnect() {
+        userRequestedDisconnect = true
+        reconnectJob?.cancel()
+        closeSocketInternal()
+        startForegroundNotification("Disconnected — waiting for Mac")
+    }
+
     // Push the current clipboard and a fresh SMS/contacts snapshot on every
     // successful connection so the Mac is always up to date without manual taps.
     private fun runAutoSync() {
@@ -136,6 +156,11 @@ class LinkConnectionService : Service() {
         }
     }
 
+    /**
+     * Sends a raw wire-protocol frame across the active socket connection.
+     *
+     * @param frameBytes Packed wire frame bytes.
+     */
     fun sendRawFrame(frameBytes: ByteArray) {
         serviceScope.launch {
             try {

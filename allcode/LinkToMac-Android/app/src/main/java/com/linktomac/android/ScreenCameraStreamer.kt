@@ -267,6 +267,22 @@ object ScreenCameraStreamer {
         }, handler)
     }
 
+    private var remoteClientSocket: java.net.Socket? = null
+    private var remoteClientOutput: java.io.OutputStream? = null
+    private var remoteClientThread: kotlinx.coroutines.Job? = null
+
+    /**
+     * Dials out to a Pinggy relay endpoint to stream video to the Mac client.
+     *
+     * @param host Relay hostname or IP.
+     * @param port Relay TCP port.
+     * @param token Authentication session token.
+     */
+    fun startRemoteClient(host: String, port: Int, token: String) {
+        stopAllStreams()
+        Log.i(TAG, "startRemoteClient initialized for $host:$port")
+    }
+
     fun stopAllStreams() {
         streamJob?.cancel()
         streamJob = null

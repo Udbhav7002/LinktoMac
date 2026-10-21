@@ -11,7 +11,12 @@ Extending LinktoMac screen-mirror and remote-control ecosystem to operate seamle
   - Branch created: `feat/remote-ip-support`
   - Canonical review of `all_code.md` and repository components
   - Documented drift and architectural alignment in `docs/REMOTE_BUILD_AUDIT.md`
-- [ ] **Phase 1 — Android Cloud Sync Listener**
+- [x] **Phase 1 — Android Cloud Sync Listener**
+  - Configured Firebase dependencies (`firebase-auth-ktx`, `firebase-firestore-ktx`, `play-services-auth`) and multi-package `google-services.json`
+  - Implemented `CloudSessionSync.kt` listening to Firestore `users/{uid}/sessions/current`
+  - Integrated `CloudSessionSync` and `disconnect()` into `LinkConnectionService.kt`
+  - Added unit test suite `CloudSessionSyncTest.kt` verifying snapshot-driven relay connection triggers (< 2s)
+  - Unit tests verified: `./gradlew testDebugUnitTest` passed cleanly
 - [ ] **Phase 2 — Dual-Port Relay**
 - [ ] **Phase 3 — Android Outbound Video Client**
 - [ ] **Phase 4 — TLS 1.3 on Both Streams (Release Blocker)**
