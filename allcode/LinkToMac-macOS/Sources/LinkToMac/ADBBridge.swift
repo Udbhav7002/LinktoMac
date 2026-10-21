@@ -28,12 +28,17 @@ final class ADBBridge: ObservableObject {
     }
 
     private func findBinary(_ name: String) -> String? {
-        let candidates = [
+        var candidates = [
+            Bundle.main.bundlePath + "/Contents/MacOS/\(name)",
+            Bundle.main.bundlePath + "/Contents/Resources/\(name)",
             "/opt/homebrew/bin/\(name)",
             "/usr/local/bin/\(name)",
             "\(NSHomeDirectory())/Library/Android/sdk/platform-tools/\(name)",
             "/usr/bin/\(name)"
         ]
+        if let res = Bundle.main.resourcePath {
+            candidates.append("\(res)/\(name)")
+        }
         return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
     }
 
