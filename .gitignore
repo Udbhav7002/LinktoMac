@@ -27,9 +27,7 @@ venv/
 **/build/
 **/bin/
 *.apk
-!public/LinkToMac.apk
 !public/downloads/LinkToMac.apk
-!downloads/LinkToMac.apk
 *.ap_
 
 
@@ -58,5 +56,6 @@ test_pinggy.py
 .DS_Store
 .agents/
 .claude/
+.zcode/
 skills-lock.json
 bundled/
