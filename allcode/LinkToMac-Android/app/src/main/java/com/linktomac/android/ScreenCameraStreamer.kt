@@ -267,25 +267,141 @@ object ScreenCameraStreamer {
         }, handler)
     }
 
+    private const val HANDSHAKE_MAGIC = 0x4C494E4B.toInt()   // "LINK"
+    private const val HANDSHAKE_SIZE = 20
+    private const val EVENT_TYPE_SYNC_REQUEST: Byte = 0x05
+
     private var remoteClientSocket: java.net.Socket? = null
     private var remoteClientOutput: java.io.OutputStream? = null
     private var remoteClientThread: kotlinx.coroutines.Job? = null
 
     /**
-     * Dials out to a Pinggy relay endpoint to stream video to the Mac client.
+     * Dials out to a Pinggy relay endpoint and streams H.264 video into it,
+     * speaking the binary handshake required by the Mac mirror_client server mode.
      *
      * @param host Relay hostname or IP.
      * @param port Relay TCP port.
-     * @param token Authentication session token.
+     * @param token 36-byte shared-secret authentication token.
      */
     fun startRemoteClient(host: String, port: Int, token: String) {
         stopAllStreams()
-        Log.i(TAG, "startRemoteClient initialized for $host:$port")
+        remoteClientThread = CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val s = java.net.Socket()
+                s.tcpNoDelay = true
+                s.keepAlive = true
+                s.connect(java.net.InetSocketAddress(host, port), 8000)
+
+                // 1. Send token (36 bytes ASCII, null-padded)
+                val tokenBytes = token.padEnd(36, 0.toChar()).toByteArray(Charsets.US_ASCII)
+                s.getOutputStream().write(tokenBytes)
+                s.getOutputStream().flush()
+
+                // 2. Send 20-byte handshake to Mac mirror_client
+                // [HANDSHAKE_MAGIC (4B)][version (4B)][width (4B)][height (4B)][flags (4B)]
+                val targetW = 720
+                val targetH = 1280
+                val handshakeBuf = java.nio.ByteBuffer.allocate(HANDSHAKE_SIZE)
+                handshakeBuf.putInt(HANDSHAKE_MAGIC)
+                handshakeBuf.putInt(2)   // version 2
+                handshakeBuf.putInt(targetW)
+                handshakeBuf.putInt(targetH)
+                handshakeBuf.putInt(1)   // flags (1 = H.264)
+                s.getOutputStream().write(handshakeBuf.array())
+                s.getOutputStream().flush()
+
+                Log.i(TAG, "Remote video client connected & handshake sent to $host:$port")
+                remoteClientSocket = s
+                remoteClientOutput = s.getOutputStream()
+
+                // 3. Start MediaProjection-based H.264 encoder streaming into output stream
+                startMediaProjectionEncoder(s.getOutputStream(), targetW, targetH)
+            } catch (e: Exception) {
+                Log.e(TAG, "Remote client connect failed", e)
+            }
+        }
     }
 
+    /**
+     * H.264 hardware encoder that writes NAL units directly to the wire,
+     * prefixed with a 4-byte big-endian length matching native mirror_client expectation.
+     */
+    private fun startMediaProjectionEncoder(out: java.io.OutputStream, width: Int, height: Int) {
+        val proj = activeMediaProjection ?: run {
+            Log.w(TAG, "No MediaProjection — request from Activity first")
+            return
+        }
+
+        val targetW = width
+        val targetH = height
+        val format = android.media.MediaFormat.createVideoFormat("video/avc", targetW, targetH).apply {
+            setInteger(android.media.MediaFormat.KEY_BIT_RATE, 2_000_000)   // 2 Mbps start for WAN
+            setInteger(android.media.MediaFormat.KEY_FRAME_RATE, 30)
+            setInteger(android.media.MediaFormat.KEY_I_FRAME_INTERVAL, 2)
+            setInteger(android.media.MediaFormat.KEY_COLOR_FORMAT,
+                android.media.MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
+        }
+
+        val encoder = android.media.MediaCodec.createEncoderByType("video/avc")
+        encoder.configure(format, null, null, android.media.MediaCodec.CONFIGURE_FLAG_ENCODE)
+        val inputSurface = encoder.createInputSurface()
+        encoder.start()
+
+        val virtualDisplay = proj.createVirtualDisplay(
+            "LinkToMacRemote", targetW, targetH, 320,
+            android.hardware.display.DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            inputSurface, null, null
+        )
+
+        val bufferInfo = android.media.MediaCodec.BufferInfo()
+        val headerBuf = java.nio.ByteBuffer.allocate(4)
+
+        kotlin.concurrent.thread(name = "remote-encoder-drain", start = true) {
+            try {
+                while (remoteClientSocket?.isConnected == true && !Thread.interrupted()) {
+                    val outBufIndex = encoder.dequeueOutputBuffer(bufferInfo, 10_000)
+                    if (outBufIndex < 0) {
+                        if (outBufIndex == android.media.MediaCodec.INFO_TRY_AGAIN_LATER) continue
+                        continue
+                    }
+                    val outBuf = encoder.getOutputBuffer(outBufIndex) ?: continue
+                    val len = bufferInfo.size
+                    if (len > 0) {
+                        headerBuf.rewind()
+                        headerBuf.putInt(len).flip()
+                        val headerArr = ByteArray(4)
+                        headerBuf.get(headerArr)
+                        out.write(headerArr)
+                        val bytes = ByteArray(len)
+                        outBuf.get(bytes)
+                        out.write(bytes)
+                        out.flush()
+                    }
+                    encoder.releaseOutputBuffer(outBufIndex, false)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Encoder drain ended", e)
+            } finally {
+                try { encoder.stop() } catch (_: Exception) {}
+                encoder.release()
+                try { virtualDisplay.release() } catch (_: Exception) {}
+                try { inputSurface.release() } catch (_: Exception) {}
+            }
+        }
+    }
+
+    /**
+     * Terminates all ongoing screen/camera streams and closes remote client connections.
+     */
     fun stopAllStreams() {
         streamJob?.cancel()
         streamJob = null
+
+        try { remoteClientSocket?.close() } catch (_: Exception) {}
+        remoteClientSocket = null
+        remoteClientOutput = null
+        remoteClientThread?.cancel()
+        remoteClientThread = null
 
         try { virtualDisplay?.release() } catch (_: Exception) {}
         virtualDisplay = null

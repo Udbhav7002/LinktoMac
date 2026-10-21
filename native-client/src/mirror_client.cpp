@@ -17,6 +17,19 @@ MirrorClient::~MirrorClient() {
     stop();
 }
 
+bool MirrorClient::verify_peer_token() {
+    if (auth_token_.empty()) return true;  // local-only fallback
+    char buf[36] = {0};
+    if (!video_sock_.recv_exact(reinterpret_cast<uint8_t*>(buf), 36)) return false;
+    // Compare constant-time
+    int diff = 0;
+    for (int i = 0; i < 36; ++i) {
+        char expected = (i < static_cast<int>(auth_token_.size())) ? auth_token_[i] : '\0';
+        diff |= static_cast<int>(buf[i]) ^ static_cast<int>(expected);
+    }
+    return diff == 0;
+}
+
 bool MirrorClient::start() {
     if (running_) return false;
     running_ = true;
@@ -72,6 +85,12 @@ bool MirrorClient::start() {
             if (!video_sock_.listen_and_accept(video_port_)) {
                 cerr << "[ERROR] Failed to accept connection, retrying in 1s..." << endl;
                 this_thread::sleep_for(seconds(1));
+                continue;
+            }
+
+            if (!verify_peer_token()) {
+                cerr << "[ERROR] Auth token mismatch, closing connection" << endl;
+                video_sock_.disconnect();
                 continue;
             }
 

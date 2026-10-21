@@ -23,7 +23,12 @@ Extending LinktoMac screen-mirror and remote-control ecosystem to operate seamle
   - Added Firestore publishing logic (`_publish_session_to_firestore`, `_publish_session_to_user`) saving session token, IDs, and endpoints
   - Patched `smart_connect(self, device_data, uid=None)` and `ui_app.py` to seamlessly route authenticated user sessions to Firestore
   - Added Phase 2 acceptance test verifying dual URL parsing, mirror_client `--auth-token` argument, and Firestore persistence; all 17 tests passed cleanly
-- [ ] **Phase 3 — Android Outbound Video Client**
+- [x] **Phase 3 — Android Outbound Video Client**
+  - Extended `ScreenCameraStreamer.kt` with `startRemoteClient(host, port, token)` initiating outbound video TCP client toward Pinggy relay
+  - Implemented hardware MediaCodec H.264 encoder in `ScreenCameraStreamer` streaming NAL units with 4-byte length prefix
+  - Added `--auth-token` CLI flag support in `native-client/src/main.cpp`
+  - Implemented constant-time 36-byte token verification in `MirrorClient::verify_peer_token()` on listen accept
+  - Added Phase 3 acceptance test `test_remote_token_handshake.py` verifying token rejection of unauthorized clients and successful acceptance of valid token + handshake
 - [ ] **Phase 4 — TLS 1.3 on Both Streams (Release Blocker)**
 - [ ] **Phase 5 — Shared-Secret Token Handshake (Release Blocker)**
 - [ ] **Phase 6 — ADB Fallback for Remote Mode**

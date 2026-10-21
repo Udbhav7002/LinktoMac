@@ -28,6 +28,12 @@ public:
 
     void set_connect_mode(bool connect) { connect_mode_ = connect; }
 
+    /**
+     * Sets the expected 36-byte shared-secret authentication token.
+     * When set, any inbound peer in server/listen mode must present this token.
+     */
+    void set_auth_token(const string& token) { auth_token_ = token; }
+
     bool start();
     void stop();
     bool is_running() const { return running_; }
@@ -37,10 +43,12 @@ public:
 
 private:
     void decode_thread_func();
+    bool verify_peer_token();
 
     string host_;
     int video_port_;
     bool connect_mode_ = false;
+    string auth_token_;
 
     TcpConnection video_sock_;
     
