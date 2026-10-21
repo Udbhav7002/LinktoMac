@@ -113,9 +113,24 @@ final class ConnectionManager: ObservableObject {
                 guard let self = self else { return }
                 switch state {
                 case .ready:
-                    self.isConnected = true
-                    self.sendHello()
-                    self.readNextChunk(from: connection)
+                    if self.pairingToken.isEmpty {
+                        self.isConnected = true
+                        self.sendHello()
+                        self.readNextChunk(from: connection)
+                    } else {
+                        self.verifyPeerTokenAsync(connection) { success in
+                            Task { @MainActor in
+                                if success {
+                                    self.isConnected = true
+                                    self.sendHello()
+                                    self.readNextChunk(from: connection)
+                                } else {
+                                    print("[LinkToMac] Auth token mismatch or missing, closing connection")
+                                    connection.cancel()
+                                }
+                            }
+                        }
+                    }
                 case .failed, .cancelled:
                     if self.activeConnection === connection {
                         self.isConnected = false
@@ -128,6 +143,29 @@ final class ConnectionManager: ObservableObject {
             }
         }
         connection.start(queue: .main)
+    }
+
+    /// Asynchronously verifies the 36-byte shared-secret authentication token from the connecting peer.
+    private func verifyPeerTokenAsync(_ connection: NWConnection, completion: @escaping (Bool) -> Void) {
+        let expectedToken = pairingToken
+        guard !expectedToken.isEmpty else {
+            completion(true)
+            return
+        }
+        connection.receive(minimumIncompleteLength: 36, maximumLength: 36) { data, _, _, error in
+            guard let data = data, data.count == 36 else {
+                completion(false)
+                return
+            }
+            let tokenBytes = Array(data)
+            let expected = Array(expectedToken.utf8)
+            var diff = 0
+            for i in 0..<36 {
+                let expByte = (i < expected.count) ? expected[i] : 0
+                diff |= Int(tokenBytes[i]) ^ Int(expByte)
+            }
+            completion(diff == 0)
+        }
     }
 
     private func readNextChunk(from connection: NWConnection) {
@@ -555,8 +593,8 @@ final class ConnectionManager: ObservableObject {
         ))
     }
 
+    /// Injects a normalized tap coordinates (0.0 - 1.0) on the remote Android screen.
     func sendRemoteTap(normalizedX: Double, normalizedY: Double) {
-        // If USB ADB is available, ADBBridge injects zero-latency tap; also send over socket
         sendEnvelope(LinkEnvelope(
             type: "STREAM_CONTROL",
             payload: [
@@ -565,15 +603,22 @@ final class ConnectionManager: ObservableObject {
                 "y": String(format: "%.4f", normalizedY)
             ]
         ))
-        ADBBridge.shared.injectTapNormalized(x: normalizedX, y: normalizedY)
+        // Only use ADB on USB transport
+        if connectionTransport == "USB" {
+            ADBBridge.shared.injectTapNormalized(x: normalizedX, y: normalizedY)
+        }
     }
 
+    /// Injects an Android key code event into the remote device.
     func sendRemoteKeyEvent(_ keyCode: Int) {
         sendEnvelope(LinkEnvelope(
             type: "STREAM_CONTROL",
             payload: ["mode": "REMOTE_KEY", "keyCode": "\(keyCode)"]
         ))
-        ADBBridge.shared.injectKeyEvent(keyCode)
+        // Only use ADB on USB transport
+        if connectionTransport == "USB" {
+            ADBBridge.shared.injectKeyEvent(keyCode)
+        }
     }
 
     // MARK: - Live Audio Playback (Android Mic / Cast)

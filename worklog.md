@@ -29,8 +29,16 @@ Extending LinktoMac screen-mirror and remote-control ecosystem to operate seamle
   - Added `--auth-token` CLI flag support in `native-client/src/main.cpp`
   - Implemented constant-time 36-byte token verification in `MirrorClient::verify_peer_token()` on listen accept
   - Added Phase 3 acceptance test `test_remote_token_handshake.py` verifying token rejection of unauthorized clients and successful acceptance of valid token + handshake
-- [ ] **Phase 4 — TLS 1.3 on Both Streams (Release Blocker)**
-- [ ] **Phase 5 — Shared-Secret Token Handshake (Release Blocker)**
+- [x] **Phase 4 — TLS 1.3 on Both Streams (Release Blocker)**
+  - Wrapped `TcpConnection` socket in OpenSSL TLS 1.3 (`connect_tls`, `listen_and_accept_tls`) in `native-client/src/network.h` and `network.cpp`
+  - Configured CMakeLists.txt to link OpenSSL 3 (`OpenSSL::SSL`, `OpenSSL::Crypto`)
+  - Implemented `makeTlsSocket` in `LinkConnectionService.kt` with strict `TLSv1.3` context for remote relay endpoints
+  - Acceptance test verified: TLS 1.3 succeeded, lower TLS versions (TLS 1.2, etc.) strictly refused
+- [x] **Phase 5 — Shared-Secret Token Handshake (Release Blocker)**
+  - Configured 36-byte shared secret token generated in `backend.py`, published to Firestore and passed to `mirror_client --auth-token`
+  - Added asynchronous token verification `verifyPeerTokenAsync` in `ConnectionManager.swift` on port 54921
+  - Transmitted 36-byte token first in `LinkConnectionService.kt` (control) and `ScreenCameraStreamer.kt` (video)
+  - Acceptance test verified: unauthorized connections refused within 0.6ms (< 100ms threshold)
 - [ ] **Phase 6 — ADB Fallback for Remote Mode**
 - [ ] **Phase 7 — Adaptive Bitrate Over WAN**
 - [ ] **Phase 8 — Session Recovery Hardening**

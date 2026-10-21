@@ -59,6 +59,9 @@ endif()
 # SDL2
 find_package(SDL2 REQUIRED)
 
+# OpenSSL for TLS 1.3
+find_package(OpenSSL REQUIRED)
+
 # Apple frameworks for VideoToolbox and Cocoa
 find_library(VIDEOTOOLBOX_FRAMEWORK VideoToolbox)
 find_library(COREMEDIA_FRAMEWORK CoreMedia)
@@ -89,6 +92,8 @@ endif()
 target_link_libraries(mirror_native PUBLIC
     ${FFMPEG_LIBRARIES}
     ${SDL2_LIBRARIES}
+    OpenSSL::SSL
+    OpenSSL::Crypto
     ${VIDEOTOOLBOX_FRAMEWORK}
     ${COREMEDIA_FRAMEWORK}
     ${COREVIDEO_FRAMEWORK}

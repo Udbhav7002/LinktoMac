@@ -17,6 +17,11 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocket
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 class LinkConnectionService : Service() {
 
@@ -87,6 +92,44 @@ class LinkConnectionService : Service() {
         return START_STICKY
     }
 
+    private fun makeTlsSocket(host: String, port: Int, caCertPem: String?): Socket {
+        val raw = Socket().apply {
+            tcpNoDelay = true
+            keepAlive = true
+            connect(InetSocketAddress(host, port), 5000)
+        }
+        if (caCertPem.isNullOrEmpty()) {
+            // TOFU / development mode — accept any cert
+            val tm = object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            }
+            val ctx = SSLContext.getInstance("TLSv1.3")
+            ctx.init(null, arrayOf<TrustManager>(tm), java.security.SecureRandom())
+            val sslSock = ctx.socketFactory.createSocket(raw, host, port, true) as SSLSocket
+            sslSock.useClientMode = true
+            sslSock.startHandshake()
+            return sslSock
+        } else {
+            // Pin to provided CA cert (PEM string saved during pairing)
+            val cf = java.security.cert.CertificateFactory.getInstance("X.509")
+            val ca = cf.generateCertificate(caCertPem.byteInputStream()) as X509Certificate
+            val ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType())
+            ks.load(null, null)
+            ks.setCertificateEntry("linktomac-ca", ca)
+            val tmf = javax.net.ssl.TrustManagerFactory.getInstance(
+                javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm()
+            )
+            tmf.init(ks)
+            val ctx = SSLContext.getInstance("TLSv1.3")
+            ctx.init(null, tmf.trustManagers, java.security.SecureRandom())
+            val sslSock = ctx.socketFactory.createSocket(raw, host, port, true) as SSLSocket
+            sslSock.startHandshake()
+            return sslSock
+        }
+    }
+
     /**
      * Initiates a TCP connection to the specified Mac host and port, performing
      * token verification and launching read/heartbeat loops.
@@ -102,16 +145,33 @@ class LinkConnectionService : Service() {
             closeSocketInternal()
             try {
                 statusMessage = "Connecting to $host:$port..."
-                val s = Socket()
-                s.tcpNoDelay = true
-                s.keepAlive = true
-                s.connect(InetSocketAddress(host, port), 4000)
+                val isLocal = host == "127.0.0.1" || host == "localhost"
+                val caPem = getSharedPreferences("linktomac", MODE_PRIVATE)
+                    .getString("ca_cert_pem", null)
+
+                val s = if (isLocal) {
+                    val raw = Socket()
+                    raw.tcpNoDelay = true
+                    raw.keepAlive = true
+                    raw.connect(InetSocketAddress(host, port), 4000)
+                    raw
+                } else {
+                    makeTlsSocket(host, port, caPem)
+                }
+
                 socket = s
                 outputStream = s.getOutputStream()
                 isConnectedState = true
-                val transport = if (host == "127.0.0.1") "USB" else "Local Wi-Fi"
+                val transport = if (host == "127.0.0.1") "USB" else if (isLocal) "Local Wi-Fi" else "Remote Relay"
                 statusMessage = "Connected ($transport • $host)"
                 startForegroundNotification("Connected to Mac ($transport)")
+
+                // Phase 5: send 36-byte token first
+                if (token.isNotEmpty()) {
+                    val tokenBytes = token.padEnd(36, 0.toChar()).toByteArray(Charsets.US_ASCII)
+                    outputStream?.write(tokenBytes)
+                    outputStream?.flush()
+                }
 
                 // Save last successful host
                 getSharedPreferences("linktomac", MODE_PRIVATE).edit()

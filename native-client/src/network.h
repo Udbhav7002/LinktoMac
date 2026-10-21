@@ -6,6 +6,8 @@
 #include <vector>
 #include <queue>
 #include <chrono>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 using namespace std;
 
@@ -31,6 +33,28 @@ public:
 
     bool listen_and_accept(int port);
     bool connect(const string& host, int port);
+
+    /**
+     * Connects to a remote host and establishes a TLS 1.3 encrypted session.
+     *
+     * @param host Target hostname or IP address.
+     * @param port Target TCP port.
+     * @param ca_cert_path Optional filesystem path to trusted CA certificate for verification.
+     * @return True if socket connection and TLS 1.3 handshake succeed.
+     */
+    bool connect_tls(const string& host, int port, const string& ca_cert_path = "");
+
+    /**
+     * Listens on a TCP port and wraps inbound accepted connection in TLS 1.3.
+     *
+     * @param port Listen TCP port.
+     * @param cert_path Path to server PEM certificate.
+     * @param key_path Path to server private key.
+     * @param ca_cert_path Optional path to client CA certificate.
+     * @return True if connection accepted and TLS 1.3 handshake succeeds.
+     */
+    bool listen_and_accept_tls(int port, const string& cert_path, const string& key_path, const string& ca_cert_path = "");
+
     void disconnect();
     void stop_listening();
     
@@ -62,11 +86,16 @@ private:
     void load_saved_0rtt_token();
     void persist_0rtt_token();
     bool send_all_locked(const uint8_t* buf, int len);
+    void cleanup_tls();
 
     int sock_fd_;
     int server_fd_ = -1;
     mutex send_mutex_;
     mutex recv_mutex_;
+
+    SSL_CTX* ssl_ctx_ = nullptr;
+    SSL* ssl_ = nullptr;
+    bool use_tls_ = false;
 
     bool has_resumption_token_{false};
     vector<uint8_t> resumption_token_;

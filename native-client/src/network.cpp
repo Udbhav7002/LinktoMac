@@ -195,8 +195,94 @@ bool TcpConnection::connect(const string& host, int port) {
     return true;
 }
 
+bool TcpConnection::connect_tls(const string& host, int port, const string& ca_cert_path) {
+    if (!connect(host, port)) return false;
+    ssl_ctx_ = SSL_CTX_new(TLS_client_method());
+    if (!ssl_ctx_) return false;
+    SSL_CTX_set_min_proto_version(ssl_ctx_, TLS1_3_VERSION);
+    SSL_CTX_set_max_proto_version(ssl_ctx_, TLS1_3_VERSION);
+
+    if (!ca_cert_path.empty()) {
+        SSL_CTX_load_verify_locations(ssl_ctx_, ca_cert_path.c_str(), nullptr);
+        SSL_CTX_set_verify(ssl_ctx_, SSL_VERIFY_PEER, nullptr);
+    } else {
+        // TOFU mode / development fallback
+        SSL_CTX_set_verify(ssl_ctx_, SSL_VERIFY_NONE, nullptr);
+    }
+
+    ssl_ = SSL_new(ssl_ctx_);
+    if (!ssl_) {
+        cleanup_tls();
+        return false;
+    }
+
+    SSL_set_tlsext_host_name(ssl_, host.c_str());
+    SSL_set_fd(ssl_, sock_fd_);
+    if (SSL_connect(ssl_) <= 0) {
+        ERR_print_errors_fp(stderr);
+        cleanup_tls();
+        return false;
+    }
+    use_tls_ = true;
+    cout << "[INFO] TLS 1.3 session established to " << host << ":" << port << "\n";
+    return true;
+}
+
+bool TcpConnection::listen_and_accept_tls(int port, const string& cert_path, const string& key_path, const string& ca_cert_path) {
+    if (!listen_and_accept(port)) return false;
+    ssl_ctx_ = SSL_CTX_new(TLS_server_method());
+    if (!ssl_ctx_) return false;
+    SSL_CTX_set_min_proto_version(ssl_ctx_, TLS1_3_VERSION);
+    SSL_CTX_set_max_proto_version(ssl_ctx_, TLS1_3_VERSION);
+
+    if (SSL_CTX_use_certificate_file(ssl_ctx_, cert_path.c_str(), SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+        cleanup_tls();
+        return false;
+    }
+    if (SSL_CTX_use_PrivateKey_file(ssl_ctx_, key_path.c_str(), SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+        cleanup_tls();
+        return false;
+    }
+    if (!ca_cert_path.empty()) {
+        SSL_CTX_load_verify_locations(ssl_ctx_, ca_cert_path.c_str(), nullptr);
+        SSL_CTX_set_verify(ssl_ctx_, SSL_VERIFY_PEER, nullptr);
+    }
+
+    ssl_ = SSL_new(ssl_ctx_);
+    if (!ssl_) {
+        cleanup_tls();
+        return false;
+    }
+
+    SSL_set_fd(ssl_, sock_fd_);
+    if (SSL_accept(ssl_) <= 0) {
+        ERR_print_errors_fp(stderr);
+        cleanup_tls();
+        return false;
+    }
+    use_tls_ = true;
+    cout << "[INFO] Inbound TLS 1.3 session accepted on port " << port << "\n";
+    return true;
+}
+
+void TcpConnection::cleanup_tls() {
+    if (ssl_) {
+        SSL_shutdown(ssl_);
+        SSL_free(ssl_);
+        ssl_ = nullptr;
+    }
+    if (ssl_ctx_) {
+        SSL_CTX_free(ssl_ctx_);
+        ssl_ctx_ = nullptr;
+    }
+    use_tls_ = false;
+}
+
 void TcpConnection::disconnect() {
     lock_guard<mutex> lock(send_mutex_);
+    cleanup_tls();
     if (sock_fd_ >= 0) {
         ::shutdown(sock_fd_, SHUT_RDWR);
         ::close(sock_fd_);
@@ -213,6 +299,15 @@ void TcpConnection::stop_listening() {
 }
 
 bool TcpConnection::recv_exact(uint8_t* buf, int len) {
+    if (use_tls_ && ssl_) {
+        int total_read = 0;
+        while (total_read < len) {
+            int n = SSL_read(ssl_, buf + total_read, len - total_read);
+            if (n <= 0) return false;
+            total_read += n;
+        }
+        return true;
+    }
     if (sock_fd_ < 0 || !buf || len <= 0) return false;
     int total_read = 0;
     int timeout_count = 0;
@@ -241,6 +336,17 @@ bool TcpConnection::recv_exact(uint8_t* buf, int len) {
 }
 
 int TcpConnection::recv(uint8_t* buf, int len) {
+    if (use_tls_ && ssl_) {
+        int n = SSL_read(ssl_, buf, len);
+        if (n <= 0) {
+            int err = SSL_get_error(ssl_, n);
+            if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+                return 0;
+            }
+            return -1;
+        }
+        return n;
+    }
     if (sock_fd_ < 0 || !buf || len <= 0) return -1;
     int bytes = ::recv(sock_fd_, buf, len, 0);
     if (bytes < 0) {
@@ -256,6 +362,15 @@ int TcpConnection::recv(uint8_t* buf, int len) {
 }
 
 bool TcpConnection::send_all_locked(const uint8_t* buf, int len) {
+    if (use_tls_ && ssl_) {
+        int total = 0;
+        while (total < len) {
+            int n = SSL_write(ssl_, buf + total, len - total);
+            if (n <= 0) return false;
+            total += n;
+        }
+        return true;
+    }
     if (sock_fd_ < 0 || !buf || len <= 0) return false;
     int total_sent = 0;
     int timeout_count = 0;
