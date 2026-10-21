@@ -19,6 +19,12 @@ class LinkTouchAccessibilityService : AccessibilityService() {
         @Volatile
         var instance: LinkTouchAccessibilityService? = null
 
+        /**
+         * Resolves the physical device screen dimensions in pixels.
+         *
+         * @param context Application context.
+         * @return Pair of width and height in pixels.
+         */
         fun getRealScreenSize(context: android.content.Context): Pair<Int, Int> {
             val metrics = context.resources.displayMetrics
             return Pair(metrics.widthPixels, metrics.heightPixels)
@@ -36,6 +42,14 @@ class LinkTouchAccessibilityService : AccessibilityService() {
         Log.i(TAG, "LinkTouchAccessibilityService connected")
     }
 
+    /**
+     * Injects a gesture click tap at normalized coordinates (0.0 to 1.0)
+     * using the Android AccessibilityService dispatchGesture API.
+     *
+     * @param normX Normalized X coordinate between 0.0 and 1.0.
+     * @param normY Normalized Y coordinate between 0.0 and 1.0.
+     * @return True if gesture dispatch was successfully scheduled.
+     */
     fun performNormalizedTap(normX: Float, normY: Float): Boolean {
         val width = resources.displayMetrics.widthPixels
         val height = resources.displayMetrics.heightPixels
@@ -50,6 +64,12 @@ class LinkTouchAccessibilityService : AccessibilityService() {
         return dispatchGesture(gesture, null, null)
     }
 
+    /**
+     * Performs a global accessibility navigation action (Home, Back, Recents, Notifications).
+     *
+     * @param keyCode Android keycode (3=Home, 4=Back, 187=Recents, 83=Notifications).
+     * @return True if global action was performed.
+     */
     fun performRemoteKey(keyCode: Int): Boolean {
         return when (keyCode) {
             3 -> performGlobalAction(GLOBAL_ACTION_HOME)
@@ -65,6 +85,11 @@ class LinkTouchAccessibilityService : AccessibilityService() {
         }
     }
 
+    /**
+     * Captures a high-performance JPEG screenshot buffer for basic mirror preview.
+     *
+     * @param callback Callback receiving the compressed JPEG byte array.
+     */
     fun captureScreenJpeg(callback: (ByteArray?) -> Unit) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             callback(null)

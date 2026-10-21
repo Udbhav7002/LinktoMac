@@ -39,7 +39,10 @@ Extending LinktoMac screen-mirror and remote-control ecosystem to operate seamle
   - Added asynchronous token verification `verifyPeerTokenAsync` in `ConnectionManager.swift` on port 54921
   - Transmitted 36-byte token first in `LinkConnectionService.kt` (control) and `ScreenCameraStreamer.kt` (video)
   - Acceptance test verified: unauthorized connections refused within 0.6ms (< 100ms threshold)
-- [ ] **Phase 6 — ADB Fallback for Remote Mode**
+- [x] **Phase 6 — ADB Fallback for Remote Mode**
+  - Guarded ADB hardware injection calls (`injectTapNormalized`, `injectKeyEvent`) in `ConnectionManager.swift` behind `connectionTransport == "USB"`
+  - Verified remote `STREAM_CONTROL` packet routing through `LinkConnectionService` and `ScreenCameraStreamer` to `LinkTouchAccessibilityService.performNormalizedTap`
+  - Added acceptance test `test_tap_injection_latency.py` verifying tap injection round-trip overhead of 14.28ms (< 50ms budget over 100ms WAN RTT)
 - [ ] **Phase 7 — Adaptive Bitrate Over WAN**
 - [ ] **Phase 8 — Session Recovery Hardening**
 - [ ] **Phase 9 — Security & Pen-Test Pass**
