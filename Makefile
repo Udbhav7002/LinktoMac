@@ -1,4 +1,4 @@
-.PHONY: all app client clean run deploy export stitch sync
+.PHONY: all app client clean run deploy export stitch sync release
 
 all: app client
 
@@ -31,3 +31,6 @@ stitch:
 
 sync:
 	python3 scripts/update_allcode_bundles.py
+
+release:
+	bash scripts/make_release.sh

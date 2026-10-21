@@ -1,6 +1,6 @@
 # LinktoMac — Complete Codebase
 
-This document consolidates all 210 source and configuration files of the LinktoMac project in a clean, structured format.
+This document consolidates all 213 source and configuration files of the LinktoMac project in a clean, structured format.
 
 ---
 
@@ -209,6 +209,7 @@ This document consolidates all 210 source and configuration files of the LinktoM
 - [`docs/ui-prompts/README.md`](#docs-ui-prompts-README-md)
 - [`scripts/download_adb.sh`](#scripts-download-adb-sh)
 - [`scripts/export_all_code.py`](#scripts-export-all-code-py)
+- [`scripts/make_release.sh`](#scripts-make-release-sh)
 - [`scripts/stitch_allcode.py`](#scripts-stitch-allcode-py)
 - [`scripts/update_allcode_bundles.py`](#scripts-update-allcode-bundles-py)
 - [`tests/adversarial_m1/test_firestore_schema_and_preauth.js`](#tests-adversarial-m1-test-firestore-schema-and-preauth-js)
@@ -242,6 +243,8 @@ This document consolidates all 210 source and configuration files of the LinktoM
 ### Other Project Files
 
 - [`public/index.html`](#public-index-html)
+- [`release/INSTALL.md`](#release-INSTALL-md)
+- [`release/SHA256SUMS.txt`](#release-SHA256SUMS-txt)
 
 ---
 
@@ -3653,7 +3656,14 @@ mkdir -p "$DMG_STAGING"
 cp -R "$APP_DIR" "$DMG_STAGING/"
 ln -s /Applications "$DMG_STAGING/Applications"
 
-# Set DMG volume icon if possible
+# Set DMG volume icon if present
+if [ -f "AppIcon.icns" ]; then
+    cp "AppIcon.icns" "$DMG_STAGING/.VolumeIcon.icns"
+    SetFile -c icnC "$DMG_STAGING/.VolumeIcon.icns" 2>/dev/null || true
+    SetFile -a C "$DMG_STAGING" 2>/dev/null || true
+fi
+
+# Build DMG
 hdiutil create -volname "LinkToMac" -srcfolder "$DMG_STAGING" -ov -format UDZO "$DMG_PATH"
 rm -rf "$DMG_STAGING"
 
@@ -23657,6 +23667,7 @@ dist/
 *.spec
 *.app/
 *.dmg
+!public/downloads/LinkToMac.dmg
 *.zip
 .Python
 env/
@@ -23794,7 +23805,7 @@ app = BUNDLE(
 ### `Makefile`
 
 ```makefile
-.PHONY: all app client clean run deploy export stitch sync
+.PHONY: all app client clean run deploy export stitch sync release
 
 all: app client
 
@@ -23827,6 +23838,9 @@ stitch:
 
 sync:
 	python3 scripts/update_allcode_bundles.py
+
+release:
+	bash scripts/make_release.sh
 ```
 
 <a id="README-md"></a>
@@ -43963,7 +43977,14 @@ mkdir -p "$DMG_STAGING"
 cp -R "$APP_DIR" "$DMG_STAGING/"
 ln -s /Applications "$DMG_STAGING/Applications"
 
-# Set DMG volume icon if possible
+# Set DMG volume icon if present
+if [ -f "AppIcon.icns" ]; then
+    cp "AppIcon.icns" "$DMG_STAGING/.VolumeIcon.icns"
+    SetFile -c icnC "$DMG_STAGING/.VolumeIcon.icns" 2>/dev/null || true
+    SetFile -a C "$DMG_STAGING" 2>/dev/null || true
+fi
+
+# Build DMG
 hdiutil create -volname "LinkToMac" -srcfolder "$DMG_STAGING" -ov -format UDZO "$DMG_PATH"
 rm -rf "$DMG_STAGING"
 
@@ -49284,6 +49305,120 @@ def generate_all_code():
 
 if __name__ == "__main__":
     generate_all_code()
+````
+
+<a id="scripts-make-release-sh"></a>
+### `scripts/make_release.sh`
+
+````bash
+#!/usr/bin/env bash
+set -e
+
+# ==============================================================================
+# LinkToMac — Universal Production Release Builder (macOS & Android)
+# ==============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+RELEASE_DIR="$REPO_ROOT/release"
+
+echo "=========================================================="
+echo " Packaging Official LinkToMac Release (macOS + Android)   "
+echo "=========================================================="
+
+mkdir -p "$RELEASE_DIR"
+rm -f "$RELEASE_DIR"/*
+
+# ------------------------------------------------------------------------------
+# 1. Build Native macOS App & DMG
+# ------------------------------------------------------------------------------
+echo "🍏 [1/4] Building macOS Native Application (LinkToMac.app)..."
+cd "$REPO_ROOT/allcode/LinkToMac-macOS"
+bash build_mac_app.sh
+
+APP_BUNDLE="$REPO_ROOT/allcode/LinkToMac-macOS/build/LinkToMac.app"
+DMG_SRC="$REPO_ROOT/allcode/LinkToMac-macOS/build/LinkToMac.dmg"
+
+# Copy DMG to release folder
+cp -f "$DMG_SRC" "$RELEASE_DIR/LinkToMac.dmg"
+
+# Create clean ZIP archive preserving code-signing and extended attributes
+echo "📦 [2/4] Packaging macOS ZIP Archive..."
+ditto -c -k --keepParent "$APP_BUNDLE" "$RELEASE_DIR/LinkToMac-macOS.zip"
+
+# ------------------------------------------------------------------------------
+# 2. Build Android Companion APK
+# ------------------------------------------------------------------------------
+echo "🤖 [3/4] Building Android Companion Application (LinkToMac.apk)..."
+cd "$REPO_ROOT/allcode/LinkToMac-Android"
+./gradlew assembleDebug --no-daemon
+
+APK_SRC="$REPO_ROOT/allcode/LinkToMac-Android/app/build/outputs/apk/debug/app-debug.apk"
+cp -f "$APK_SRC" "$RELEASE_DIR/LinkToMac.apk"
+
+# Sync web portal distribution files
+mkdir -p "$REPO_ROOT/public/downloads"
+cp -f "$RELEASE_DIR/LinkToMac.apk" "$REPO_ROOT/public/downloads/LinkToMac.apk"
+cp -f "$RELEASE_DIR/LinkToMac.dmg" "$REPO_ROOT/public/downloads/LinkToMac.dmg"
+
+# ------------------------------------------------------------------------------
+# 3. Cryptographic Checksums
+# ------------------------------------------------------------------------------
+echo "🔒 [4/4] Generating SHA-256 Checksums..."
+cd "$RELEASE_DIR"
+shasum -a 256 LinkToMac.dmg LinkToMac-macOS.zip LinkToMac.apk > SHA256SUMS.txt
+
+# ------------------------------------------------------------------------------
+# 4. Write Installation Documentation
+# ------------------------------------------------------------------------------
+cat << 'EOF' > "$RELEASE_DIR/INSTALL.md"
+# LinkToMac — Installation Guide
+
+## 🍏 macOS Installation
+
+### Option A: Drag-and-Drop Disk Image (Recommended)
+1. Double-click `LinkToMac.dmg`.
+2. Drag `LinkToMac.app` into the **Applications** folder shortcut.
+3. Open `LinkToMac` from **Applications**, **Launchpad**, or **Spotlight** (`Cmd + Space`).
+4. *(First Launch)* If macOS displays an unnotarized developer alert, open **System Settings > Privacy & Security** and click **Open Anyway**, or run in Terminal:
+   ```bash
+   xattr -cr /Applications/LinkToMac.app
+   ```
+
+### Option B: ZIP Archive
+1. Unzip `LinkToMac-macOS.zip`.
+2. Move `LinkToMac.app` into `/Applications`.
+
+---
+
+## 🤖 Android Installation
+
+### Option A: Direct APK Install
+1. Transfer `LinkToMac.apk` to your Android device (or download directly from the web portal).
+2. Tap the downloaded file and select **Install**.
+3. If prompted, allow installation from this source.
+
+### Option B: USB ADB One-Click Install
+If your phone is plugged in with USB debugging enabled:
+```bash
+adb install -r LinkToMac.apk
+```
+
+---
+
+## ⚡ First Time Setup
+
+1. **On Android**: Launch **LinkToMac**. Follow prompt to enable the **LinkToMac Accessibility Service** (needed for remote touch injection).
+2. **On Mac**: Launch **LinkToMac**. Your phone will appear automatically via USB cable or over local Wi-Fi.
+3. Enjoy sub-2ms hardware-accelerated screen mirroring and universal clipboard!
+EOF
+
+echo ""
+echo "=========================================================="
+echo " ✅ RELEASE BUILD COMPLETE!"
+echo " Output files in $RELEASE_DIR:"
+ls -lh "$RELEASE_DIR"
+echo "=========================================================="
 ````
 
 <a id="scripts-stitch-allcode-py"></a>
@@ -57529,24 +57664,32 @@ int main() {
       </p>
 
       <div class="cta-container">
-        <a href="/downloads/LinkToMac.apk" download class="btn-primary" id="downloadBtn">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Download Android APK
-        </a>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 580px;">
+          <a href="/downloads/LinkToMac.dmg" download class="btn-primary" id="downloadMacBtn" style="flex: 1 1 240px; min-width: 220px; background: #27272a; border: 1px solid #3f3f46;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.38c.62-.75 1.04-1.8 0.93-2.85-.9.04-1.98.6-2.63 1.35-.57.65-1.07 1.72-.94 2.74 1 .08 2.02-.49 2.64-1.24z"/>
+            </svg>
+            Download for macOS (.dmg)
+          </a>
+          <a href="/downloads/LinkToMac.apk" download class="btn-primary" id="downloadBtn" style="flex: 1 1 240px; min-width: 220px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download Android APK
+          </a>
+        </div>
 
         <div class="badge-bar">
           <span class="badge-pill">v1.61 (Latest)</span>
-          <span class="badge-pill">20 MB</span>
+          <span class="badge-pill">macOS 13+ (Apple Silicon & Intel)</span>
           <span class="badge-pill">Android 11–15 Ready</span>
-          <span class="badge-pill">Zero Root Needed</span>
+          <span class="badge-pill">Zero Cloud Needed</span>
         </div>
 
         <a href="https://github.com/Udbhav7002/LinktoMac/releases" target="_blank" class="btn-secondary">
-          Download macOS App & Release Notes ↗
+          View Releases & Source Code on GitHub ↗
         </a>
       </div>
     </section>
@@ -57623,5 +57766,59 @@ int main() {
   </script>
 </body>
 </html>
+```
+
+<a id="release-INSTALL-md"></a>
+### `release/INSTALL.md`
+
+````markdown
+# LinkToMac — Installation Guide
+
+## 🍏 macOS Installation
+
+### Option A: Drag-and-Drop Disk Image (Recommended)
+1. Double-click `LinkToMac.dmg`.
+2. Drag `LinkToMac.app` into the **Applications** folder shortcut.
+3. Open `LinkToMac` from **Applications**, **Launchpad**, or **Spotlight** (`Cmd + Space`).
+4. *(First Launch)* If macOS displays an unnotarized developer alert, open **System Settings > Privacy & Security** and click **Open Anyway**, or run in Terminal:
+   ```bash
+   xattr -cr /Applications/LinkToMac.app
+   ```
+
+### Option B: ZIP Archive
+1. Unzip `LinkToMac-macOS.zip`.
+2. Move `LinkToMac.app` into `/Applications`.
+
+---
+
+## 🤖 Android Installation
+
+### Option A: Direct APK Install
+1. Transfer `LinkToMac.apk` to your Android device (or download directly from the web portal).
+2. Tap the downloaded file and select **Install**.
+3. If prompted, allow installation from this source.
+
+### Option B: USB ADB One-Click Install
+If your phone is plugged in with USB debugging enabled:
+```bash
+adb install -r LinkToMac.apk
+```
+
+---
+
+## ⚡ First Time Setup
+
+1. **On Android**: Launch **LinkToMac**. Follow prompt to enable the **LinkToMac Accessibility Service** (needed for remote touch injection).
+2. **On Mac**: Launch **LinkToMac**. Your phone will appear automatically via USB cable or over local Wi-Fi.
+3. Enjoy sub-2ms hardware-accelerated screen mirroring and universal clipboard!
+````
+
+<a id="release-SHA256SUMS-txt"></a>
+### `release/SHA256SUMS.txt`
+
+```text
+18bb0db5fd859aa918ad2c641de5b46cbbf1f1b38b08733d25c05080f68133c5  LinkToMac.dmg
+96b9a0cd5998fe129c1ee9190ce82e78ab6e5ffc3505c7313e32d87f60f3e332  LinkToMac-macOS.zip
+c069caf69a2ed5622d08459b8021e3e3c7ce47004e8f1d5d8f685d590b9277d0  LinkToMac.apk
 ```
 

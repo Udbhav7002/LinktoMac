@@ -55,7 +55,14 @@ mkdir -p "$DMG_STAGING"
 cp -R "$APP_DIR" "$DMG_STAGING/"
 ln -s /Applications "$DMG_STAGING/Applications"
 
-# Set DMG volume icon if possible
+# Set DMG volume icon if present
+if [ -f "AppIcon.icns" ]; then
+    cp "AppIcon.icns" "$DMG_STAGING/.VolumeIcon.icns"
+    SetFile -c icnC "$DMG_STAGING/.VolumeIcon.icns" 2>/dev/null || true
+    SetFile -a C "$DMG_STAGING" 2>/dev/null || true
+fi
+
+# Build DMG
 hdiutil create -volname "LinkToMac" -srcfolder "$DMG_STAGING" -ov -format UDZO "$DMG_PATH"
 rm -rf "$DMG_STAGING"
 
