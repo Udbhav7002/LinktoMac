@@ -51,7 +51,11 @@ Extending LinktoMac screen-mirror and remote-control ecosystem to operate seamle
 - [x] **Phase 8 — Session Recovery Hardening**
   - Hardened `CloudSessionSync.kt` snapshot listener with 30-second restart grace detection window
   - Verified recovery tests in `CloudSessionSyncTest.kt` asserting reconnection within 10s upon Mac app relaunch
-- [ ] **Phase 9 — Security & Pen-Test Pass**
+- [x] **Phase 9 — Security & Pen-Test Pass**
+  - Extended `tests/adversarial_m1/test_m1_screen_capture_and_handshake.py` asserting strict TLS 1.3 protocol version bounds in native-client and Android LinkConnectionService
+  - Extended `tests/adversarial_m4/test_handshake_malformed_fuzzer.py` with section 7 fuzzing 36-byte auth tokens against `mirror_client` (truncated tokens, corrupt payloads, slow byte-by-byte delivery)
+  - Created `docs/REMOTE_SECURITY.md` documenting the WAN threat model (TLS 1.3 AEAD, 144-bit entropy token handshake, ADB hardware isolation, and TOFU vs pinned CA trust model)
+  - Verified 100% pass across all security and adversarial test suites
 - [ ] **Phase 10 — Release (v1.62)**
 
 ---

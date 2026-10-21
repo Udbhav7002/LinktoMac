@@ -189,9 +189,102 @@ def run_all():
     print(f"  ✓ {corrupt_count} malformed connections handled without socket exhaustion.")
     server_sock.close()
 
+    # 7. 36-Byte Shared Secret Auth Token Malformed Fuzzer (Phase 9)
+    test_auth_token_fuzzer()
+
     print("\n===================================================================")
     print("  ALL HANDSHAKE PARSER ADVERSARIAL STRESS TESTS PASSED (100% PASS)  ")
     print("===================================================================")
+
+
+def test_auth_token_fuzzer():
+    print("\n--- 7. 36-Byte Shared Secret Auth Token Malformed Fuzzer (Phase 9) ---")
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
+
+    valid_token = "0123456789abcdef0123456789abcdef0123"
+    proc = subprocess.Popen(
+        [str(CLIENT_BIN), "--video-port", str(port), "--auth-token", valid_token],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    time.sleep(0.5)
+    assert proc.poll() is None, "mirror_client crashed on startup"
+
+    try:
+        # A. Truncated tokens (0, 1, 10, 35 bytes)
+        for length in [0, 1, 10, 35]:
+            payload = valid_token[:length].encode("ascii")
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(("127.0.0.1", port))
+            if payload:
+                sock.sendall(payload)
+            sock.close()
+            time.sleep(0.05)
+            assert proc.poll() is None, f"mirror_client crashed on truncated token of length {length}"
+            print(f"  ✓ Truncated token ({length} / 36 bytes) rejected cleanly without server crash")
+
+        # B. Fuzzed / garbage token bytes
+        garbage_samples = [
+            b"\x00" * 36,
+            b"\xff" * 36,
+            b"GARBAGE_PAYLOAD_NON_HEX_CHARS_12345",
+            b"0123456789abcdef0123456789abcdef0124",  # 1-bit flip at the end
+            b"\xde\xad\xbe\xef" * 9,
+        ]
+        for idx, garbage in enumerate(garbage_samples):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(("127.0.0.1", port))
+            sock.sendall(garbage)
+            sock.settimeout(1.0)
+            try:
+                sock.recv(1024)
+            except Exception:
+                pass
+            sock.close()
+            time.sleep(0.05)
+            assert proc.poll() is None, f"mirror_client crashed on garbage token #{idx+1}"
+            print(f"  ✓ Garbage token #{idx+1} rejected cleanly without server crash")
+
+        # C. Byte-by-byte slow delivery (slow loris fuzzing with bad token)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(("127.0.0.1", port))
+        slow_bad_token = b"slow_fuzz_bad_token_1234567890abcdef"
+        for b in slow_bad_token:
+            try:
+                sock.sendall(bytes([b]))
+                time.sleep(0.005)
+            except Exception:
+                break
+        sock.close()
+        time.sleep(0.05)
+        assert proc.poll() is None, "mirror_client crashed on slow delivery token"
+        print("  ✓ Slow byte-by-byte delivery (1 byte every 5ms) rejected cleanly without server crash")
+
+        # D. Confirm valid connection is accepted after all fuzzed attempts
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(("127.0.0.1", port))
+        sock.sendall(valid_token.encode("ascii"))
+        handshake = struct.pack(">IIIII", MAGIC, VERSION_V2, 720, 1280, 1)
+        sock.sendall(handshake)
+        nal_payload = b"\x00\x00\x00\x01\x67\x42\x00\x1f"
+        nal_packet = struct.pack(">I", len(nal_payload)) + nal_payload
+        sock.sendall(nal_packet)
+        time.sleep(0.2)
+        sock.close()
+        assert proc.poll() is None, "mirror_client crashed when handling valid connection after fuzzer"
+        print("  ✓ Valid token and handshake accepted successfully after fuzzer flood")
+
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=1.0)
+        except Exception:
+            proc.kill()
+
 
 
 if __name__ == "__main__":

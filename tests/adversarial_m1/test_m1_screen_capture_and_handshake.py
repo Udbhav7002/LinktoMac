@@ -250,6 +250,30 @@ class TestMilestone1ReflectionAndHandshake(unittest.TestCase):
             self.assertNotIn("closeTransaction", res_dex.stdout)
 
     # =========================================================================
+    # 6. TLS 1.3 PROTOCOL ENFORCEMENT
+    # =========================================================================
+
+    def test_tls13_enforcement_in_native_client_and_android(self):
+        """Verify native-client strictly enforces TLS1_3_VERSION and Android requests TLSv1.3."""
+        network_cpp = os.path.join(REPO_ROOT, "native-client/src/network.cpp")
+        self.assertTrue(os.path.isfile(network_cpp), f"Missing {network_cpp}")
+        with open(network_cpp, "r", encoding="utf-8") as f:
+            net_code = f.read()
+
+        # Both connect_tls and listen_and_accept_tls must enforce min and max TLS1_3_VERSION
+        self.assertIn("SSL_CTX_set_min_proto_version(ssl_ctx_, TLS1_3_VERSION);", net_code)
+        self.assertIn("SSL_CTX_set_max_proto_version(ssl_ctx_, TLS1_3_VERSION);", net_code)
+
+        # Android LinkConnectionService.kt must request TLSv1.3
+        link_service_kt = os.path.join(REPO_ROOT, "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkConnectionService.kt")
+        self.assertTrue(os.path.isfile(link_service_kt), f"Missing {link_service_kt}")
+        with open(link_service_kt, "r", encoding="utf-8") as f:
+            kt_code = f.read()
+
+        self.assertIn('SSLContext.getInstance("TLSv1.3")', kt_code)
+
+
+    # =========================================================================
     # 6. SIMULATED RUNTIME REFLECTION ORACLE
     # =========================================================================
 
