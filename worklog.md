@@ -1,0 +1,40 @@
+# LinktoMac Remote IP Support — Implementation Worklog
+
+## Overview
+Extending LinktoMac screen-mirror and remote-control ecosystem to operate seamlessly across different networks (cellular, NAT'd Wi-Fi, cross-network) via dual-port Pinggy relay, Firestore discovery, TLS 1.3 encryption, and shared-secret authentication.
+
+---
+
+## Phase Status Checklist
+
+- [x] **Phase 0 — Audit & Branch Setup**
+  - Branch created: `feat/remote-ip-support`
+  - Canonical review of `all_code.md` and repository components
+  - Documented drift and architectural alignment in `docs/REMOTE_BUILD_AUDIT.md`
+- [ ] **Phase 1 — Android Cloud Sync Listener**
+- [ ] **Phase 2 — Dual-Port Relay**
+- [ ] **Phase 3 — Android Outbound Video Client**
+- [ ] **Phase 4 — TLS 1.3 on Both Streams (Release Blocker)**
+- [ ] **Phase 5 — Shared-Secret Token Handshake (Release Blocker)**
+- [ ] **Phase 6 — ADB Fallback for Remote Mode**
+- [ ] **Phase 7 — Adaptive Bitrate Over WAN**
+- [ ] **Phase 8 — Session Recovery Hardening**
+- [ ] **Phase 9 — Security & Pen-Test Pass**
+- [ ] **Phase 10 — Release (v1.62)**
+
+---
+
+## Detailed Phase Execution Log
+
+### Phase 0: Audit & Branch Setup
+- Checked git status on `main`, created branch `feat/remote-ip-support`.
+- Audited `all_code.md` against live code across macOS Swift (`allcode/LinkToMac-macOS`), Android Kotlin (`allcode/LinkToMac-Android`, `android-app`), C++ Native Client (`native-client`), and Python Orchestrator (`orchestrator`).
+- Identified and documented 8 key drift areas in `docs/REMOTE_BUILD_AUDIT.md`:
+  1. Multi-package `google-services.json` requirements and Gradle root plugin declaration.
+  2. Video channel 20-byte handshake direction (Android transmits resolution & codec parameters to Mac mirror_client).
+  3. C++ Native Client OpenSSL 3 linking requirements for TLS 1.3 support.
+  4. Dual-port reverse tunneling (`-R0:localhost:27189` and `-R0:localhost:54921`) in `orchestrator/linktomac/backend.py`.
+  5. 36-byte token authentication on control channel (port 54921) via `NWConnection` in `ConnectionManager.swift`.
+  6. ADB transport isolation for remote connections.
+  7. ABR network telemetry handler in `ScreenEncoder.java`.
+  8. Version numbering baseline (161 / 1.61 -> 162 / 1.62).
