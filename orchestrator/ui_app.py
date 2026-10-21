@@ -283,12 +283,16 @@ class Api:
         return True
 
     def connect_device(self, device_data):
-        return self.backend.smart_connect(device_data)
+        user = self.get_saved_user()
+        uid = user.get("uid") if user else None
+        return self.backend.smart_connect(device_data, uid=uid)
 
     def connect_to_ip(self, ip):
         if not ip or ip == "undefined":
             return {"success": False, "error": "Invalid target"}
-        return self.backend.smart_connect({"ip": ip})
+        user = self.get_saved_user()
+        uid = user.get("uid") if user else None
+        return self.backend.smart_connect({"ip": ip}, uid=uid)
 
     def start_remote_session(self):
         print("🔗 Starting remote session...")

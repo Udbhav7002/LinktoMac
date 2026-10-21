@@ -318,7 +318,7 @@ class LinkMyMacBackend:
         except Exception:
             return False
 
-    def smart_connect(self, device_data):
+    def smart_connect(self, device_data, uid=None):
         """
         1. If on the same Wi-Fi subnet (or mDNS discovered), launch mirror_client directly.
         2. If on a different Wi-Fi network / 5G, or direct launch fails, seamlessly negotiate the Pinggy remote relay tunnel.
@@ -362,7 +362,9 @@ class LinkMyMacBackend:
                         pass
                     mac_ip = self.get_mac_local_ip(ip)
                     return {"success": True, "mode": "local", "name": device_name, "mac_ip": mac_ip}
-                if device_data.get("is_usb") or ip in ("127.0.0.1", "localhost"):
+                if self._cancel_remote.is_set():
+                    return {"success": False, "error": "Connection cancelled."}
+                if device_data.get("is_usb"):
                     return {"success": False, "error": f"USB mirror launch failed: {err}"}
                 logger.info(f"Direct mirror_client launch failed for {ip}: {err}. Falling back to remote relay tunnel...")
 
@@ -372,10 +374,15 @@ class LinkMyMacBackend:
         logger.info(f"Local Wi-Fi unreachable for {device_name}. Seamlessly negotiating remote relay tunnel...")
         relay_res = self.start_remote_session()
         if relay_res.get("success"):
+            if uid:
+                self._publish_session_to_user(uid, relay_res)
             code = relay_res.get("code", "")
             host = ""
             port = 0
-            if ":" in code:
+            if "video" in relay_res and isinstance(relay_res["video"], dict):
+                host = relay_res["video"].get("host", "")
+                port = relay_res["video"].get("port", 0)
+            elif ":" in code:
                 parts = code.split(":")
                 host = parts[0].strip()
                 try:
@@ -388,7 +395,11 @@ class LinkMyMacBackend:
                 "name": device_name,
                 "session_code": code,
                 "host": host,
-                "port": port
+                "port": port,
+                "video": relay_res.get("video"),
+                "control": relay_res.get("control"),
+                "token": relay_res.get("token"),
+                "session_id": relay_res.get("session_id")
             }
 
         return {
@@ -439,7 +450,14 @@ class LinkMyMacBackend:
             return False, str(e)
 
     def start_remote_session(self):
-        logger.info("Negotiating background remote relay session...")
+        """
+        Open TWO Pinggy reverse tunnels in a single SSH session:
+          -R0:localhost:27189   (video)
+          -R0:localhost:54921   (control)
+        Parse both `tcp://host:port` lines from stdout, write both to Firestore,
+        and launch mirror_client in listen mode.
+        """
+        import subprocess, threading, os, time, tempfile, secrets
         pinggy_proc = None
         mirror_proc = None
         mirror_log_file = None
@@ -447,6 +465,7 @@ class LinkMyMacBackend:
             cmd = [
                 "ssh", "-tt", "-p", "443",
                 "-R0:localhost:27189",
+                "-R0:localhost:54921",
                 "tcp@a.pinggy.io",
                 "-o", "StrictHostKeyChecking=no",
                 "-o", "UserKnownHostsFile=/dev/null",
@@ -462,7 +481,8 @@ class LinkMyMacBackend:
             with self._mirrors_lock:
                 self.running_mirrors["ngrok"] = pinggy_proc
 
-            public_url = None
+            video_url = None
+            control_url = None
             output_lines = []
 
             def reader_thread():
@@ -478,16 +498,17 @@ class LinkMyMacBackend:
             t.start()
 
             start_time = time.time()
-            while not self._cancel_remote.is_set() and (time.time() - start_time < 20):
+            while not self._cancel_remote.is_set() and (time.time() - start_time < 25):
                 for line in list(output_lines):
-                    if "tcp://" in line:
-                        public_url = line.strip()
-                        idx = public_url.find("tcp://")
-                        if idx != -1:
-                            public_url = public_url[idx:].replace("tcp://", "")
-                            public_url = public_url.split('\x1b')[0].strip().split()[0]
-                        break
-                if public_url or pinggy_proc.poll() is not None:
+                    parsed = self._extract_pinggy_url(line)
+                    if parsed:
+                        if video_url is None:
+                            video_url = parsed
+                        elif control_url is None and parsed != video_url:
+                            control_url = parsed
+                if video_url and control_url:
+                    break
+                if pinggy_proc.poll() is not None:
                     break
                 time.sleep(0.2)
 
@@ -496,15 +517,20 @@ class LinkMyMacBackend:
                     self._kill_pg(pinggy_proc)
                 with self._mirrors_lock:
                     self.running_mirrors.pop("ngrok", None)
-                return {"success": False, "error": "Remote tunnel negotiation cancelled."}
+                return {"success": False, "error": "Cancelled"}
 
-            if not public_url:
+            if not video_url or not control_url:
                 if pinggy_proc:
                     self._kill_pg(pinggy_proc)
                 with self._mirrors_lock:
                     self.running_mirrors.pop("ngrok", None)
-                return {"success": False, "error": "Remote tunnel negotiation timed out."}
+                return {"success": False, "error": "Pinggy did not return both URLs"}
 
+            # Generate session token + id
+            session_token = secrets.token_hex(18)
+            session_id = secrets.token_hex(8)
+
+            # Launch local mirror_client in listen mode
             try:
                 client_path = resolve_mirror_client_path()
             except FileNotFoundError as e:
@@ -514,9 +540,10 @@ class LinkMyMacBackend:
                     self.running_mirrors.pop("ngrok", None)
                 return {"success": False, "error": str(e)}
 
-            cmd = [str(client_path), "--video-port", "27189"]
             log_path = os.path.join(tempfile.gettempdir(), "LinktoMac_Mirror.log")
             mirror_log_file = open(log_path, "w")
+            cmd = [str(client_path), "--video-port", "27189",
+                   "--auth-token", session_token]
 
             if self._cancel_remote.is_set():
                 if pinggy_proc:
@@ -528,7 +555,7 @@ class LinkMyMacBackend:
                         mirror_log_file.close()
                     except Exception:
                         pass
-                return {"success": False, "error": "Remote tunnel negotiation cancelled."}
+                return {"success": False, "error": "Cancelled"}
 
             self._user_stopped = False
             mirror_proc = subprocess.Popen(
@@ -541,21 +568,7 @@ class LinkMyMacBackend:
             with self._mirrors_lock:
                 self.running_mirrors["mirror"] = mirror_proc
 
-            if self._cancel_remote.is_set():
-                self._kill_pg(mirror_proc)
-                if pinggy_proc:
-                    self._kill_pg(pinggy_proc)
-                with self._mirrors_lock:
-                    self.running_mirrors.pop("ngrok", None)
-                    self.running_mirrors.pop("mirror", None)
-                if mirror_log_file:
-                    try:
-                        mirror_log_file.close()
-                    except Exception:
-                        pass
-                return {"success": False, "error": "Remote tunnel negotiation cancelled."}
-
-            time.sleep(0.12)
+            time.sleep(0.4)
             if mirror_proc.poll() is not None:
                 err_code = mirror_proc.returncode
                 self._kill_pg(pinggy_proc)
@@ -567,26 +580,24 @@ class LinkMyMacBackend:
                         mirror_log_file.close()
                     except Exception:
                         pass
-                return {"success": False, "error": f"Local mirror listener exited with code {err_code}"}
-
-            if self._cancel_remote.is_set():
-                self._kill_pg(mirror_proc)
-                if pinggy_proc:
-                    self._kill_pg(pinggy_proc)
-                with self._mirrors_lock:
-                    self.running_mirrors.pop("ngrok", None)
-                    self.running_mirrors.pop("mirror", None)
-                if mirror_log_file:
-                    try:
-                        mirror_log_file.close()
-                    except Exception:
-                        pass
-                return {"success": False, "error": "Remote tunnel negotiation cancelled."}
+                return {"success": False, "error": f"mirror_client exited with {err_code}"}
 
             self._spawn_process_watcher(mirror_proc, "remote")
-
             self.mirror_log_file = mirror_log_file
-            return {"success": True, "code": public_url}
+
+            # Publish to Firestore (Phase 1 will read this)
+            self._publish_session_to_firestore(
+                video_host=video_url["host"], video_port=video_url["port"],
+                control_host=control_url["host"], control_port=control_url["port"],
+                token=session_token, session_id=session_id,
+            )
+
+            return {
+                "success": True,
+                "code": f"{video_url['host']}:{video_url['port']}",
+                "video": video_url, "control": control_url,
+                "token": session_token, "session_id": session_id,
+            }
 
         except Exception as e:
             if mirror_proc:
@@ -602,6 +613,75 @@ class LinkMyMacBackend:
                 self.running_mirrors.pop("ngrok", None)
                 self.running_mirrors.pop("mirror", None)
             return {"success": False, "error": str(e)}
+
+    def _extract_pinggy_url(self, line):
+        """Parse 'tcp://a.pinggy.io:44321' from a Pinggy log line."""
+        idx = line.find("tcp://")
+        if idx < 0:
+            return None
+        rest = line[idx:].replace("tcp://", "").split('\x1b')[0].strip().split()[0]
+        if ":" not in rest:
+            return None
+        host, port_str = rest.rsplit(":", 1)
+        try:
+            return {"host": host, "port": int(port_str), "raw": rest}
+        except ValueError:
+            return None
+
+    def _publish_session_to_firestore(self, video_host, video_port,
+                                      control_host, control_port,
+                                      token, session_id):
+        """Write the relay endpoints + token to Firestore so Android can dial in."""
+        try:
+            import firebase_admin
+            from firebase_admin import credentials, firestore
+            from pathlib import Path
+            if not firebase_admin._apps:
+                cred_path = Path.home() / ".linktomac" / "firebase-creds.json"
+                if cred_path.exists():
+                    cred = credentials.Certificate(str(cred_path))
+                    firebase_admin.initialize_app(cred)
+                else:
+                    return
+            db = firestore.client()
+            db.collection("sessions").document(session_id).set({
+                "videoHost": video_host, "videoPort": video_port,
+                "controlHost": control_host, "controlPort": control_port,
+                "token": token, "active": True,
+                "sessionId": session_id,
+                "updatedAt": firestore.SERVER_TIMESTAMP,
+            })
+        except Exception as e:
+            logger.warning(f"Firestore publish failed: {e}")
+
+    def _publish_session_to_user(self, uid, relay_res):
+        """Publish the active session to users/{uid}/sessions/current."""
+        try:
+            import firebase_admin
+            from firebase_admin import credentials, firestore
+            from pathlib import Path
+            if not firebase_admin._apps:
+                cred_path = Path.home() / ".linktomac" / "firebase-creds.json"
+                if cred_path.exists():
+                    cred = credentials.Certificate(str(cred_path))
+                    firebase_admin.initialize_app(cred)
+                else:
+                    return
+            db = firestore.client()
+            video = relay_res.get("video", {})
+            control = relay_res.get("control", {})
+            db.collection("users").document(uid).collection("sessions").document("current").set({
+                "videoHost": video.get("host", ""),
+                "videoPort": video.get("port", 27189),
+                "controlHost": control.get("host", ""),
+                "controlPort": control.get("port", 54921),
+                "token": relay_res.get("token", ""),
+                "sessionId": relay_res.get("session_id", ""),
+                "active": True,
+                "updatedAt": firestore.SERVER_TIMESTAMP,
+            })
+        except Exception as e:
+            logger.warning(f"Firestore publish to user {uid} failed: {e}")
 
     def _kill_pg(self, proc):
         if proc and proc.poll() is None:

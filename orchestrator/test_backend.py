@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import unittest
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -233,6 +234,97 @@ class TestLinktoMacBackend(unittest.TestCase):
             self.assertTrue(updates[1][0]["is_tls"])
         finally:
             backend.stop_discovery()
+
+    def test_start_remote_session_dual_urls_parsed_and_written_to_firestore(self):
+        """
+        Phase 2 Acceptance Test:
+        Asserts that TWO Pinggy reverse tunnel URLs (video and control) are parsed from stdout,
+        passed to mirror_client (--auth-token), and written to Firestore.
+        """
+        backend = LinktoMacBackend()
+
+        mock_pinggy = MagicMock()
+        mock_pinggy.poll.return_value = None
+        mock_pinggy.stdout.readline.side_effect = [
+            "tcp://a.pinggy.io:44321\n",
+            "tcp://a.pinggy.io:54321\n",
+            ""
+        ]
+
+        mock_mirror = MagicMock()
+        mock_mirror.poll.return_value = None
+
+        mock_firestore_db = MagicMock()
+        mock_collection = MagicMock()
+        mock_doc = MagicMock()
+        mock_firestore_db.collection.return_value = mock_collection
+        mock_collection.document.return_value = mock_doc
+
+        mock_fb = MagicMock()
+        mock_fb._apps = [MagicMock()]
+        mock_fb_fs = MagicMock()
+        mock_fb_fs.client.return_value = mock_firestore_db
+        mock_fb_fs.SERVER_TIMESTAMP = "MOCK_TIMESTAMP"
+        mock_fb_cred = MagicMock()
+        mock_fb.firestore = mock_fb_fs
+        mock_fb.credentials = mock_fb_cred
+
+        with patch("subprocess.Popen", side_effect=[mock_pinggy, mock_mirror]) as mock_popen, \
+             patch("linktomac.backend.resolve_mirror_client_path", return_value=Path("/tmp/mirror_client")), \
+             patch.object(backend, "_spawn_process_watcher"), \
+             patch.dict("sys.modules", {
+                 "firebase_admin": mock_fb,
+                 "firebase_admin.credentials": mock_fb_cred,
+                 "firebase_admin.firestore": mock_fb_fs
+             }), \
+             patch("pathlib.Path.exists", return_value=True):
+
+            res = backend.start_remote_session()
+
+            self.assertTrue(res.get("success"), f"Expected success but got: {res}")
+            self.assertEqual(res["video"]["host"], "a.pinggy.io")
+            self.assertEqual(res["video"]["port"], 44321)
+            self.assertEqual(res["control"]["host"], "a.pinggy.io")
+            self.assertEqual(res["control"]["port"], 54321)
+            self.assertTrue(len(res["token"]) >= 36)
+            self.assertTrue(len(res["session_id"]) >= 8)
+
+            # Assert mirror_client was invoked with --auth-token and --video-port
+            mirror_cmd = mock_popen.call_args_list[1][0][0]
+            self.assertIn("--video-port", mirror_cmd)
+            self.assertIn("27189", mirror_cmd)
+            self.assertIn("--auth-token", mirror_cmd)
+            self.assertIn(res["token"], mirror_cmd)
+
+            # Assert written to Firestore
+            mock_firestore_db.collection.assert_called_with("sessions")
+            mock_collection.document.assert_called_with(res["session_id"])
+            saved_doc = mock_doc.set.call_args[0][0]
+            self.assertEqual(saved_doc["videoHost"], "a.pinggy.io")
+            self.assertEqual(saved_doc["videoPort"], 44321)
+            self.assertEqual(saved_doc["controlHost"], "a.pinggy.io")
+            self.assertEqual(saved_doc["controlPort"], 54321)
+            self.assertEqual(saved_doc["token"], res["token"])
+            self.assertTrue(saved_doc["active"])
+
+            # Test user-specific publish via smart_connect
+            user_collection = MagicMock()
+            user_doc = MagicMock()
+            sub_col = MagicMock()
+            curr_doc = MagicMock()
+            mock_firestore_db.collection.side_effect = lambda name: user_collection if name == "users" else mock_collection
+            user_collection.document.return_value = user_doc
+            user_doc.collection.return_value = sub_col
+            sub_col.document.return_value = curr_doc
+
+            backend._publish_session_to_user("test_uid_mumbai", res)
+            curr_doc.set.assert_called_once()
+            user_payload = curr_doc.set.call_args[0][0]
+            self.assertEqual(user_payload["videoHost"], "a.pinggy.io")
+            self.assertEqual(user_payload["videoPort"], 44321)
+            self.assertEqual(user_payload["controlHost"], "a.pinggy.io")
+            self.assertEqual(user_payload["controlPort"], 54321)
+            self.assertEqual(user_payload["token"], res["token"])
 
     def test_cli_wireless_mode_routes_directly_without_adb(self):
         """Verify cli.py in wireless mode routes mirror_client directly to <ip>:27189 without failing on absent ADB."""
