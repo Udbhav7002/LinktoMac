@@ -1,10 +1,377 @@
-# LinktoMac — Complete Codebase
+# LinktoMac — Complete Codebase & Project Architecture
 
-This document consolidates all 213 source and configuration files of the LinktoMac project in a clean, structured format.
+> **Repository Summary**: `213` Source & Configuration Files | `88,953` Total Lines of Code
+
+LinktoMac is a high-performance, low-latency screen mirroring and remote control ecosystem connecting Android devices with macOS. It features hardware-accelerated 60fps streaming, bi-directional clipboard sync, telephony/SMS management, notification bridging, and low-latency input event injection over USB (ADB) and local Wi-Fi networks.
 
 ---
 
-## Table of Contents
+## 1. System Architecture & Component Design
+
+### High-Level Architecture Diagram
+
+```mermaid
+graph TD
+    subgraph Android["Android Device"]
+        App["Standalone Android App<br/>(Kotlin / Compose)"]
+        Svc["LinkConnectionService<br/>(MediaProjection / H.264)"]
+        Acc["AccessibilityService<br/>(Touch & Key Injection)"]
+        Notif["Notification / SMS Bridge"]
+        Server["Headless Daemon<br/>(android-server.jar)"]
+    end
+
+    subgraph Transport["Transport Layer"]
+        USB["ADB Reverse Port Forwarding<br/>(localhost:7007 / 7008)"]
+        LAN["LAN TCP/UDP Streaming<br/>(Wi-Fi Direct / Local Subnet)"]
+        WS["WebSocket IPC & Telemetry<br/>(Control & Clipboard)"]
+    end
+
+    subgraph Mac["macOS Host"]
+        SwiftApp["Standalone Native macOS App<br/>(Swift / SwiftUI)"]
+        NativeClient["macOS Native Client<br/>(C++ / Metal / VideoToolbox)"]
+        Orchestrator["Python Orchestrator & Web UI<br/>(FastAPI / WebSockets / Rumps)"]
+    end
+
+    App --> Svc
+    App --> Acc
+    App --> Notif
+    Svc --> LAN
+    Svc --> USB
+    Server --> USB
+    USB --> Orchestrator
+    LAN --> NativeClient
+    USB --> NativeClient
+    Orchestrator --> SwiftApp
+    NativeClient --> SwiftApp
+```
+
+### Subsystems & Technology Stack
+
+1. **Standalone Native macOS App (`allcode/LinkToMac-macOS`)**
+   - Pure Swift and SwiftUI desktop application optimized for macOS 13+ (Ventura, Sonoma, Sequoia).
+   - Features modular SwiftUI views: `MainDashboardView`, `OverviewView`, `MirrorCameraView`, `MessagesView`, `NotificationsView`, `FilesPhotosView`, `ClipboardView`, and `PairingCallHUDView`.
+   - Built-in `ADBBridge` and `ConnectionManager` manage process lifecycle and auto-discovery.
+
+2. **Standalone Android Companion App (`allcode/LinkToMac-Android`)**
+   - Modern Kotlin application built with Jetpack Compose following Material Design 3 tokens.
+   - `ScreenCameraStreamer` captures screen buffers via `MediaProjection` and hardware-encodes H.264 video with `MediaCodec`.
+   - `LinkTouchAccessibilityService` performs ultra-low-latency gesture, touch tap, and keypress injection.
+   - `LinkNotificationService` and `SmsContactsCallBridge` expose notification syncing, incoming call HUD, and SMS threads.
+
+3. **macOS Native Client (`native-client`)**
+   - High-performance C++ / Objective-C++ streaming engine built with Apple Metal and VideoToolbox.
+   - Zero-copy hardware video decoding via `VTDecompressionSession` (`decoder.cpp`).
+   - Metal texture shader pipeline rendering directly to `CAMetalLayer` (`renderer.mm`).
+   - Native macOS mouse and keyboard event capture mapped directly to binary stream packets (`input_handler.cpp`).
+   - Pybind11 integration (`python_bindings.cpp`) providing Python bindings for the orchestrator.
+
+4. **macOS Python Orchestrator & Web UI (`orchestrator`)**
+   - Lightweight FastAPI & WebSockets service (`backend.py`) orchestrating ADB reverse tunneling, pairing tokens, and LAN fallback.
+   - Native macOS Menu Bar utility (`menubar_app.py`) built with `rumps` for one-click streaming.
+   - Browser-based HTML5 dashboard (`orchestrator/ui/`) for responsive control without desktop app dependencies.
+
+5. **Android Headless Server (`android-server`)**
+   - Rootless ADB daemon executed via `app_process /system/bin com.linktomac.server.Server`.
+   - Uses hidden Android APIs (`SurfaceControl`, `InputManager`) to stream and control devices without requiring an APK to be installed.
+
+6. **Multi-Tier Stress & Adversarial Test Suites (`tests`)**
+   - Extensive adversarial validation suites: `adversarial_m1` (network & handshake), `adversarial_m2` (DOM recovery & USB watcher), `adversarial_m3` (packaging & binary path integrity), `adversarial_m4` (adaptive bitrate telemetry, gesture coalescing, protocol fuzzing), and `adversarial_native` (VideoToolbox decoder stress & rapid surface flip resilience).
+
+7. **Automation, Packaging & Deployment (`scripts`, `Makefile`, `.github`)**
+   - Automated build scripts (`make_release.sh`, `build_mac_app.sh`), code synchronizers (`export_all_code.py`, `update_allcode_bundles.py`, `stitch_allcode.py`), and CI/CD workflows for macOS and Android.
+
+---
+
+## 2. Project Directory Structure
+
+```text
+LinktoMac/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md
+│   │   └── feature_request.md
+│   └── workflows/  # GitHub Actions CI/CD workflows
+│       ├── build-android.yml
+│       ├── build-mac.yml
+│       └── build.yml
+├── allcode/
+│   ├── LinkToMac-Android/  # Standalone Android Companion App (Kotlin / Jetpack Compose)
+│   │   ├── app/
+│   │   │   ├── src/
+│   │   │   │   └── main/
+│   │   │   │       ├── java/
+│   │   │   │       │   └── com/
+│   │   │   │       │       └── linktomac/
+│   │   │   │       │           └── android/  # Compose UI, Screen Streamer & Accessibility
+│   │   │   │       │               ├── FilePhotosBridge.kt
+│   │   │   │       │               ├── LinkConnectionService.kt
+│   │   │   │       │               ├── LinkNotificationService.kt
+│   │   │   │       │               ├── LinkTheme.kt
+│   │   │   │       │               ├── LinkTouchAccessibilityService.kt
+│   │   │   │       │               ├── MainActivity.kt
+│   │   │   │       │               ├── ProtocolModels.kt
+│   │   │   │       │               ├── ScreenCameraStreamer.kt
+│   │   │   │       │               └── SmsContactsCallBridge.kt
+│   │   │   │       ├── res/
+│   │   │   │       │   ├── drawable/
+│   │   │   │       │   │   ├── ic_accessibility.xml
+│   │   │   │       │   │   ├── ic_battery.xml
+│   │   │   │       │   │   ├── ic_bell.xml
+│   │   │   │       │   │   ├── ic_chat.xml
+│   │   │   │       │   │   ├── ic_folder.xml
+│   │   │   │       │   │   ├── ic_launcher_foreground.xml
+│   │   │   │       │   │   ├── ic_link.xml
+│   │   │   │       │   │   ├── ic_north_east.xml
+│   │   │   │       │   │   ├── ic_qr.xml
+│   │   │   │       │   │   ├── ic_usb.xml
+│   │   │   │       │   │   └── ic_wifi.xml
+│   │   │   │       │   ├── mipmap-anydpi-v26/
+│   │   │   │       │   │   ├── ic_launcher.xml
+│   │   │   │       │   │   └── ic_launcher_round.xml
+│   │   │   │       │   ├── values/
+│   │   │   │       │   │   ├── colors.xml
+│   │   │   │       │   │   ├── strings.xml
+│   │   │   │       │   │   └── themes.xml
+│   │   │   │       │   └── xml/
+│   │   │   │       │       ├── accessibility_service_config.xml
+│   │   │   │       │       └── link_accessibility_config.xml
+│   │   │   │       └── AndroidManifest.xml
+│   │   │   └── build.gradle.kts
+│   │   ├── gradle/
+│   │   │   └── wrapper/
+│   │   │       └── gradle-wrapper.properties
+│   │   ├── build.gradle.kts
+│   │   ├── gradle.properties
+│   │   ├── gradlew
+│   │   └── settings.gradle.kts
+│   └── LinkToMac-macOS/  # Standalone Native macOS App (Swift / SwiftUI)
+│       ├── Sources/
+│       │   └── LinkToMac/  # SwiftUI Views, Controllers & IPC bridges
+│       │       ├── ADBBridge.swift
+│       │       ├── ClipboardSyncManager.swift
+│       │       ├── ClipboardView.swift
+│       │       ├── ConnectionManager.swift
+│       │       ├── FilesPhotosView.swift
+│       │       ├── LinkComponents.swift
+│       │       ├── LinkTheme.swift
+│       │       ├── LinkToMacApp.swift
+│       │       ├── LocalState.swift
+│       │       ├── MainDashboardView.swift
+│       │       ├── MessagesView.swift
+│       │       ├── MirrorCameraView.swift
+│       │       ├── NotificationsView.swift
+│       │       ├── OverviewView.swift
+│       │       ├── PairingCallHUDView.swift
+│       │       └── ProtocolModels.swift
+│       ├── Info.plist
+│       ├── Package.swift
+│       └── build_mac_app.sh
+├── android-app/  # Android Companion App (Legacy Kotlin Client)
+│   ├── app/
+│   │   ├── src/
+│   │   │   ├── main/
+│   │   │   │   ├── java/
+│   │   │   │   │   └── com/
+│   │   │   │   │       └── linktomac/
+│   │   │   │   │           └── app/
+│   │   │   │   │               ├── ApprovedClientsStore.kt
+│   │   │   │   │               ├── DeviceSyncHelper.kt
+│   │   │   │   │               ├── LinktoMacAccessibilityService.kt
+│   │   │   │   │               ├── MainActivity.kt
+│   │   │   │   │               ├── MirrorService.kt
+│   │   │   │   │               ├── NalParser.kt
+│   │   │   │   │               ├── ScreenEncoder.kt
+│   │   │   │   │               └── StreamProtocol.kt
+│   │   │   │   ├── res/
+│   │   │   │   │   ├── drawable/
+│   │   │   │   │   │   ├── bg_card.xml
+│   │   │   │   │   │   ├── bg_google_btn.xml
+│   │   │   │   │   │   ├── bg_pill_green.xml
+│   │   │   │   │   │   ├── bg_pill_orange.xml
+│   │   │   │   │   │   ├── ic_cast.xml
+│   │   │   │   │   │   ├── ic_info.xml
+│   │   │   │   │   │   └── ic_link.xml
+│   │   │   │   │   ├── layout/
+│   │   │   │   │   │   └── activity_main.xml
+│   │   │   │   │   ├── values/
+│   │   │   │   │   │   ├── strings.xml
+│   │   │   │   │   │   └── themes.xml
+│   │   │   │   │   └── xml/
+│   │   │   │   │       └── accessibility_service_config.xml
+│   │   │   │   └── AndroidManifest.xml
+│   │   │   └── test/
+│   │   │       └── java/
+│   │   │           └── com/
+│   │   │               └── linktomac/
+│   │   │                   └── app/
+│   │   │                       ├── AdversarialStressTest.kt
+│   │   │                       ├── ApprovedClientsStoreTest.kt
+│   │   │                       ├── BoundedFrameQueueTest.kt
+│   │   │                       ├── DeviceSyncHelperTest.kt
+│   │   │                       ├── DisplayMetricsHelperTest.kt
+│   │   │                       ├── Milestone1AdversarialChallengeTest.kt
+│   │   │                       ├── Milestone3AdversarialChallengeTest.kt
+│   │   │                       ├── Milestone3AdversarialTest.kt
+│   │   │                       ├── NalParserTest.kt
+│   │   │                       ├── ScreenEncoderCodecVerificationTest.kt
+│   │   │                       ├── SocketSyncTest.kt
+│   │   │                       └── StreamProtocolTest.kt
+│   │   ├── build.gradle
+│   │   ├── google-services.json
+│   │   └── proguard-rules.pro
+│   ├── gradle/
+│   │   ├── wrapper/
+│   │   │   └── gradle-wrapper.properties
+│   │   └── gradle-daemon-jvm.properties
+│   ├── README.md
+│   ├── build.gradle
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   └── settings.gradle
+├── android-server/  # Android Headless Server (ADB Daemon Mode)
+│   ├── gradle/
+│   │   └── wrapper/
+│   │       └── gradle-wrapper.properties
+│   ├── src/
+│   │   └── main/
+│   │       └── java/
+│   │           └── com/
+│   │               └── linktomac/
+│   │                   ├── Connection.java
+│   │                   ├── InputController.java
+│   │                   ├── ScreenCapture.java
+│   │                   ├── ScreenEncoder.java
+│   │                   └── Server.java
+│   ├── build.gradle
+│   ├── build.sh
+│   ├── gradlew
+│   ├── gradlew.bat
+│   └── settings.gradle
+├── docs/  # Architecture specifications, UI prompts & audit reports
+│   ├── archive/
+│   │   ├── ARCHITECTURE_PLAN.md
+│   │   ├── IMPROVEMENT_PLAN.md
+│   │   ├── ORIGINAL_REQUEST.md
+│   │   ├── OVERNIGHT_BUILD_REPORT.md
+│   │   └── PROJECT_CONTEXT.md
+│   ├── bundles/
+│   │   ├── linktomac_complete_android_source_code.md
+│   │   └── linktomac_complete_macos_source_code.md
+│   ├── ui-prompts/  # UI Design System & component prompt definitions
+│   │   ├── 00-MASTER-PROMPT.md
+│   │   ├── 01-design-tokens.md
+│   │   ├── 02-macos-app-shell.md
+│   │   ├── 03-macos-overview.md
+│   │   ├── 04-macos-messages.md
+│   │   ├── 05-macos-notifications.md
+│   │   ├── 06-macos-files-photos.md
+│   │   ├── 07-macos-clipboard.md
+│   │   ├── 08-macos-mirror-camera.md
+│   │   ├── 09-macos-pairing-callhud.md
+│   │   ├── 10-android-app.md
+│   │   ├── 11-web-orchestrator.md
+│   │   ├── 12-menubar.md
+│   │   ├── PROGRESS.md
+│   │   └── README.md
+│   ├── PROJECT.md
+│   ├── TEST_INFRA.md
+│   ├── android_flow_storyboard.md
+│   ├── audit_report.md
+│   └── mac_flow_storyboard.md
+├── native-client/  # macOS Native Client (C++ / Objective-C++ / Metal)
+│   ├── src/  # Hardware VideoToolbox decoder, Metal renderer, and network pipeline
+│   │   ├── decoder.cpp
+│   │   ├── decoder.h
+│   │   ├── input_handler.cpp
+│   │   ├── input_handler.h
+│   │   ├── main.cpp
+│   │   ├── mirror_client.cpp
+│   │   ├── mirror_client.h
+│   │   ├── network.cpp
+│   │   ├── network.h
+│   │   ├── protocol.h
+│   │   ├── python_bindings.cpp
+│   │   ├── renderer.h
+│   │   └── renderer.mm
+│   └── CMakeLists.txt
+├── orchestrator/  # macOS Python Orchestrator & Web Dashboard
+│   ├── linktomac/  # FastAPI backend, ADB port tunneling, and pairing logic
+│   │   ├── __init__.py
+│   │   ├── adb.py
+│   │   ├── backend.py
+│   │   ├── cli.py
+│   │   ├── config.py
+│   │   ├── menubar_app.py
+│   │   ├── pairing.py
+│   │   └── storage.py
+│   ├── ui/  # Web Dashboard UI (HTML5 / Vanilla JS / CSS)
+│   │   ├── index.html
+│   │   ├── script.js
+│   │   └── style.css
+│   ├── menubar_app.py
+│   ├── requirements.txt
+│   ├── simulate_android_app.py
+│   ├── test_adversarial_mac.py
+│   ├── test_backend.py
+│   ├── test_ui_app.py
+│   └── ui_app.py
+├── public/  # Distribution downloads & landing portal
+│   └── index.html
+├── release/  # Release checksums and installation instructions
+│   ├── INSTALL.md
+│   └── SHA256SUMS.txt
+├── scripts/  # Build, Release, Packaging & Code Stitcher tooling
+│   ├── download_adb.sh
+│   ├── export_all_code.py
+│   ├── make_release.sh
+│   ├── stitch_allcode.py
+│   └── update_allcode_bundles.py
+├── tests/  # Adversarial & Multi-tier Stress Test Harnesses
+│   ├── adversarial_m1/  # M1: LAN IP, Smart Connect & Handshake tests
+│   │   ├── test_firestore_schema_and_preauth.js
+│   │   ├── test_lan_ip_and_smart_connect_stress.py
+│   │   └── test_m1_screen_capture_and_handshake.py
+│   ├── adversarial_m2/  # M2: DOM offline, USB watcher & multitenant isolation
+│   │   ├── run_all_m2_stress_tests.sh
+│   │   ├── test_challenger_m2_i2.js
+│   │   ├── test_m2_ui_dom_offline.js
+│   │   ├── test_m2_usb_watcher_stress.py
+│   │   ├── test_multitenant_isolation.js
+│   │   ├── test_premature_write_elimination.js
+│   │   └── test_remote_recovery_stress.js
+│   ├── adversarial_m3/  # M3: Packaging and path integrity tests
+│   │   └── test_m3_packaging_and_paths.py
+│   ├── adversarial_m4/  # M4: ABR telemetry, scroll coalescing & fuzzer
+│   │   ├── run_all_m4_stress_tests.sh
+│   │   ├── test_abr_telemetry_stress.py
+│   │   ├── test_challenger_m4_e2e_stress.py
+│   │   ├── test_gesture_scroll_coalescing_stress.py
+│   │   ├── test_handshake_malformed_fuzzer.py
+│   │   └── test_multitenant_concurrent_sessions.js
+│   └── adversarial_native/  # Native: VideoToolbox decoder & Metal surface stress tests
+│       ├── run_all_m1_stress_tests.sh
+│       ├── run_all_m2_stress_tests.sh
+│       ├── test_decoder_rotation.cpp
+│       ├── test_decoder_stress.cpp
+│       ├── test_handshake_stress.py
+│       ├── test_m2_decoder_resilience_stress.cpp
+│       ├── test_m2_renderer_rapid_flips.mm
+│       ├── test_python_bindings_stream.py
+│       ├── test_resize_stress.cpp
+│       └── test_scroll_stress.cpp
+├── .gitignore
+├── .vercelignore
+├── LinktoMac.spec
+├── Makefile
+├── README.md
+├── build_mac_app.sh
+└── vercel.json
+```
+
+---
+
+## 3. Complete Source Code Table of Contents
 
 ### Standalone Native macOS App (Swift / SwiftUI)
 
@@ -248,10 +615,12 @@ This document consolidates all 213 source and configuration files of the LinktoM
 
 ---
 
-## Standalone Native macOS App (Swift / SwiftUI)
+## 4. Source Code Manifest
+
+### Category: Standalone Native macOS App (Swift / SwiftUI)
 
 <a id="allcode-LinkToMac-macOS-Info-plist"></a>
-### `allcode/LinkToMac-macOS/Info.plist`
+#### File: `allcode/LinkToMac-macOS/Info.plist`
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -295,7 +664,7 @@ This document consolidates all 213 source and configuration files of the LinktoM
 ```
 
 <a id="allcode-LinkToMac-macOS-Package-swift"></a>
-### `allcode/LinkToMac-macOS/Package.swift`
+#### File: `allcode/LinkToMac-macOS/Package.swift`
 
 ```swift
 // swift-tools-version: 5.9
@@ -319,7 +688,7 @@ let package = Package(
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-ADBBridge-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift`
 
 ```swift
 import Foundation
@@ -498,7 +867,7 @@ final class ADBBridge: ObservableObject {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-ClipboardSyncManager-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift`
 
 ```swift
 import Foundation
@@ -606,7 +975,7 @@ final class ClipboardSyncManager: ObservableObject {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-ClipboardView-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardView.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardView.swift`
 
 ```swift
 import SwiftUI
@@ -743,7 +1112,7 @@ struct ClipboardRow: View {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-ConnectionManager-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/ConnectionManager.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/ConnectionManager.swift`
 
 ```swift
 import Foundation
@@ -1410,7 +1779,7 @@ final class ConnectionManager: ObservableObject {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-FilesPhotosView-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/FilesPhotosView.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/FilesPhotosView.swift`
 
 ```swift
 import SwiftUI
@@ -1787,7 +2156,7 @@ struct PhotoCard: View {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-LinkComponents-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/LinkComponents.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/LinkComponents.swift`
 
 ```swift
 import SwiftUI
@@ -2037,7 +2406,7 @@ struct MonoValue: View {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-LinkTheme-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/LinkTheme.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/LinkTheme.swift`
 
 ```swift
 import SwiftUI
@@ -2150,7 +2519,7 @@ enum LinkAvatar {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-LinkToMacApp-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/LinkToMacApp.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/LinkToMacApp.swift`
 
 ```swift
 import SwiftUI
@@ -2218,7 +2587,7 @@ struct LinkToMacApp: App {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-LocalState-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift`
 
 ```swift
 import SwiftUI
@@ -2255,7 +2624,7 @@ public struct LocalState<Value>: DynamicProperty {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-MainDashboardView-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift`
 
 ```swift
 import SwiftUI
@@ -2436,7 +2805,7 @@ struct StatusPill: View {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-MessagesView-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/MessagesView.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/MessagesView.swift`
 
 ```swift
 import SwiftUI
@@ -2675,7 +3044,7 @@ struct ChatBubble: View {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-MirrorCameraView-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/MirrorCameraView.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/MirrorCameraView.swift`
 
 ```swift
 import SwiftUI
@@ -2930,7 +3299,7 @@ private extension MirrorAndCameraWorkspaceView {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-NotificationsView-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/NotificationsView.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/NotificationsView.swift`
 
 ```swift
 import SwiftUI
@@ -3080,7 +3449,7 @@ struct NotificationRow: View {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-OverviewView-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/OverviewView.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/OverviewView.swift`
 
 ```swift
 import SwiftUI
@@ -3289,7 +3658,7 @@ struct ImageToolbarButton: View {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-PairingCallHUDView-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/PairingCallHUDView.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/PairingCallHUDView.swift`
 
 ```swift
 import SwiftUI
@@ -3467,7 +3836,7 @@ struct IncomingCallHUDView: View {
 ```
 
 <a id="allcode-LinkToMac-macOS-Sources-LinkToMac-ProtocolModels-swift"></a>
-### `allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift`
+#### File: `allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift`
 
 ```swift
 import Foundation
@@ -3596,7 +3965,7 @@ enum WireFramer {
 ```
 
 <a id="allcode-LinkToMac-macOS-build-mac-app-sh"></a>
-### `allcode/LinkToMac-macOS/build_mac_app.sh`
+#### File: `allcode/LinkToMac-macOS/build_mac_app.sh`
 
 ```bash
 #!/usr/bin/env bash
@@ -3689,10 +4058,10 @@ echo " Run with: open /Applications/LinkToMac.app"
 echo "=========================================="
 ```
 
-## Standalone Android Companion App (Kotlin / Jetpack Compose)
+### Category: Standalone Android Companion App (Kotlin / Jetpack Compose)
 
 <a id="allcode-LinkToMac-Android-app-build-gradle-kts"></a>
-### `allcode/LinkToMac-Android/app/build.gradle.kts`
+#### File: `allcode/LinkToMac-Android/app/build.gradle.kts`
 
 ```kotlin
 plugins {
@@ -3741,7 +4110,7 @@ dependencies {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-AndroidManifest-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/AndroidManifest.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/AndroidManifest.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -3841,7 +4210,7 @@ dependencies {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-java-com-linktomac-android-FilePhotosBridge-kt"></a>
-### `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/FilePhotosBridge.kt`
+#### File: `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/FilePhotosBridge.kt`
 
 ```kotlin
 package com.linktomac.android
@@ -4038,7 +4407,7 @@ object FilePhotosBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-java-com-linktomac-android-LinkConnectionService-kt"></a>
-### `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkConnectionService.kt`
+#### File: `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkConnectionService.kt`
 
 ```kotlin
 package com.linktomac.android
@@ -4555,7 +4924,7 @@ object ClipboardManagerBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-java-com-linktomac-android-LinkNotificationService-kt"></a>
-### `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkNotificationService.kt`
+#### File: `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkNotificationService.kt`
 
 ```kotlin
 package com.linktomac.android
@@ -4695,7 +5064,7 @@ class LinkNotificationService : NotificationListenerService() {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-java-com-linktomac-android-LinkTheme-kt"></a>
-### `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTheme.kt`
+#### File: `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTheme.kt`
 
 ```kotlin
 package com.linktomac.android
@@ -4862,7 +5231,7 @@ object LT {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-java-com-linktomac-android-LinkTouchAccessibilityService-kt"></a>
-### `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTouchAccessibilityService.kt`
+#### File: `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTouchAccessibilityService.kt`
 
 ```kotlin
 package com.linktomac.android
@@ -5010,7 +5379,7 @@ class LinkTouchAccessibilityService : AccessibilityService() {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-java-com-linktomac-android-MainActivity-kt"></a>
-### `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/MainActivity.kt`
+#### File: `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/MainActivity.kt`
 
 ```kotlin
 package com.linktomac.android
@@ -5625,7 +5994,7 @@ class MainActivity : ComponentActivity() {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-java-com-linktomac-android-ProtocolModels-kt"></a>
-### `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ProtocolModels.kt`
+#### File: `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ProtocolModels.kt`
 
 ```kotlin
 package com.linktomac.android
@@ -5665,7 +6034,7 @@ object WireProtocol {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-java-com-linktomac-android-ScreenCameraStreamer-kt"></a>
-### `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ScreenCameraStreamer.kt`
+#### File: `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ScreenCameraStreamer.kt`
 
 ```kotlin
 package com.linktomac.android
@@ -5978,7 +6347,7 @@ object ScreenCameraStreamer {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-java-com-linktomac-android-SmsContactsCallBridge-kt"></a>
-### `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/SmsContactsCallBridge.kt`
+#### File: `allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/SmsContactsCallBridge.kt`
 
 ```kotlin
 package com.linktomac.android
@@ -6147,7 +6516,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-accessibility-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_accessibility.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_accessibility.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6171,7 +6540,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-battery-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_battery.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_battery.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6190,7 +6559,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-bell-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_bell.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_bell.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6215,7 +6584,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-chat-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_chat.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_chat.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6240,7 +6609,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-folder-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_folder.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_folder.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6259,7 +6628,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-launcher-foreground-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_launcher_foreground.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_launcher_foreground.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6289,7 +6658,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-link-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_link.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_link.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6319,7 +6688,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-north-east-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_north_east.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_north_east.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6338,7 +6707,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-qr-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_qr.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_qr.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6362,7 +6731,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-usb-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_usb.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_usb.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6387,7 +6756,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-drawable-ic-wifi-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_wifi.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/drawable/ic_wifi.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6411,7 +6780,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-mipmap-anydpi-v26-ic-launcher-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6423,7 +6792,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-mipmap-anydpi-v26-ic-launcher-round-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6435,7 +6804,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-values-colors-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/values/colors.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/values/colors.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6445,7 +6814,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-values-strings-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/values/strings.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/values/strings.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6456,7 +6825,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-values-themes-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/values/themes.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/values/themes.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6469,7 +6838,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-xml-accessibility-service-config-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/xml/accessibility_service_config.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/xml/accessibility_service_config.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6485,7 +6854,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-app-src-main-res-xml-link-accessibility-config-xml"></a>
-### `allcode/LinkToMac-Android/app/src/main/res/xml/link_accessibility_config.xml`
+#### File: `allcode/LinkToMac-Android/app/src/main/res/xml/link_accessibility_config.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -6500,7 +6869,7 @@ object SmsContactsCallBridge {
 ```
 
 <a id="allcode-LinkToMac-Android-build-gradle-kts"></a>
-### `allcode/LinkToMac-Android/build.gradle.kts`
+#### File: `allcode/LinkToMac-Android/build.gradle.kts`
 
 ```kotlin
 plugins {
@@ -6510,7 +6879,7 @@ plugins {
 ```
 
 <a id="allcode-LinkToMac-Android-gradle-properties"></a>
-### `allcode/LinkToMac-Android/gradle.properties`
+#### File: `allcode/LinkToMac-Android/gradle.properties`
 
 ```properties
 android.useAndroidX=true
@@ -6521,7 +6890,7 @@ kotlin.compiler.execution.strategy=in-process
 ```
 
 <a id="allcode-LinkToMac-Android-gradle-wrapper-gradle-wrapper-properties"></a>
-### `allcode/LinkToMac-Android/gradle/wrapper/gradle-wrapper.properties`
+#### File: `allcode/LinkToMac-Android/gradle/wrapper/gradle-wrapper.properties`
 
 ```properties
 distributionBase=GRADLE_USER_HOME
@@ -6533,7 +6902,7 @@ zipStorePath=wrapper/dists
 ```
 
 <a id="allcode-LinkToMac-Android-gradlew"></a>
-### `allcode/LinkToMac-Android/gradlew`
+#### File: `allcode/LinkToMac-Android/gradlew`
 
 ```bash
 #!/bin/sh
@@ -6788,7 +7157,7 @@ exec "$JAVACMD" "$@"
 ```
 
 <a id="allcode-LinkToMac-Android-settings-gradle-kts"></a>
-### `allcode/LinkToMac-Android/settings.gradle.kts`
+#### File: `allcode/LinkToMac-Android/settings.gradle.kts`
 
 ```kotlin
 pluginManagement {
@@ -6809,10 +7178,10 @@ rootProject.name = "LinkToMacAndroid"
 include(":app")
 ```
 
-## macOS Native Client (C++ / Objective-C++ / Metal)
+### Category: macOS Native Client (C++ / Objective-C++ / Metal)
 
 <a id="native-client-CMakeLists-txt"></a>
-### `native-client/CMakeLists.txt`
+#### File: `native-client/CMakeLists.txt`
 
 ```cmake
 cmake_minimum_required(VERSION 3.16)
@@ -6926,7 +7295,7 @@ endif()
 ```
 
 <a id="native-client-src-decoder-cpp"></a>
-### `native-client/src/decoder.cpp`
+#### File: `native-client/src/decoder.cpp`
 
 ```cpp
 #include "decoder.h"
@@ -7305,7 +7674,7 @@ void Decoder::decode(const uint8_t* data, int size, FrameCallback callback) {
 ```
 
 <a id="native-client-src-decoder-h"></a>
-### `native-client/src/decoder.h`
+#### File: `native-client/src/decoder.h`
 
 ```cpp
 #pragma once
@@ -7371,7 +7740,7 @@ private:
 ```
 
 <a id="native-client-src-input-handler-cpp"></a>
-### `native-client/src/input_handler.cpp`
+#### File: `native-client/src/input_handler.cpp`
 
 ```cpp
 #include "input_handler.h"
@@ -7661,7 +8030,7 @@ void InputHandler::send_text(const string& text) {
 ```
 
 <a id="native-client-src-input-handler-h"></a>
-### `native-client/src/input_handler.h`
+#### File: `native-client/src/input_handler.h`
 
 ```cpp
 #pragma once
@@ -7712,7 +8081,7 @@ private:
 ```
 
 <a id="native-client-src-main-cpp"></a>
-### `native-client/src/main.cpp`
+#### File: `native-client/src/main.cpp`
 
 ```cpp
 #include "mirror_client.h"
@@ -7754,7 +8123,7 @@ int main(int argc, char* argv[]) {
 ```
 
 <a id="native-client-src-mirror-client-cpp"></a>
-### `native-client/src/mirror_client.cpp`
+#### File: `native-client/src/mirror_client.cpp`
 
 ```cpp
 #include "mirror_client.h"
@@ -8112,7 +8481,7 @@ void MirrorClient::decode_thread_func() {
 ```
 
 <a id="native-client-src-mirror-client-h"></a>
-### `native-client/src/mirror_client.h`
+#### File: `native-client/src/mirror_client.h`
 
 ```cpp
 #pragma once
@@ -8187,7 +8556,7 @@ private:
 ```
 
 <a id="native-client-src-network-cpp"></a>
-### `native-client/src/network.cpp`
+#### File: `native-client/src/network.cpp`
 
 ```cpp
 #include "network.h"
@@ -8528,7 +8897,7 @@ void TcpConnection::send_network_feedback(float loss_rate, float rtt_ms) {
 ```
 
 <a id="native-client-src-network-h"></a>
-### `native-client/src/network.h`
+#### File: `native-client/src/network.h`
 
 ```cpp
 #pragma once
@@ -8611,7 +8980,7 @@ private:
 ```
 
 <a id="native-client-src-protocol-h"></a>
-### `native-client/src/protocol.h`
+#### File: `native-client/src/protocol.h`
 
 ```cpp
 #pragma once
@@ -8661,7 +9030,7 @@ inline float read_be_float(const uint8_t* buf) {
 ```
 
 <a id="native-client-src-python-bindings-cpp"></a>
-### `native-client/src/python_bindings.cpp`
+#### File: `native-client/src/python_bindings.cpp`
 
 ```cpp
 #include <pybind11/pybind11.h>
@@ -8685,7 +9054,7 @@ PYBIND11_MODULE(mirror_core, m) {
 ```
 
 <a id="native-client-src-renderer-h"></a>
-### `native-client/src/renderer.h`
+#### File: `native-client/src/renderer.h`
 
 ```cpp
 #pragma once
@@ -8729,7 +9098,7 @@ private:
 ```
 
 <a id="native-client-src-renderer-mm"></a>
-### `native-client/src/renderer.mm`
+#### File: `native-client/src/renderer.mm`
 
 ```objectivec
 #include "renderer.h"
@@ -9014,17 +9383,17 @@ void Renderer::window_to_device(int win_x, int win_y, float& dev_x, float& dev_y
 }
 ```
 
-## macOS Python Orchestrator & Web UI
+### Category: macOS Python Orchestrator & Web UI
 
 <a id="orchestrator-linktomac---init---py"></a>
-### `orchestrator/linktomac/__init__.py`
+#### File: `orchestrator/linktomac/__init__.py`
 
 ```python
 # __init__.py
 ```
 
 <a id="orchestrator-linktomac-adb-py"></a>
-### `orchestrator/linktomac/adb.py`
+#### File: `orchestrator/linktomac/adb.py`
 
 ```python
 import os
@@ -9249,7 +9618,7 @@ class AdbClient:
 ```
 
 <a id="orchestrator-linktomac-backend-py"></a>
-### `orchestrator/linktomac/backend.py`
+#### File: `orchestrator/linktomac/backend.py`
 
 ```python
 import logging
@@ -9929,7 +10298,7 @@ __all__ = ["LinkMyMacBackend", "LinktoMacBackend", "UsbDeviceWatcher", "resolve_
 ```
 
 <a id="orchestrator-linktomac-cli-py"></a>
-### `orchestrator/linktomac/cli.py`
+#### File: `orchestrator/linktomac/cli.py`
 
 ```python
 import argparse
@@ -10053,7 +10422,7 @@ if __name__ == "__main__":
 ```
 
 <a id="orchestrator-linktomac-config-py"></a>
-### `orchestrator/linktomac/config.py`
+#### File: `orchestrator/linktomac/config.py`
 
 ```python
 """Configuration constants for LinktoMac"""
@@ -10092,7 +10461,7 @@ DEFAULT_HEIGHT = 1600
 ```
 
 <a id="orchestrator-linktomac-menubar-app-py"></a>
-### `orchestrator/linktomac/menubar_app.py`
+#### File: `orchestrator/linktomac/menubar_app.py`
 
 ```python
 """
@@ -10245,7 +10614,7 @@ def _run_menubar():
 ```
 
 <a id="orchestrator-linktomac-pairing-py"></a>
-### `orchestrator/linktomac/pairing.py`
+#### File: `orchestrator/linktomac/pairing.py`
 
 ```python
 import socket
@@ -10496,7 +10865,7 @@ def _get_cert_manager():
 ```
 
 <a id="orchestrator-linktomac-storage-py"></a>
-### `orchestrator/linktomac/storage.py`
+#### File: `orchestrator/linktomac/storage.py`
 
 ```python
 import json
@@ -10606,7 +10975,7 @@ def save_settings(settings):
 ```
 
 <a id="orchestrator-menubar-app-py"></a>
-### `orchestrator/menubar_app.py`
+#### File: `orchestrator/menubar_app.py`
 
 ```python
 #!/usr/bin/env python3
@@ -10891,7 +11260,7 @@ if __name__ == "__main__":
 ```
 
 <a id="orchestrator-requirements-txt"></a>
-### `orchestrator/requirements.txt`
+#### File: `orchestrator/requirements.txt`
 
 ```text
 # Dependencies
@@ -10908,7 +11277,7 @@ requests>=2.28.0
 ```
 
 <a id="orchestrator-simulate-android-app-py"></a>
-### `orchestrator/simulate_android_app.py`
+#### File: `orchestrator/simulate_android_app.py`
 
 ```python
 import socket
@@ -10973,7 +11342,7 @@ if __name__ == "__main__":
 ```
 
 <a id="orchestrator-test-adversarial-mac-py"></a>
-### `orchestrator/test_adversarial_mac.py`
+#### File: `orchestrator/test_adversarial_mac.py`
 
 ```python
 """
@@ -11499,7 +11868,7 @@ if __name__ == "__main__":
 ```
 
 <a id="orchestrator-test-backend-py"></a>
-### `orchestrator/test_backend.py`
+#### File: `orchestrator/test_backend.py`
 
 ```python
 import os
@@ -11761,7 +12130,7 @@ if __name__ == "__main__":
 ```
 
 <a id="orchestrator-test-ui-app-py"></a>
-### `orchestrator/test_ui_app.py`
+#### File: `orchestrator/test_ui_app.py`
 
 ```python
 import os
@@ -11974,7 +12343,7 @@ if __name__ == "__main__":
 ```
 
 <a id="orchestrator-ui-index-html"></a>
-### `orchestrator/ui/index.html`
+#### File: `orchestrator/ui/index.html`
 
 ```html
 <!DOCTYPE html>
@@ -12175,7 +12544,7 @@ if __name__ == "__main__":
 ```
 
 <a id="orchestrator-ui-script-js"></a>
-### `orchestrator/ui/script.js`
+#### File: `orchestrator/ui/script.js`
 
 ```javascript
 // --- Quiet Premium theme bootstrap (presentation only) ---
@@ -13085,7 +13454,7 @@ setInterval(() => {
 ```
 
 <a id="orchestrator-ui-style-css"></a>
-### `orchestrator/ui/style.css`
+#### File: `orchestrator/ui/style.css`
 
 ```css
 /* ============================================================
@@ -13569,7 +13938,7 @@ button:disabled { opacity: 0.4; cursor: default; }
 ```
 
 <a id="orchestrator-ui-app-py"></a>
-### `orchestrator/ui_app.py`
+#### File: `orchestrator/ui_app.py`
 
 ```python
 import html
@@ -13970,10 +14339,10 @@ if __name__ == '__main__':
     main()
 ```
 
-## Android Companion App (Kotlin / Legacy)
+### Category: Android Companion App (Kotlin / Legacy)
 
 <a id="android-app-README-md"></a>
-### `android-app/README.md`
+#### File: `android-app/README.md`
 
 ````markdown
 # LinktoMac Android Companion Module
@@ -14017,7 +14386,7 @@ Engineering documentation and architecture for the Android companion application
 ````
 
 <a id="android-app-app-build-gradle"></a>
-### `android-app/app/build.gradle`
+#### File: `android-app/app/build.gradle`
 
 ```groovy
 plugins {
@@ -14084,7 +14453,7 @@ dependencies {
 ```
 
 <a id="android-app-app-google-services-json"></a>
-### `android-app/app/google-services.json`
+#### File: `android-app/app/google-services.json`
 
 ```json
 {
@@ -14137,7 +14506,7 @@ dependencies {
 ```
 
 <a id="android-app-app-proguard-rules-pro"></a>
-### `android-app/app/proguard-rules.pro`
+#### File: `android-app/app/proguard-rules.pro`
 
 ```text
 # ProGuard rules for LinktoMac Companion
@@ -14188,7 +14557,7 @@ dependencies {
 ```
 
 <a id="android-app-app-src-main-AndroidManifest-xml"></a>
-### `android-app/app/src/main/AndroidManifest.xml`
+#### File: `android-app/app/src/main/AndroidManifest.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -14252,7 +14621,7 @@ dependencies {
 ```
 
 <a id="android-app-app-src-main-java-com-linktomac-app-ApprovedClientsStore-kt"></a>
-### `android-app/app/src/main/java/com/linktomac/app/ApprovedClientsStore.kt`
+#### File: `android-app/app/src/main/java/com/linktomac/app/ApprovedClientsStore.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -14376,7 +14745,7 @@ object ApprovedClientsStore {
 ```
 
 <a id="android-app-app-src-main-java-com-linktomac-app-DeviceSyncHelper-kt"></a>
-### `android-app/app/src/main/java/com/linktomac/app/DeviceSyncHelper.kt`
+#### File: `android-app/app/src/main/java/com/linktomac/app/DeviceSyncHelper.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -14466,7 +14835,7 @@ object DeviceSyncHelper {
 ```
 
 <a id="android-app-app-src-main-java-com-linktomac-app-LinktoMacAccessibilityService-kt"></a>
-### `android-app/app/src/main/java/com/linktomac/app/LinktoMacAccessibilityService.kt`
+#### File: `android-app/app/src/main/java/com/linktomac/app/LinktoMacAccessibilityService.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -15199,7 +15568,7 @@ class LinktoMacAccessibilityService : AccessibilityService() {
 ```
 
 <a id="android-app-app-src-main-java-com-linktomac-app-MainActivity-kt"></a>
-### `android-app/app/src/main/java/com/linktomac/app/MainActivity.kt`
+#### File: `android-app/app/src/main/java/com/linktomac/app/MainActivity.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -16001,7 +16370,7 @@ class MainActivity : AppCompatActivity() {
 ```
 
 <a id="android-app-app-src-main-java-com-linktomac-app-MirrorService-kt"></a>
-### `android-app/app/src/main/java/com/linktomac/app/MirrorService.kt`
+#### File: `android-app/app/src/main/java/com/linktomac/app/MirrorService.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -16816,7 +17185,7 @@ class MirrorService : Service() {
 ```
 
 <a id="android-app-app-src-main-java-com-linktomac-app-NalParser-kt"></a>
-### `android-app/app/src/main/java/com/linktomac/app/NalParser.kt`
+#### File: `android-app/app/src/main/java/com/linktomac/app/NalParser.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -17100,7 +17469,7 @@ object DisplayMetricsHelper {
 ```
 
 <a id="android-app-app-src-main-java-com-linktomac-app-ScreenEncoder-kt"></a>
-### `android-app/app/src/main/java/com/linktomac/app/ScreenEncoder.kt`
+#### File: `android-app/app/src/main/java/com/linktomac/app/ScreenEncoder.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -17729,7 +18098,7 @@ class ScreenEncoder(
 ```
 
 <a id="android-app-app-src-main-java-com-linktomac-app-StreamProtocol-kt"></a>
-### `android-app/app/src/main/java/com/linktomac/app/StreamProtocol.kt`
+#### File: `android-app/app/src/main/java/com/linktomac/app/StreamProtocol.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -17996,7 +18365,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-drawable-bg-card-xml"></a>
-### `android-app/app/src/main/res/drawable/bg_card.xml`
+#### File: `android-app/app/src/main/res/drawable/bg_card.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -18009,7 +18378,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-drawable-bg-google-btn-xml"></a>
-### `android-app/app/src/main/res/drawable/bg_google_btn.xml`
+#### File: `android-app/app/src/main/res/drawable/bg_google_btn.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -18026,7 +18395,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-drawable-bg-pill-green-xml"></a>
-### `android-app/app/src/main/res/drawable/bg_pill_green.xml`
+#### File: `android-app/app/src/main/res/drawable/bg_pill_green.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -18039,7 +18408,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-drawable-bg-pill-orange-xml"></a>
-### `android-app/app/src/main/res/drawable/bg_pill_orange.xml`
+#### File: `android-app/app/src/main/res/drawable/bg_pill_orange.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -18052,7 +18421,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-drawable-ic-cast-xml"></a>
-### `android-app/app/src/main/res/drawable/ic_cast.xml`
+#### File: `android-app/app/src/main/res/drawable/ic_cast.xml`
 
 ```xml
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -18068,7 +18437,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-drawable-ic-info-xml"></a>
-### `android-app/app/src/main/res/drawable/ic_info.xml`
+#### File: `android-app/app/src/main/res/drawable/ic_info.xml`
 
 ```xml
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -18083,7 +18452,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-drawable-ic-link-xml"></a>
-### `android-app/app/src/main/res/drawable/ic_link.xml`
+#### File: `android-app/app/src/main/res/drawable/ic_link.xml`
 
 ```xml
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -18098,7 +18467,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-layout-activity-main-xml"></a>
-### `android-app/app/src/main/res/layout/activity_main.xml`
+#### File: `android-app/app/src/main/res/layout/activity_main.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -18492,7 +18861,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-values-strings-xml"></a>
-### `android-app/app/src/main/res/values/strings.xml`
+#### File: `android-app/app/src/main/res/values/strings.xml`
 
 ```xml
 <resources>
@@ -18512,7 +18881,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-values-themes-xml"></a>
-### `android-app/app/src/main/res/values/themes.xml`
+#### File: `android-app/app/src/main/res/values/themes.xml`
 
 ```xml
 <resources>
@@ -18531,7 +18900,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-main-res-xml-accessibility-service-config-xml"></a>
-### `android-app/app/src/main/res/xml/accessibility_service_config.xml`
+#### File: `android-app/app/src/main/res/xml/accessibility_service_config.xml`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -18547,7 +18916,7 @@ object StreamProtocol {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-AdversarialStressTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/AdversarialStressTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/AdversarialStressTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -18674,7 +19043,7 @@ class AdversarialStressTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-ApprovedClientsStoreTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/ApprovedClientsStoreTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/ApprovedClientsStoreTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -18735,7 +19104,7 @@ class ApprovedClientsStoreTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-BoundedFrameQueueTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/BoundedFrameQueueTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/BoundedFrameQueueTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -18877,7 +19246,7 @@ class BoundedFrameQueueTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-DeviceSyncHelperTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/DeviceSyncHelperTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/DeviceSyncHelperTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -18964,7 +19333,7 @@ class DeviceSyncHelperTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-DisplayMetricsHelperTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/DisplayMetricsHelperTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/DisplayMetricsHelperTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -19024,7 +19393,7 @@ class DisplayMetricsHelperTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-Milestone1AdversarialChallengeTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/Milestone1AdversarialChallengeTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/Milestone1AdversarialChallengeTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -19695,7 +20064,7 @@ class Milestone1AdversarialChallengeTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-Milestone3AdversarialChallengeTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/Milestone3AdversarialChallengeTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/Milestone3AdversarialChallengeTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -20249,7 +20618,7 @@ class Milestone3AdversarialChallengeTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-Milestone3AdversarialTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/Milestone3AdversarialTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/Milestone3AdversarialTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -20634,7 +21003,7 @@ class Milestone3AdversarialTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-NalParserTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/NalParserTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/NalParserTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -20789,7 +21158,7 @@ class NalParserTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-ScreenEncoderCodecVerificationTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/ScreenEncoderCodecVerificationTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/ScreenEncoderCodecVerificationTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -21038,7 +21407,7 @@ class ScreenEncoderCodecVerificationTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-SocketSyncTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/SocketSyncTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/SocketSyncTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -21262,7 +21631,7 @@ class SocketSyncTest {
 ```
 
 <a id="android-app-app-src-test-java-com-linktomac-app-StreamProtocolTest-kt"></a>
-### `android-app/app/src/test/java/com/linktomac/app/StreamProtocolTest.kt`
+#### File: `android-app/app/src/test/java/com/linktomac/app/StreamProtocolTest.kt`
 
 ```kotlin
 package com.linktomac.app
@@ -21424,7 +21793,7 @@ class StreamProtocolTest {
 ```
 
 <a id="android-app-build-gradle"></a>
-### `android-app/build.gradle`
+#### File: `android-app/build.gradle`
 
 ```groovy
 plugins {
@@ -21435,7 +21804,7 @@ plugins {
 ```
 
 <a id="android-app-gradle-properties"></a>
-### `android-app/gradle.properties`
+#### File: `android-app/gradle.properties`
 
 ```properties
 android.useAndroidX=true
@@ -21448,7 +21817,7 @@ android.sync.suppressAgpWarnings=UNSUPPORTED_PROJECT_OPTION_USE,DEPRECATED_DSL,L
 ```
 
 <a id="android-app-gradle-gradle-daemon-jvm-properties"></a>
-### `android-app/gradle/gradle-daemon-jvm.properties`
+#### File: `android-app/gradle/gradle-daemon-jvm.properties`
 
 ```properties
 #This file is generated by updateDaemonJvm
@@ -21466,7 +21835,7 @@ toolchainVersion=25
 ```
 
 <a id="android-app-gradle-wrapper-gradle-wrapper-properties"></a>
-### `android-app/gradle/wrapper/gradle-wrapper.properties`
+#### File: `android-app/gradle/wrapper/gradle-wrapper.properties`
 
 ```properties
 distributionBase=GRADLE_USER_HOME
@@ -21478,7 +21847,7 @@ zipStorePath=wrapper/dists
 ```
 
 <a id="android-app-gradlew"></a>
-### `android-app/gradlew`
+#### File: `android-app/gradlew`
 
 ```bash
 #!/bin/sh
@@ -21733,7 +22102,7 @@ exec "$JAVACMD" "$@"
 ```
 
 <a id="android-app-gradlew-bat"></a>
-### `android-app/gradlew.bat`
+#### File: `android-app/gradlew.bat`
 
 ```text
 @rem
@@ -21831,7 +22200,7 @@ if "%OS%"=="Windows_NT" endlocal
 ```
 
 <a id="android-app-settings-gradle"></a>
-### `android-app/settings.gradle`
+#### File: `android-app/settings.gradle`
 
 ```groovy
 pluginManagement {
@@ -21852,10 +22221,10 @@ rootProject.name = "LinktoMacCompanion"
 include ':app'
 ```
 
-## Android Headless Server (ADB Mode)
+### Category: Android Headless Server (ADB Mode)
 
 <a id="android-server-build-gradle"></a>
-### `android-server/build.gradle`
+#### File: `android-server/build.gradle`
 
 ```groovy
 plugins {
@@ -22059,7 +22428,7 @@ task buildServerJar(type: Jar) {
 ```
 
 <a id="android-server-build-sh"></a>
-### `android-server/build.sh`
+#### File: `android-server/build.sh`
 
 ```bash
 #!/bin/bash
@@ -22086,7 +22455,7 @@ echo "Run with: adb shell CLASSPATH=/data/local/tmp/server.jar app_process / com
 ```
 
 <a id="android-server-gradle-wrapper-gradle-wrapper-properties"></a>
-### `android-server/gradle/wrapper/gradle-wrapper.properties`
+#### File: `android-server/gradle/wrapper/gradle-wrapper.properties`
 
 ```properties
 distributionBase=GRADLE_USER_HOME
@@ -22101,7 +22470,7 @@ zipStorePath=wrapper/dists
 ```
 
 <a id="android-server-gradlew"></a>
-### `android-server/gradlew`
+#### File: `android-server/gradlew`
 
 ```bash
 #!/bin/sh
@@ -22355,7 +22724,7 @@ exec "$JAVACMD" "$@"
 ```
 
 <a id="android-server-gradlew-bat"></a>
-### `android-server/gradlew.bat`
+#### File: `android-server/gradlew.bat`
 
 ```text
 @rem
@@ -22443,14 +22812,14 @@ endlocal & "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.grad
 ```
 
 <a id="android-server-settings-gradle"></a>
-### `android-server/settings.gradle`
+#### File: `android-server/settings.gradle`
 
 ```groovy
 rootProject.name = 'android-server'
 ```
 
 <a id="android-server-src-main-java-com-linktomac-Connection-java"></a>
-### `android-server/src/main/java/com/linktomac/Connection.java`
+#### File: `android-server/src/main/java/com/linktomac/Connection.java`
 
 ```java
 package com.linktomac;
@@ -22497,7 +22866,7 @@ public class Connection {
 ```
 
 <a id="android-server-src-main-java-com-linktomac-InputController-java"></a>
-### `android-server/src/main/java/com/linktomac/InputController.java`
+#### File: `android-server/src/main/java/com/linktomac/InputController.java`
 
 ```java
 package com.linktomac;
@@ -22882,7 +23251,7 @@ public class InputController {
 ```
 
 <a id="android-server-src-main-java-com-linktomac-ScreenCapture-java"></a>
-### `android-server/src/main/java/com/linktomac/ScreenCapture.java`
+#### File: `android-server/src/main/java/com/linktomac/ScreenCapture.java`
 
 ```java
 package com.linktomac;
@@ -23014,7 +23383,7 @@ public class ScreenCapture {
 ```
 
 <a id="android-server-src-main-java-com-linktomac-ScreenEncoder-java"></a>
-### `android-server/src/main/java/com/linktomac/ScreenEncoder.java`
+#### File: `android-server/src/main/java/com/linktomac/ScreenEncoder.java`
 
 ```java
 package com.linktomac;
@@ -23195,7 +23564,7 @@ public class ScreenEncoder {
 ```
 
 <a id="android-server-src-main-java-com-linktomac-Server-java"></a>
-### `android-server/src/main/java/com/linktomac/Server.java`
+#### File: `android-server/src/main/java/com/linktomac/Server.java`
 
 ```java
 package com.linktomac;
@@ -23342,10 +23711,10 @@ try (ServerSocket videoServerSocket = new ServerSocket(VIDEO_PORT);
 }
 ```
 
-## Root Configuration & Build Scripts
+### Category: Root Configuration & Build Scripts
 
 <a id="-github-ISSUE-TEMPLATE-bug-report-md"></a>
-### `.github/ISSUE_TEMPLATE/bug_report.md`
+#### File: `.github/ISSUE_TEMPLATE/bug_report.md`
 
 ```markdown
 ---
@@ -23395,7 +23764,7 @@ Any other context about the problem.
 ```
 
 <a id="-github-ISSUE-TEMPLATE-feature-request-md"></a>
-### `.github/ISSUE_TEMPLATE/feature_request.md`
+#### File: `.github/ISSUE_TEMPLATE/feature_request.md`
 
 ```markdown
 ---
@@ -23428,7 +23797,7 @@ Add any other context, mockups, or screenshots about the feature request here.
 ```
 
 <a id="-github-workflows-build-android-yml"></a>
-### `.github/workflows/build-android.yml`
+#### File: `.github/workflows/build-android.yml`
 
 ```yaml
 name: Build Android Apps
@@ -23497,7 +23866,7 @@ jobs:
 ```
 
 <a id="-github-workflows-build-mac-yml"></a>
-### `.github/workflows/build-mac.yml`
+#### File: `.github/workflows/build-mac.yml`
 
 ```yaml
 name: Build and Publish macOS App
@@ -23537,7 +23906,7 @@ jobs:
 ```
 
 <a id="-github-workflows-build-yml"></a>
-### `.github/workflows/build.yml`
+#### File: `.github/workflows/build.yml`
 
 ```yaml
 name: Build and Release
@@ -23654,9 +24023,11 @@ jobs:
 ```
 
 <a id="-gitignore"></a>
-### `.gitignore`
+#### File: `.gitignore`
 
 ```text
+all_code.md
+/all_code.md
 # Mac / Python
 __pycache__/
 *.py[cod]
@@ -23722,7 +24093,7 @@ bundled/
 ```
 
 <a id="-vercelignore"></a>
-### `.vercelignore`
+#### File: `.vercelignore`
 
 ```text
 # Ignore all backend and platform code so Vercel treats this purely as a static website
@@ -23746,7 +24117,7 @@ scripts/
 ```
 
 <a id="LinktoMac-spec"></a>
-### `LinktoMac.spec`
+#### File: `LinktoMac.spec`
 
 ```python
 # -*- mode: python ; coding: utf-8 -*-
@@ -23802,7 +24173,7 @@ app = BUNDLE(
 ```
 
 <a id="Makefile"></a>
-### `Makefile`
+#### File: `Makefile`
 
 ```makefile
 .PHONY: all app client clean run deploy export stitch sync release
@@ -23844,306 +24215,214 @@ release:
 ```
 
 <a id="README-md"></a>
-### `README.md`
+#### File: `README.md`
 
 ````markdown
 <p align="center">
-  <img src="assets/banner.jpg" alt="LinktoMac High Performance Display Bridge" width="100%">
+  <img src="assets/AppIcon.png" alt="LinkToMac Icon" width="128" height="128" style="border-radius: 28px;">
 </p>
 
-```text
-================================================================================
-  _     ___ _   _ _  _______ ___  __  __    _    ____ 
- | |   |_ _| \ | | |/ /_   _/ _ \|  \/  |  / \  / ___|
- | |    | ||  \| | ' /  | || | | | |\/| | / _ \| |    
- | |___ | || |\  | . \  | || |_| | |  | |/ ___ \ |___ 
- |_____|___|_| \_|_|\_\ |_| \___/|_|  |_/_/   \_\____|
-================================================================================
-  HIGH-PERFORMANCE HARDWARE-ACCELERATED ANDROID WORKSPACE BRIDGE FOR MACOS
-  Sub-2ms Latency | Apple VideoToolbox & Metal | Wi-Fi / USB / WAN Tunnels
-================================================================================
-```
+<h1 align="center">LinkToMac</h1>
 
 <p align="center">
-  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/PLATFORM-macOS%2012%2B%20%7C%20Android%2011%2B-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Platform"></a>
-  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/DECODER-Apple%20VideoToolbox%20%2B%20Metal-101010?style=for-the-badge&logo=apple" alt="Decoder"></a>
-  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/CODEC-HEVC%20%2F%20H.265%20%26%20AVC-101010?style=for-the-badge" alt="Codec"></a>
-  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/LATENCY-%3C%202ms%20(USB)%20%7C%20%3C%208ms%20(Wi--Fi)-00c853?style=for-the-badge" alt="Latency"></a>
-  <a href="https://github.com/Udbhav7002/LinktoMac/blob/main/LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-000000?style=for-the-badge" alt="License"></a>
+  <strong>Ultra-low latency Android workspace bridge & continuity suite for macOS.</strong><br>
+  Engineered natively with Apple VideoToolbox, Metal, SwiftUI, and Jetpack Compose.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/macOS-13%2B%20Ventura%20%2F%20Sonoma%20%2F%20Sequoia-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS"></a>
+  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/Android-11%20to%2015%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android"></a>
+  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/Decoder-VideoToolbox%20%2B%20Metal-18181B?style=for-the-badge&logo=apple" alt="VideoToolbox"></a>
+  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/Latency-%3C%202ms%20(USB)%20%7C%20%3C%208ms%20(Wi--Fi)-10b981?style=for-the-badge" alt="Latency"></a>
+  <a href="https://github.com/Udbhav7002/LinktoMac/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-gray?style=for-the-badge" alt="License"></a>
 </p>
 
 ---
 
-## 01. Overview
+## 🚀 Fast Downloads
 
-**LinktoMac** is an open-source, production-grade workspace bridge that seamlessly integrates Android devices into macOS. Engineered natively in **Swift/SwiftUI**, **Kotlin**, and **C++ (Metal / VideoToolbox)**, LinktoMac eliminates the latency, audio stutter, complex network configurations, and cloud account dependencies of legacy screen mirroring tools.
+Download production-ready installers directly from the repository or landing page:
 
-Whether connected via local Wi-Fi, direct USB Type-C, or over an encrypted WAN relay tunnel, LinktoMac delivers a responsive 60fps mirror with unified clipboard, hardware input injection, and full touch-emulation gesture support.
-
----
-
-## 02. System Architecture & Dataflow
-
-LinktoMac operates on an asynchronous multi-tier architecture separating the hardware-encoded video stream from low-overhead bidirectional control and input channels.
-
-```text
-+-----------------------------------------------------------------------------+
-|                           LINKTOMAC ARCHITECTURE                            |
-+-----------------------------------------------------------------------------+
-
- [ Android Device ]                                      [ macOS Workstation ]
- +---------------------------+                          +--------------------+
- | Display Framebuffer       |                          | Retina Display     |
- +-------------+-------------+                          +---------^----------+
-               |                                                  |
-       [MediaProjection]                                   [Metal Shader]
-               |                                                  |
-               v                                                  |
- +-------------+-------------+                          +---------+----------+
- | Hardware MediaCodec       |                          | Apple VideoToolbox |
- | (H.265/HEVC or H.264 AVC) |                          | Zero-Copy Decoder  |
- +-------------+-------------+                          +---------^----------+
-               |                                                  |
-         [NAL Parser]                                      [FFmpeg Demux]
-               |                                                  |
-               v                                                  |
- +-------------+-------------+   TCP 27189 (Raw H.265)  +---------+----------+
- | Android Server Socket /   |=========================>| Native Client      |
- | ADB Forwarding Daemon     |   Wi-Fi / USB / Pinggy   | (C++ mirror_client)|
- +---------------------------+                          +---------+----------+
-                                                                  |
- +---------------------------+   TCP 27190 (Binary IPC) +---------v----------+
- | LinkTouchAccessibility    |<=========================| Native Event Loop  |
- | System Input Injection    |   Touch / Keys / Scroll  | (Swift / SDL2)     |
- +---------------------------+                          +--------------------+
-               ^                                                  ^
-               |                 UDP 27191 (mDNS)                 |
-               + - - - - - - - - - - - - - - - - - - - - - - - - -+
-```
-
-### Video Delivery Pipeline
-1. **Capture**: Android `MediaProjection` records surface frames directly from the Display Manager at native resolution.
-2. **Encoding**: Framebuffers are streamed to on-device hardware `MediaCodec` generating Annex-B byte-streams in HEVC (H.265) or AVC (H.264).
-3. **Transport**: Non-blocking TCP sockets transmit NAL packets across Wi-Fi LAN, direct ADB USB port forwarding, or SSH reverse tunnels.
-4. **Hardware Decoding**: macOS native client utilizes Apple `VideoToolbox` framework for hardware-accelerated decompression directly into native Metal textures with zero CPU memory copying.
-5. **Presentation**: Rendered through Metal shaders onto an SDL2 surface synchronized with the host display refresh rate.
-
----
-
-## 03. Technical Comparison
-
-| Feature Metric | LinktoMac | Samsung DeX on Mac | scrcpy | Commercial Utilities |
-| :--- | :--- | :--- | :--- | :--- |
-| Video Latency (USB) | **1 - 3 ms** | 60 - 120 ms | 20 - 45 ms | 80 - 250 ms |
-| Video Latency (Wi-Fi) | **5 - 12 ms** | Not Supported | 35 - 70 ms | 100 - 300 ms |
-| Decoding Engine | **Hardware VideoToolbox** | Software / Discontinued | FFmpeg Software | Proprietary Software |
-| Host GUI Engine | **Native macOS SwiftUI** | Legacy App Bundle | Terminal / SDL | Electron (Heavy) |
-| Account Requirement | **None (100% Local)** | Required Account | None | Cloud Login Required |
-| Network Discovery | **mDNS Zero-Config** | Manual USB | Manual IP | Centralized Relay |
-| Android Compatibility| **Android 11 - 15** | Android 9 - 11 only | Android 5.0+ | Varies |
-| Privacy Integrity | **Zero Outbound Telemetry**| Telemetry Enabled | Clean | Tracking / Ads |
-
----
-
-## 04. Connection Modes
-
-LinktoMac provides three flexible connection topologies designed for different workspace conditions:
-
-```text
-[MODE 1: WIRELESS LAN]
- Android Phone [mDNS Beacon] ----(Local 5GHz Wi-Fi)----> macOS Client
- (Zero cables, automatic discovery, PIN authentication, sub-10ms latency)
-
-[MODE 2: DIRECT USB CABLE]
- Android Phone <=========(USB Type-C ADB Forwarding)========> macOS Client
- (Fastest connection, uncompressed visual fidelity, sub-2ms latency, zero jitter)
-
-[MODE 3: REMOTE WAN RELAY]
- Android Phone --------(Encrypted SSH Tunnel)--------> Pinggy.link --------> macOS Client
- (Cross-network access across different internet connections with zero router port forwarding)
-```
-
-### Mode 1: Wireless LAN (Zero-Config)
-- Employs Apple Bonjour and Android `NsdManager` over UDP port `27191`.
-- When both devices are connected to the same local network, discovery occurs in under 500ms.
-- 4-digit PIN authentication prevents unwanted connections on shared networks.
-
-### Mode 2: Direct USB Cable
-- Ideal for gaming, rapid software testing, and zero-latency desktop workflows.
-- Communicates via host ADB port forwarding (`adb forward tcp:27189 tcp:27189`).
-- Completely bypasses Wi-Fi congestion and operates offline.
-
-### Mode 3: Remote WAN Mirroring
-- Enables remote assistance and mirroring across completely different networks.
-- Uses outbound SSH tunnel relays via Pinggy (`a.pinggy.io`) to expose a secure port.
-- Transmits data point-to-point without persistent server storage.
-
----
-
-## 05. Controls & Interaction
-
-LinktoMac translates macOS trackpad, mouse, and keyboard inputs into low-level Android input events in real time.
-
-```text
-+---------------------------------------------------------------------------+
-| LINKTOMAC WIRE PROTOCOL FRAME SPECIFICATION                              |
-+--------+--------+------------------+------------------+-------------------+
-| BYTE 0 | BYTE 1 | BYTES 2..5       | BYTES 6..9       | BYTES 10..N       |
-+--------+--------+------------------+------------------+-------------------+
-| TYPE   | ACTION | PARAMETER 1 (X)  | PARAMETER 2 (Y)  | PAYLOAD (OPTIONAL)|
-| (1 B)  | (1 B)  | (32-bit INT / BE)| (32-bit INT / BE)| (RAW BYTES / UTF8)|
-+--------+--------+------------------+------------------+-------------------+
-```
-
-| macOS Action | Android Emulated Event | Implementation |
+| Platform | Download Installer | Package Details |
 | :--- | :--- | :--- |
-| Single Click / Tap | Screen Touch Down / Up | `MotionEvent.ACTION_DOWN / UP` |
-| Click + Drag | Swipe / Drag Gesture | `MotionEvent.ACTION_MOVE` |
-| Two-Finger Trackpad Scroll | Vertical / Horizontal Scroll | Kinetic Wheel Event Injection |
-| Physical Keyboard Typing | Direct Text / Key Injection | `KeyEvent.ACTION_DOWN` + IME Bridge |
-| Escape Key | Android Back Button | Keycode 4 (`KEYCODE_BACK`) |
-| Command + 1 | Android Home Navigation | Intent `CATEGORY_HOME` |
-| Command + 2 | Android App Switcher (Recents) | Accessibility Action `GLOBAL_RECENTS` |
-| Command + 3 | Android Back Navigation | Accessibility Action `GLOBAL_BACK` |
-| Command + C / Command + V | Universal Clipboard Sync | Dual-direction System Pasteboard Hook |
+| **macOS** | [**`LinkToMac.dmg`**](public/downloads/LinkToMac.dmg) | Drag-and-drop installer for Apple Silicon & Intel (`macOS 13+`) |
+| **Android** | [**`LinkToMac.apk`**](public/downloads/LinkToMac.apk) | Companion app (`Android 11–15`), zero root required |
+| **Web Portal** | [**`linkto-mac.vercel.app`**](https://linkto-mac.vercel.app) | Live web dashboard and direct download mirrors |
+
+*Cryptographic verification checksums for all distribution artifacts are published in [`release/SHA256SUMS.txt`](release/SHA256SUMS.txt).*
 
 ---
 
-## 06. Downloads & Fast Deployment
-
-### Option A: Pre-Compiled Direct Downloads
+## ✨ Key Features
 
 ```text
-[ARTIFACTS]
-├── Android Companion APK (v1.61) : https://github.com/Udbhav7002/LinktoMac/raw/main/downloads/LinkToMac.apk
-└── Web Download Landing Portal   : https://linkto-mac.vercel.app
++---------------------------------------------------------------------------------------+
+|                                    LINKTOMAC SUITE                                    |
++---------------------------------------------------------------------------------------+
+|  📺 Hardware Mirroring    | Sub-2ms 60fps streaming via Apple VideoToolbox & Metal.   |
+|  📋 Universal Clipboard   | Seamless two-way pasteboard synchronization.             |
+|  📁 Files & Photo Gallery | Direct device filesystem access with drag-and-drop.       |
+|  💬 Messages & Call HUD   | Live SMS conversation threads & desktop incoming alerts.  |
+|  🖱️ Touch & Keyboard      | Kinetic trackpad scrolling, native IME typing, gestures.  |
+|  🧭 Menu Bar Companion    | Lightweight popover for battery, media controls & alerts. |
++---------------------------------------------------------------------------------------+
 ```
 
-- **Android Companion APK**: [Download LinkToMac.apk](https://github.com/Udbhav7002/LinktoMac/raw/main/downloads/LinkToMac.apk) (20 MB, Android 11 to 15 verified)
-- **macOS Native Binary**: Built via universal shell script in under 30 seconds (see below).
+### 1. Hardware-Accelerated Mirroring (Sub-2ms)
+- **Zero-Copy Pipeline**: Hardware-encoded H.265/HEVC or H.264 video streams from Android `MediaCodec` are decompressed directly to GPU memory via Apple `VideoToolbox`.
+- **Direct Metal Shaders**: Display frames render onto an optimized `CAMetalLayer` surface synchronized with Retina display refresh rates (60–120Hz ProMotion).
+
+### 2. Universal Clipboard Sync
+- Instant bidirectional text and link transfer between macOS `NSPasteboard` and Android system clipboard with zero manual triggers.
+
+### 3. Native macOS SwiftUI Experience
+- Built from the ground up in modern SwiftUI adhering to Apple Human Interface Guidelines: Quiet Premium matte design tokens, sidebar workspace navigation, and native system appearance (Light & Dark mode).
+
+### 4. Direct USB & Wireless Zero-Config
+- **Direct USB-C**: Sub-2ms latency over standard ADB reverse socket forwarding (`tcp:54921`). Bypasses Wi-Fi congestion entirely and works offline.
+- **Wireless LAN**: Automatic zero-configuration discovery via Apple Bonjour / mDNS (`_linktomac._tcp`) with 6-digit PIN handshake verification.
+- **Remote Relay**: Dynamic SSH reverse tunneling for remote assistance across different networks.
 
 ---
 
-### Option B: Build and Run Native macOS Application
+## 🛠️ System Architecture
 
+```text
+[ Android Companion App ]                              [ macOS Workstation ]
++-------------------------+                            +--------------------+
+| Android Display Manager |                            | Native SwiftUI GUI |
++------------+------------+                            +---------^----------+
+             |                                                   |
+     [MediaProjection]                                    [Metal Shaders]
+             |                                                   |
+             v                                                   |
++------------+------------+                            +---------+----------+
+|  Hardware MediaCodec    |                            |  Apple VideoToolbox|
+|  (H.265 / H.264 Annex-B)|                            |  Zero-Copy Decoder |
++------------+------------+                            +---------^----------+
+             |                                                   |
+             v                                                   |
++------------+------------+       TCP Port 27189       +---------+----------+
+|  Socket Server Daemon   |===========================>| Native Metal Client|
+|  (Local / USB / Pinggy) |     Raw NAL Bitstream      | (native-client C++)|
++------------+------------+                            +---------+----------+
+             ^                                                   |
+             |                    TCP Port 54921                 v
++------------+------------+   Bi-directional JSON IPC  +---------+----------+
+| LinkTouchAccessibility  |<===========================| ConnectionManager  |
+| (Touch / Keys / Gestures|    Touch, Clipboard, SMS   | & ADBBridge.swift  |
++-------------------------+                            +--------------------+
+```
+
+---
+
+## 📦 Installation & Setup
+
+### macOS Installation
+
+1. Download [**`LinkToMac.dmg`**](public/downloads/LinkToMac.dmg).
+2. Open the disk image and drag **LinkToMac.app** into the **Applications** folder shortcut.
+3. Launch `LinkToMac` from **Applications**, **Launchpad**, or **Spotlight** (`Cmd + Space`).
+4. *(If macOS Gatekeeper flags an unnotarized build on first open)*:
+   ```bash
+   xattr -cr /Applications/LinkToMac.app
+   ```
+
+### Android Installation
+
+1. Download [**`LinkToMac.apk`**](public/downloads/LinkToMac.apk) onto your device and tap **Install** (allow *Install from Unknown Sources* if prompted).
+2. Or install directly from your Mac terminal over USB:
+   ```bash
+   adb install -r public/downloads/LinkToMac.apk
+   ```
+3. Open **LinkToMac** on your phone and enable the **LinkToMac Accessibility Service** (required for touch and gesture injection).
+
+---
+
+## ⌨️ Desktop Shortcuts & Controls
+
+| macOS Action | Android Emulated Event | Trigger |
+| :--- | :--- | :--- |
+| **Click / Tap** | Touch Down / Up | `MotionEvent.ACTION_DOWN / UP` |
+| **Click + Drag** | Swipe / Drag Gesture | `MotionEvent.ACTION_MOVE` |
+| **Two-Finger Scroll**| Kinetic Vertical & Horizontal Wheel | Smooth pixel-ratio wheel injection |
+| **Keyboard Typing** | Direct Character & Keycode Injection | Native macOS key bridge |
+| **Escape Key** | Android Back Button | Keycode 4 (`KEYCODE_BACK`) |
+| **Command + 1** | Return Home | Intent `CATEGORY_HOME` |
+| **Command + 2** | App Switcher (Recents) | Accessibility `GLOBAL_RECENTS` |
+| **Command + 3** | Back Navigation | Accessibility `GLOBAL_BACK` |
+| **Command + C / V** | Universal Clipboard Sync | Instant dual-direction sync hook |
+
+---
+
+## 🏗️ Building from Source
+
+### Prerequisites
+- macOS 13+ with Xcode Command Line Tools installed (`xcode-select --install`)
+- CMake (`brew install cmake`)
+- Android Studio or Android SDK with platform tools installed
+
+### 1. Build macOS Application
 ```bash
-# 1. Clone repository
-git clone https://github.com/Udbhav7002/LinktoMac.git
-cd LinktoMac
+# Build standalone native SwiftUI app bundle & DMG installer
+cd allcode/LinkToMac-macOS
+bash build_mac_app.sh
 
-# 2. Compile standalone macOS app bundle
-./build_mac_app.sh
-
-# 3. Launch application
+# Open newly built bundle
 open build/LinkToMac.app
 ```
 
+### 2. Build Android Companion App
+```bash
+cd allcode/LinkToMac-Android
+./gradlew assembleDebug
+
+# Deploy directly to connected Android device
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+### 3. Generate Complete Release Suite
+To compile both macOS and Android artifacts, generate checksums, and package the release directory in one step:
+```bash
+make release
+```
+
 ---
 
-## 07. Technical Specifications & Ports
-
-| Protocol Identifier | Transport | Port / Channel | Purpose |
-| :--- | :--- | :--- | :--- |
-| `VIDEO_FEED` | TCP | `27189` | Raw H.265 / H.264 NAL stream from encoder |
-| `CONTROL_CHANNEL`| TCP | `27190` | Binary input events and command transport |
-| `LAN_BEACON` | UDP | `27191` | mDNS service advertisement (`_linktomac._tcp.local`)|
-| `HANDSHAKE_SEC` | TCP | `27192` | PIN verification and session initialization |
-| `REMOTE_RELAY` | SSH | `443 / Dynamic`| Outbound Pinggy tunnel endpoint |
-
----
-
-## 08. Project Structure
+## 📂 Repository Layout
 
 ```text
 LinktoMac/
-├── .github/                  # Automated CI/CD build workflows
-├── .gitignore                # Source control exclusion specifications
-├── .vercelignore             # Web deployment exclusions
-├── Makefile                  # Root development targets
-├── README.md                 # Master project documentation
-├── build_mac_app.sh          # Native macOS compiler script
-├── vercel.json               # Edge deployment manifest
-│
-├── allcode/                  # Standalone native Swift & Kotlin implementations
-│   ├── LinkToMac-Android/    # Android companion app (Kotlin, Gradle, Compose)
-│   └── LinkToMac-macOS/      # Native macOS application (SwiftUI, Swift Package)
-│
-├── android-app/              # Core Android companion module
-├── android-server/           # Headless Java server for USB ADB injection
-├── native-client/            # C++ Metal/VideoToolbox video decoding client
-├── orchestrator/             # Connection manager, ADB bridge & Webview UI
-│
-├── assets/                   # High-resolution artwork & banners
-├── docs/                     # Specifications, audit reports & flow diagrams
-│   └── bundles/              # Complete consolidated code manifests (all_code.md)
-├── downloads/                # Direct download binaries (LinkToMac.apk)
-├── public/                   # Static landing portal assets for Vercel
-├── scripts/                  # Code stitching, export, and synchronization tools
-└── tests/                    # Native and adversarial test suites
+├── allcode/
+│   ├── LinkToMac-macOS/      # Native macOS SwiftUI application (App, Views, Managers)
+│   └── LinkToMac-Android/    # Android companion app (Kotlin, Jetpack Compose, Services)
+├── assets/                   # High-res icons (AppIcon.icns, AppIcon.png) & banners
+├── native-client/            # C++ Apple VideoToolbox / Metal hardware decoding client
+├── orchestrator/             # Lightweight Python connection router & webview bridge
+├── public/                   # Web landing portal & distribution downloads
+│   └── downloads/            # Distribution binaries (LinkToMac.dmg, LinkToMac.apk)
+├── release/                  # Checksums (SHA256SUMS.txt) & installation documentation
+├── scripts/                  # Build, packaging (make_release.sh) & export scripts
+└── tests/                    # Multi-tier adversarial stress test harnesses
 ```
 
 ---
 
-## 09. Diagnostics & Troubleshooting
+## 🔒 Security & Privacy Philosophy
 
-```text
-+-----------------------------------------------------------------------------+
-|                           DIAGNOSTIC MATRIX                                 |
-+------------------------------+-----------------------+----------------------+
-| SYMPTOM                      | PROBABLE CAUSE        | CORRECTIVE ACTION    |
-+------------------------------+-----------------------+----------------------+
-| Wireless device discovery    | Local firewall or AP  | Verify Wi-Fi subnet; |
-| times out                    | isolation active      | allow UDP port 27191 |
-+------------------------------+-----------------------+----------------------+
-| USB connection unrecognized  | USB debugging         | Toggle Developer     |
-|                              | revoked               | Options; adb devices |
-+------------------------------+-----------------------+----------------------+
-| Black window on launch       | Missing SDL2 / Metal  | brew install sdl2    |
-|                              | dependency            | rebuild native client|
-+------------------------------+-----------------------+----------------------+
-| Touch events not injected    | Accessibility service | Enable LinkToMac in  |
-|                              | permission disabled   | Android Accessibility|
-+------------------------------+-----------------------+----------------------+
-```
-
-### Common Commands
-
-```bash
-# Verify attached Android devices via ADB
-adb devices
-
-# Forward manual ports for USB mode
-adb forward tcp:27189 tcp:27189
-adb forward tcp:27190 tcp:27190
-
-# Rebuild complete Android companion APK
-cd allcode/LinkToMac-Android && ./gradlew assembleDebug
-
-# Rebuild standalone macOS SwiftUI app
-cd allcode/LinkToMac-macOS && ./build_mac_app.sh
-
-# Run full project synchronization suite
-make sync
-```
+1. **100% Local-First**: Screen video streams and input events travel directly over your local Wi-Fi subnet or physical USB-C cable. Zero intermediary relay servers can intercept or view your display frames.
+2. **Ephemeral Memory Pipeline**: Video frames are decompressed directly into GPU texture memory with zero frames written to disk.
+3. **No Mandatory Accounts**: LinkToMac operates out-of-the-box with PIN-based local handshakes. No subscriptions, logins, or telemetry tracking required.
 
 ---
 
-## 10. Security & Privacy Philosophy
+## 📄 License
 
-1. **Local-First Design**: Video and input streams are sent directly over local networks or USB cables. No intermediate servers ever receive or decrypt your screen data.
-2. **Ephemeral Memory Buffers**: Frames are decompressed directly to GPU memory; no session frames or touch logs are written to disk.
-3. **Hardware Sandboxing**: macOS application runs within strict system sandboxing limits with granular access permissions.
-4. **Zero Account Barrier**: LinktoMac does not require accounts, phone numbers, or analytics SDKs.
-
----
-
-## 11. License
-
-Distributed under the **MIT License**. See `LICENSE` for further details.
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
 ````
 
 <a id="build-mac-app-sh"></a>
-### `build_mac_app.sh`
+#### File: `build_mac_app.sh`
 
 ```bash
 #!/bin/bash
@@ -24252,7 +24531,7 @@ echo "✅ Build complete! Production output: dist/LinktoMac.dmg"
 ```
 
 <a id="vercel-json"></a>
-### `vercel.json`
+#### File: `vercel.json`
 
 ```json
 {
@@ -24274,15 +24553,28 @@ echo "✅ Build complete! Production output: dist/LinktoMac.dmg"
           "value": "attachment; filename=\"LinkToMac.apk\""
         }
       ]
+    },
+    {
+      "source": "/(.*)\\.dmg",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/x-apple-diskimage"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"LinkToMac.dmg\""
+        }
+      ]
     }
   ]
 }
 ```
 
-## Scripts, Tests & Documentation
+### Category: Scripts, Tests & Documentation
 
 <a id="docs-PROJECT-md"></a>
-### `docs/PROJECT.md`
+#### File: `docs/PROJECT.md`
 
 ```markdown
 # Project: LinktoMac Consolidation & Hardening
@@ -24389,7 +24681,7 @@ The architecture consists of:
 ```
 
 <a id="docs-TEST-INFRA-md"></a>
-### `docs/TEST_INFRA.md`
+#### File: `docs/TEST_INFRA.md`
 
 ```markdown
 # E2E Test Infra: LinktoMac
@@ -24435,7 +24727,7 @@ The architecture consists of:
 ```
 
 <a id="docs-android-flow-storyboard-md"></a>
-### `docs/android_flow_storyboard.md`
+#### File: `docs/android_flow_storyboard.md`
 
 ````markdown
 # LinktoMac — Android App UI Storyboard & Functional Specification
@@ -24741,7 +25033,7 @@ sequenceDiagram
 ````
 
 <a id="docs-archive-ARCHITECTURE-PLAN-md"></a>
-### `docs/archive/ARCHITECTURE_PLAN.md`
+#### File: `docs/archive/ARCHITECTURE_PLAN.md`
 
 ````markdown
 # LinkToMac — Zero-Ambiguity Agent Playbook & Stitching Guide (`allcode/`)
@@ -24941,7 +25233,7 @@ What `build_mac_app.sh` does:
 ````
 
 <a id="docs-archive-IMPROVEMENT-PLAN-md"></a>
-### `docs/archive/IMPROVEMENT_PLAN.md`
+#### File: `docs/archive/IMPROVEMENT_PLAN.md`
 
 ````markdown
 # LinktoMac - Comprehensive Improvement Plan
@@ -26039,7 +26331,7 @@ TEST(DecoderTest, InitAndDecode) {
 ````
 
 <a id="docs-archive-ORIGINAL-REQUEST-md"></a>
-### `docs/archive/ORIGINAL_REQUEST.md`
+#### File: `docs/archive/ORIGINAL_REQUEST.md`
 
 ```markdown
 # Original User Request
@@ -26222,7 +26514,7 @@ Ensure all subprojects (`android-server`, `android-app`, `native-client`, `orche
 ```
 
 <a id="docs-archive-OVERNIGHT-BUILD-REPORT-md"></a>
-### `docs/archive/OVERNIGHT_BUILD_REPORT.md`
+#### File: `docs/archive/OVERNIGHT_BUILD_REPORT.md`
 
 ````markdown
 # LinkToMac — Overnight Build & Verification Report
@@ -26368,7 +26660,7 @@ export JAVA_HOME=/Users/sanagariudbhav/Library/Java/JavaVirtualMachines/jbr-17.0
 ````
 
 <a id="docs-archive-PROJECT-CONTEXT-md"></a>
-### `docs/archive/PROJECT_CONTEXT.md`
+#### File: `docs/archive/PROJECT_CONTEXT.md`
 
 ````markdown
 # LinktoMac — Project Master Context & Architecture Guide
@@ -26603,7 +26895,7 @@ pytest orchestrator/test_backend.py orchestrator/test_ui_app.py
 ````
 
 <a id="docs-audit-report-md"></a>
-### `docs/audit_report.md`
+#### File: `docs/audit_report.md`
 
 ````markdown
 # LinktoMac Production Release Audit Report
@@ -27139,7 +27431,7 @@ LinktoMac represents an advanced, feature-rich multi-device continuity system. U
 ````
 
 <a id="docs-bundles-linktomac-complete-android-source-code-md"></a>
-### `docs/bundles/linktomac_complete_android_source_code.md`
+#### File: `docs/bundles/linktomac_complete_android_source_code.md`
 
 ````markdown
 # LinkToMac — Complete Android Source Code (`allcode/LinkToMac-Android`)
@@ -30268,7 +30560,7 @@ exec "$JAVACMD" "$@"
 ````
 
 <a id="docs-bundles-linktomac-complete-macos-source-code-md"></a>
-### `docs/bundles/linktomac_complete_macos_source_code.md`
+#### File: `docs/bundles/linktomac_complete_macos_source_code.md`
 
 ````markdown
 # LinkToMac — Complete macOS Source Code (`allcode/LinkToMac-macOS`)
@@ -44014,7 +44306,7 @@ echo "=========================================="
 ````
 
 <a id="docs-mac-flow-storyboard-md"></a>
-### `docs/mac_flow_storyboard.md`
+#### File: `docs/mac_flow_storyboard.md`
 
 ````markdown
 # LinktoMac — macOS App UI Storyboard & Functional Specification
@@ -44292,7 +44584,7 @@ graph TD
 ````
 
 <a id="docs-ui-prompts-00-MASTER-PROMPT-md"></a>
-### `docs/ui-prompts/00-MASTER-PROMPT.md`
+#### File: `docs/ui-prompts/00-MASTER-PROMPT.md`
 
 ````markdown
 # LINKTOMAC UI MASTER PROMPT — "Quiet Premium" Redesign
@@ -44509,7 +44801,7 @@ confirm behavior unchanged → screenshot → compare against anti-pattern list.
 ````
 
 <a id="docs-ui-prompts-01-design-tokens-md"></a>
-### `docs/ui-prompts/01-design-tokens.md`
+#### File: `docs/ui-prompts/01-design-tokens.md`
 
 ````markdown
 # Task 01 — Design Tokens & Shared Components
@@ -45071,7 +45363,7 @@ Paste at the top of the new `orchestrator/ui/style.css` (full stylesheet arrives
 ````
 
 <a id="docs-ui-prompts-02-macos-app-shell-md"></a>
-### `docs/ui-prompts/02-macos-app-shell.md`
+#### File: `docs/ui-prompts/02-macos-app-shell.md`
 
 ````markdown
 # Task 02 — macOS App Shell: Window, Sidebar & Status Pill
@@ -45377,7 +45669,7 @@ struct StatusPill: View {
 ````
 
 <a id="docs-ui-prompts-03-macos-overview-md"></a>
-### `docs/ui-prompts/03-macos-overview.md`
+#### File: `docs/ui-prompts/03-macos-overview.md`
 
 ````markdown
 # Task 03 — macOS Overview Dashboard
@@ -45616,7 +45908,7 @@ struct ImageToolbarButton: View {
 ````
 
 <a id="docs-ui-prompts-04-macos-messages-md"></a>
-### `docs/ui-prompts/04-macos-messages.md`
+#### File: `docs/ui-prompts/04-macos-messages.md`
 
 ````markdown
 # Task 04 — macOS Messages Workspace
@@ -45895,7 +46187,7 @@ struct ChatBubble: View {
 ````
 
 <a id="docs-ui-prompts-05-macos-notifications-md"></a>
-### `docs/ui-prompts/05-macos-notifications.md`
+#### File: `docs/ui-prompts/05-macos-notifications.md`
 
 ````markdown
 # Task 05 — macOS Notifications Workspace
@@ -46082,7 +46374,7 @@ struct NotificationRow: View {
 ````
 
 <a id="docs-ui-prompts-06-macos-files-photos-md"></a>
-### `docs/ui-prompts/06-macos-files-photos.md`
+#### File: `docs/ui-prompts/06-macos-files-photos.md`
 
 ````markdown
 # Task 06 — macOS Files & Photos Workspaces
@@ -46498,7 +46790,7 @@ struct PhotoCard: View {
 ````
 
 <a id="docs-ui-prompts-07-macos-clipboard-md"></a>
-### `docs/ui-prompts/07-macos-clipboard.md`
+#### File: `docs/ui-prompts/07-macos-clipboard.md`
 
 ````markdown
 # Task 07 — macOS Clipboard Workspace
@@ -46670,7 +46962,7 @@ struct ClipboardRow: View {
 ````
 
 <a id="docs-ui-prompts-08-macos-mirror-camera-md"></a>
-### `docs/ui-prompts/08-macos-mirror-camera.md`
+#### File: `docs/ui-prompts/08-macos-mirror-camera.md`
 
 ````markdown
 # Task 08 — macOS Mirror & Camera Workspace
@@ -46964,7 +47256,7 @@ private extension MirrorAndCameraWorkspaceView {
 ````
 
 <a id="docs-ui-prompts-09-macos-pairing-callhud-md"></a>
-### `docs/ui-prompts/09-macos-pairing-callhud.md`
+#### File: `docs/ui-prompts/09-macos-pairing-callhud.md`
 
 ````markdown
 # Task 09 — macOS Pairing QR & Incoming Call HUD
@@ -47197,7 +47489,7 @@ grep -rn "01 •\|02 •\|03 •\|v1.61" Sources/ && echo "stale copy found" || 
 ````
 
 <a id="docs-ui-prompts-10-android-app-md"></a>
-### `docs/ui-prompts/10-android-app.md`
+#### File: `docs/ui-prompts/10-android-app.md`
 
 ````markdown
 # Task 10 — Android App Redesign (Jetpack Compose)
@@ -47854,7 +48146,7 @@ class MainActivity : ComponentActivity() {
 ````
 
 <a id="docs-ui-prompts-11-web-orchestrator-md"></a>
-### `docs/ui-prompts/11-web-orchestrator.md`
+#### File: `docs/ui-prompts/11-web-orchestrator.md`
 
 ````markdown
 # Task 11 — Web Orchestrator UI Redesign
@@ -48630,7 +48922,7 @@ stays byte-identical.**
 ````
 
 <a id="docs-ui-prompts-12-menubar-md"></a>
-### `docs/ui-prompts/12-menubar.md`
+#### File: `docs/ui-prompts/12-menubar.md`
 
 ````markdown
 # Task 12 — Menu Bar Apps Polish
@@ -48752,7 +49044,7 @@ alerts, callbacks — is untouched.
 ````
 
 <a id="docs-ui-prompts-PROGRESS-md"></a>
-### `docs/ui-prompts/PROGRESS.md`
+#### File: `docs/ui-prompts/PROGRESS.md`
 
 ```markdown
 # UI Redesign Progress Log
@@ -48969,7 +49261,7 @@ alerts, callbacks — is untouched.
 ```
 
 <a id="docs-ui-prompts-README-md"></a>
-### `docs/ui-prompts/README.md`
+#### File: `docs/ui-prompts/README.md`
 
 ```markdown
 # LinktoMac UI Master Prompt Pack — "Quiet Premium"
@@ -49038,7 +49330,7 @@ and bridges, the binary wire protocol, ports, Bonjour service, Firestore paths, 
 ```
 
 <a id="scripts-download-adb-sh"></a>
-### `scripts/download_adb.sh`
+#### File: `scripts/download_adb.sh`
 
 ```bash
 #!/bin/bash
@@ -49053,17 +49345,18 @@ echo "✅ ADB bundled successfully at bundled/platform-tools/adb"
 ```
 
 <a id="scripts-export-all-code-py"></a>
-### `scripts/export_all_code.py`
+#### File: `scripts/export_all_code.py`
 
 ````python
 #!/usr/bin/env python3
 """
-Exports the complete, clean codebase of LinktoMac into all_code.md.
-Categorizes files, generates Table of Contents with Markdown anchors,
-and excludes git metadata, build artifacts, binaries, and deleted obsolete modules.
+Exports the complete, clean codebase and project structure of LinktoMac into all_code.md.
+Categorizes files, generates comprehensive architecture documentation, project directory tree,
+Table of Contents with Markdown anchors, and includes 100% of the source code.
 """
 
 import os
+import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -49112,6 +49405,8 @@ EXCLUDED_DIRS = {
     "out",
     ".idea",
     ".vscode",
+    ".claude",
+    ".zcode",
     "android-client",  # Obsolete module permanently removed
 }
 
@@ -49140,6 +49435,7 @@ EXCLUDED_EXTS = {
 
 EXCLUDED_FILES = {
     "all_code.md",
+    ".DS_Store",
     "gradle-wrapper.jar",
     "server.jar",
     "app-debug.apk",
@@ -49181,6 +49477,32 @@ CATEGORIES = [
     ),
 ]
 
+DIR_ANNOTATIONS = {
+    "allcode/LinkToMac-macOS": "Standalone Native macOS App (Swift / SwiftUI)",
+    "allcode/LinkToMac-macOS/Sources/LinkToMac": "SwiftUI Views, Controllers & IPC bridges",
+    "allcode/LinkToMac-Android": "Standalone Android Companion App (Kotlin / Jetpack Compose)",
+    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android": "Compose UI, Screen Streamer & Accessibility",
+    "native-client": "macOS Native Client (C++ / Objective-C++ / Metal)",
+    "native-client/src": "Hardware VideoToolbox decoder, Metal renderer, and network pipeline",
+    "orchestrator": "macOS Python Orchestrator & Web Dashboard",
+    "orchestrator/linktomac": "FastAPI backend, ADB port tunneling, and pairing logic",
+    "orchestrator/ui": "Web Dashboard UI (HTML5 / Vanilla JS / CSS)",
+    "android-server": "Android Headless Server (ADB Daemon Mode)",
+    "android-app": "Android Companion App (Legacy Kotlin Client)",
+    "tests": "Adversarial & Multi-tier Stress Test Harnesses",
+    "tests/adversarial_m1": "M1: LAN IP, Smart Connect & Handshake tests",
+    "tests/adversarial_m2": "M2: DOM offline, USB watcher & multitenant isolation",
+    "tests/adversarial_m3": "M3: Packaging and path integrity tests",
+    "tests/adversarial_m4": "M4: ABR telemetry, scroll coalescing & fuzzer",
+    "tests/adversarial_native": "Native: VideoToolbox decoder & Metal surface stress tests",
+    "scripts": "Build, Release, Packaging & Code Stitcher tooling",
+    "docs": "Architecture specifications, UI prompts & audit reports",
+    "docs/ui-prompts": "UI Design System & component prompt definitions",
+    "release": "Release checksums and installation instructions",
+    "public": "Distribution downloads & landing portal",
+    ".github/workflows": "GitHub Actions CI/CD workflows",
+}
+
 def make_anchor(rel_path: str) -> str:
     # Anchor id replaces '/', '.', and '_' to standard hyphen anchor
     return rel_path.replace("/", "-").replace(".", "-").replace("_", "-")
@@ -49196,6 +49518,13 @@ def get_highlight_lang(file_path: Path) -> str:
     if name.endswith(".plist"):
         return "xml"
     return EXT_MAP.get(file_path.suffix.lower(), "text")
+
+def get_fence(content: str) -> str:
+    max_b = 3
+    runs = re.findall(r"`+", content)
+    if runs:
+        max_b = max(max_b, max(len(r) for r in runs) + 1)
+    return "`" * max_b
 
 def is_text_file(path: Path) -> bool:
     if path.suffix.lower() in EXCLUDED_EXTS:
@@ -49254,17 +49583,137 @@ def categorize_files(files):
 
     return result
 
+def format_directory_tree(dir_path: Path, prefix="") -> list[str]:
+    entries = sorted([p for p in dir_path.iterdir() if p.name not in EXCLUDED_DIRS and p.name not in EXCLUDED_FILES and not p.name.startswith(".DS_Store")])
+    dirs = [e for e in entries if e.is_dir() and (not e.name.startswith(".") or e.name == ".github")]
+    files = [e for e in entries if e.is_file() and is_text_file(e)]
+
+    # Filter out directories that have no text files
+    active_dirs = []
+    for d in dirs:
+        has_files = any(f.is_file() and is_text_file(f) for f in d.rglob("*") if not any(part in EXCLUDED_DIRS for part in f.parts))
+        if has_files:
+            active_dirs.append(d)
+
+    lines = []
+    items = active_dirs + files
+    for i, item in enumerate(items):
+        is_last = (i == len(items) - 1)
+        connector = "└── " if is_last else "├── "
+        child_prefix = "    " if is_last else "│   "
+        rel = item.relative_to(REPO_ROOT).as_posix()
+
+        annotation = f"  # {DIR_ANNOTATIONS[rel]}" if rel in DIR_ANNOTATIONS else ""
+        if item.is_dir():
+            lines.append(f"{prefix}{connector}{item.name}/{annotation}")
+            lines.extend(format_directory_tree(item, prefix + child_prefix))
+        else:
+            lines.append(f"{prefix}{connector}{item.name}{annotation}")
+    return lines
+
 def generate_all_code():
     files = collect_files()
     categorized = categorize_files(files)
     total_files = len(files)
 
-    lines = []
-    lines.append("# LinktoMac — Complete Codebase\n")
-    lines.append(f"This document consolidates all {total_files} source and configuration files of the LinktoMac project in a clean, structured format.\n")
-    lines.append("---\n")
-    lines.append("## Table of Contents\n")
+    total_lines = 0
+    for f in files:
+        try:
+            total_lines += len((REPO_ROOT / f).read_text(encoding="utf-8", errors="replace").splitlines())
+        except Exception:
+            pass
 
+    tree_lines = ["LinktoMac/"] + format_directory_tree(REPO_ROOT)
+    tree_text = "\n".join(tree_lines)
+
+    lines = []
+    lines.append("# LinktoMac — Complete Codebase & Project Architecture\n")
+    lines.append(f"> **Repository Summary**: `{total_files}` Source & Configuration Files | `{total_lines:,}` Total Lines of Code\n")
+    lines.append("LinktoMac is a high-performance, low-latency screen mirroring and remote control ecosystem connecting Android devices with macOS. It features hardware-accelerated 60fps streaming, bi-directional clipboard sync, telephony/SMS management, notification bridging, and low-latency input event injection over USB (ADB) and local Wi-Fi networks.\n")
+    lines.append("---\n")
+
+    # Section 1: Architecture Overview
+    lines.append("## 1. System Architecture & Component Design\n")
+    lines.append("### High-Level Architecture Diagram\n")
+    lines.append("```mermaid")
+    lines.append("graph TD")
+    lines.append("    subgraph Android[\"Android Device\"]")
+    lines.append("        App[\"Standalone Android App<br/>(Kotlin / Compose)\"]")
+    lines.append("        Svc[\"LinkConnectionService<br/>(MediaProjection / H.264)\"]")
+    lines.append("        Acc[\"AccessibilityService<br/>(Touch & Key Injection)\"]")
+    lines.append("        Notif[\"Notification / SMS Bridge\"]")
+    lines.append("        Server[\"Headless Daemon<br/>(android-server.jar)\"]")
+    lines.append("    end")
+    lines.append("")
+    lines.append("    subgraph Transport[\"Transport Layer\"]")
+    lines.append("        USB[\"ADB Reverse Port Forwarding<br/>(localhost:7007 / 7008)\"]")
+    lines.append("        LAN[\"LAN TCP/UDP Streaming<br/>(Wi-Fi Direct / Local Subnet)\"]")
+    lines.append("        WS[\"WebSocket IPC & Telemetry<br/>(Control & Clipboard)\"]")
+    lines.append("    end")
+    lines.append("")
+    lines.append("    subgraph Mac[\"macOS Host\"]")
+    lines.append("        SwiftApp[\"Standalone Native macOS App<br/>(Swift / SwiftUI)\"]")
+    lines.append("        NativeClient[\"macOS Native Client<br/>(C++ / Metal / VideoToolbox)\"]")
+    lines.append("        Orchestrator[\"Python Orchestrator & Web UI<br/>(FastAPI / WebSockets / Rumps)\"]")
+    lines.append("    end")
+    lines.append("")
+    lines.append("    App --> Svc")
+    lines.append("    App --> Acc")
+    lines.append("    App --> Notif")
+    lines.append("    Svc --> LAN")
+    lines.append("    Svc --> USB")
+    lines.append("    Server --> USB")
+    lines.append("    USB --> Orchestrator")
+    lines.append("    LAN --> NativeClient")
+    lines.append("    USB --> NativeClient")
+    lines.append("    Orchestrator --> SwiftApp")
+    lines.append("    NativeClient --> SwiftApp")
+    lines.append("```\n")
+
+    lines.append("### Subsystems & Technology Stack\n")
+    lines.append("1. **Standalone Native macOS App (`allcode/LinkToMac-macOS`)**")
+    lines.append("   - Pure Swift and SwiftUI desktop application optimized for macOS 13+ (Ventura, Sonoma, Sequoia).")
+    lines.append("   - Features modular SwiftUI views: `MainDashboardView`, `OverviewView`, `MirrorCameraView`, `MessagesView`, `NotificationsView`, `FilesPhotosView`, `ClipboardView`, and `PairingCallHUDView`.")
+    lines.append("   - Built-in `ADBBridge` and `ConnectionManager` manage process lifecycle and auto-discovery.\n")
+
+    lines.append("2. **Standalone Android Companion App (`allcode/LinkToMac-Android`)**")
+    lines.append("   - Modern Kotlin application built with Jetpack Compose following Material Design 3 tokens.")
+    lines.append("   - `ScreenCameraStreamer` captures screen buffers via `MediaProjection` and hardware-encodes H.264 video with `MediaCodec`.")
+    lines.append("   - `LinkTouchAccessibilityService` performs ultra-low-latency gesture, touch tap, and keypress injection.")
+    lines.append("   - `LinkNotificationService` and `SmsContactsCallBridge` expose notification syncing, incoming call HUD, and SMS threads.\n")
+
+    lines.append("3. **macOS Native Client (`native-client`)**")
+    lines.append("   - High-performance C++ / Objective-C++ streaming engine built with Apple Metal and VideoToolbox.")
+    lines.append("   - Zero-copy hardware video decoding via `VTDecompressionSession` (`decoder.cpp`).")
+    lines.append("   - Metal texture shader pipeline rendering directly to `CAMetalLayer` (`renderer.mm`).")
+    lines.append("   - Native macOS mouse and keyboard event capture mapped directly to binary stream packets (`input_handler.cpp`).")
+    lines.append("   - Pybind11 integration (`python_bindings.cpp`) providing Python bindings for the orchestrator.\n")
+
+    lines.append("4. **macOS Python Orchestrator & Web UI (`orchestrator`)**")
+    lines.append("   - Lightweight FastAPI & WebSockets service (`backend.py`) orchestrating ADB reverse tunneling, pairing tokens, and LAN fallback.")
+    lines.append("   - Native macOS Menu Bar utility (`menubar_app.py`) built with `rumps` for one-click streaming.")
+    lines.append("   - Browser-based HTML5 dashboard (`orchestrator/ui/`) for responsive control without desktop app dependencies.\n")
+
+    lines.append("5. **Android Headless Server (`android-server`)**")
+    lines.append("   - Rootless ADB daemon executed via `app_process /system/bin com.linktomac.server.Server`.")
+    lines.append("   - Uses hidden Android APIs (`SurfaceControl`, `InputManager`) to stream and control devices without requiring an APK to be installed.\n")
+
+    lines.append("6. **Multi-Tier Stress & Adversarial Test Suites (`tests`)**")
+    lines.append("   - Extensive adversarial validation suites: `adversarial_m1` (network & handshake), `adversarial_m2` (DOM recovery & USB watcher), `adversarial_m3` (packaging & binary path integrity), `adversarial_m4` (adaptive bitrate telemetry, gesture coalescing, protocol fuzzing), and `adversarial_native` (VideoToolbox decoder stress & rapid surface flip resilience).\n")
+
+    lines.append("7. **Automation, Packaging & Deployment (`scripts`, `Makefile`, `.github`)**")
+    lines.append("   - Automated build scripts (`make_release.sh`, `build_mac_app.sh`), code synchronizers (`export_all_code.py`, `update_allcode_bundles.py`, `stitch_allcode.py`), and CI/CD workflows for macOS and Android.\n")
+    lines.append("---\n")
+
+    # Section 2: Directory Structure
+    lines.append("## 2. Project Directory Structure\n")
+    lines.append("```text")
+    lines.append(tree_text)
+    lines.append("```\n")
+    lines.append("---\n")
+
+    # Section 3: Table of Contents
+    lines.append("## 3. Complete Source Code Table of Contents\n")
     for title, cat_files in categorized:
         lines.append(f"### {title}\n")
         for f in cat_files:
@@ -49274,41 +49723,52 @@ def generate_all_code():
 
     lines.append("---\n")
 
+    # Section 4: File Contents
+    lines.append("## 4. Source Code Manifest\n")
     for title, cat_files in categorized:
-        lines.append(f"## {title}\n")
+        lines.append(f"### Category: {title}\n")
         for f in cat_files:
             full_path = REPO_ROOT / f
             anchor = make_anchor(f)
             lang = get_highlight_lang(full_path)
 
             lines.append(f'<a id="{anchor}"></a>')
-            lines.append(f"### `{f}`\n")
+            lines.append(f"#### File: `{f}`\n")
 
             try:
                 content = full_path.read_text(encoding="utf-8", errors="replace")
             except Exception as e:
                 content = f"// Error reading file: {e}"
 
-            # Ensure backticks inside markdown files don't prematurely close code block
-            fence = "```"
-            if "```" in content:
-                fence = "````"
+            fence = get_fence(content)
 
             lines.append(f"{fence}{lang}")
             lines.append(content.rstrip())
             lines.append(f"{fence}\n")
 
-    out_file = REPO_ROOT / "docs" / "bundles" / "all_code.md"
-    out_file.parent.mkdir(parents=True, exist_ok=True)
-    out_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Successfully exported {total_files} files to {out_file} ({out_file.stat().st_size:,} bytes)")
+    output_text = "\n".join(lines) + "\n"
+
+    # Save to root all_code.md
+    root_out = REPO_ROOT / "all_code.md"
+    root_out.write_text(output_text, encoding="utf-8")
+
+    # Save to docs/bundles/all_code.md
+    bundle_out = REPO_ROOT / "docs" / "bundles" / "all_code.md"
+    bundle_out.parent.mkdir(parents=True, exist_ok=True)
+    bundle_out.write_text(output_text, encoding="utf-8")
+
+    print(f"Successfully generated all_code.md!")
+    print(f"  - Root file:   {root_out} ({root_out.stat().st_size:,} bytes)")
+    print(f"  - Bundle file: {bundle_out} ({bundle_out.stat().st_size:,} bytes)")
+    print(f"  - Total files included: {total_files}")
+    print(f"  - Total code lines:     {total_lines:,}")
 
 if __name__ == "__main__":
     generate_all_code()
 ````
 
 <a id="scripts-make-release-sh"></a>
-### `scripts/make_release.sh`
+#### File: `scripts/make_release.sh`
 
 ````bash
 #!/usr/bin/env bash
@@ -49422,7 +49882,7 @@ echo "=========================================================="
 ````
 
 <a id="scripts-stitch-allcode-py"></a>
-### `scripts/stitch_allcode.py`
+#### File: `scripts/stitch_allcode.py`
 
 ````python
 #!/usr/bin/env python3
@@ -49482,7 +49942,7 @@ if __name__ == "__main__":
 ````
 
 <a id="scripts-update-allcode-bundles-py"></a>
-### `scripts/update_allcode_bundles.py`
+#### File: `scripts/update_allcode_bundles.py`
 
 ````python
 #!/usr/bin/env python3
@@ -49623,7 +50083,7 @@ if __name__ == "__main__":
 ````
 
 <a id="tests-adversarial-m1-test-firestore-schema-and-preauth-js"></a>
-### `tests/adversarial_m1/test_firestore_schema_and_preauth.js`
+#### File: `tests/adversarial_m1/test_firestore_schema_and_preauth.js`
 
 ```javascript
 /**
@@ -49947,7 +50407,7 @@ runAll().catch(err => {
 ```
 
 <a id="tests-adversarial-m1-test-lan-ip-and-smart-connect-stress-py"></a>
-### `tests/adversarial_m1/test_lan_ip_and_smart_connect_stress.py`
+#### File: `tests/adversarial_m1/test_lan_ip_and_smart_connect_stress.py`
 
 ```python
 #!/usr/bin/env python3
@@ -50178,7 +50638,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-m1-test-m1-screen-capture-and-handshake-py"></a>
-### `tests/adversarial_m1/test_m1_screen_capture_and_handshake.py`
+#### File: `tests/adversarial_m1/test_m1_screen_capture_and_handshake.py`
 
 ```python
 #!/usr/bin/env python3
@@ -50663,7 +51123,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-m2-run-all-m2-stress-tests-sh"></a>
-### `tests/adversarial_m2/run_all_m2_stress_tests.sh`
+#### File: `tests/adversarial_m2/run_all_m2_stress_tests.sh`
 
 ```bash
 #!/bin/bash
@@ -50707,7 +51167,7 @@ echo "=========================================================="
 ```
 
 <a id="tests-adversarial-m2-test-challenger-m2-i2-js"></a>
-### `tests/adversarial_m2/test_challenger_m2_i2.js`
+#### File: `tests/adversarial_m2/test_challenger_m2_i2.js`
 
 ```javascript
 /**
@@ -51305,7 +51765,7 @@ main().catch(err => {
 ```
 
 <a id="tests-adversarial-m2-test-m2-ui-dom-offline-js"></a>
-### `tests/adversarial_m2/test_m2_ui_dom_offline.js`
+#### File: `tests/adversarial_m2/test_m2_ui_dom_offline.js`
 
 ```javascript
 #!/usr/bin/env node
@@ -51630,7 +52090,7 @@ console.log('===================================================================
 ```
 
 <a id="tests-adversarial-m2-test-m2-usb-watcher-stress-py"></a>
-### `tests/adversarial_m2/test_m2_usb_watcher_stress.py`
+#### File: `tests/adversarial_m2/test_m2_usb_watcher_stress.py`
 
 ```python
 #!/usr/bin/env python3
@@ -51868,7 +52328,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-m2-test-multitenant-isolation-js"></a>
-### `tests/adversarial_m2/test_multitenant_isolation.js`
+#### File: `tests/adversarial_m2/test_multitenant_isolation.js`
 
 ```javascript
 /**
@@ -52125,7 +52585,7 @@ testConcurrentSignIns().then(() => {
 ```
 
 <a id="tests-adversarial-m2-test-premature-write-elimination-js"></a>
-### `tests/adversarial_m2/test_premature_write_elimination.js`
+#### File: `tests/adversarial_m2/test_premature_write_elimination.js`
 
 ```javascript
 /**
@@ -52476,7 +52936,7 @@ testTimingScenarios().then(() => {
 ```
 
 <a id="tests-adversarial-m2-test-remote-recovery-stress-js"></a>
-### `tests/adversarial_m2/test_remote_recovery_stress.js`
+#### File: `tests/adversarial_m2/test_remote_recovery_stress.js`
 
 ```javascript
 /**
@@ -52889,7 +53349,7 @@ runRecoveryTests().then(() => {
 ```
 
 <a id="tests-adversarial-m3-test-m3-packaging-and-paths-py"></a>
-### `tests/adversarial_m3/test_m3_packaging_and_paths.py`
+#### File: `tests/adversarial_m3/test_m3_packaging_and_paths.py`
 
 ```python
 """
@@ -53306,7 +53766,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-m4-run-all-m4-stress-tests-sh"></a>
-### `tests/adversarial_m4/run_all_m4_stress_tests.sh`
+#### File: `tests/adversarial_m4/run_all_m4_stress_tests.sh`
 
 ```bash
 #!/bin/bash
@@ -53339,7 +53799,7 @@ echo "==================================================================="
 ```
 
 <a id="tests-adversarial-m4-test-abr-telemetry-stress-py"></a>
-### `tests/adversarial_m4/test_abr_telemetry_stress.py`
+#### File: `tests/adversarial_m4/test_abr_telemetry_stress.py`
 
 ```python
 #!/usr/bin/env python3
@@ -53529,7 +53989,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-m4-test-challenger-m4-e2e-stress-py"></a>
-### `tests/adversarial_m4/test_challenger_m4_e2e_stress.py`
+#### File: `tests/adversarial_m4/test_challenger_m4_e2e_stress.py`
 
 ```python
 #!/usr/bin/env python3
@@ -54049,7 +54509,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-m4-test-gesture-scroll-coalescing-stress-py"></a>
-### `tests/adversarial_m4/test_gesture_scroll_coalescing_stress.py`
+#### File: `tests/adversarial_m4/test_gesture_scroll_coalescing_stress.py`
 
 ```python
 #!/usr/bin/env python3
@@ -54313,7 +54773,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-m4-test-handshake-malformed-fuzzer-py"></a>
-### `tests/adversarial_m4/test_handshake_malformed_fuzzer.py`
+#### File: `tests/adversarial_m4/test_handshake_malformed_fuzzer.py`
 
 ```python
 #!/usr/bin/env python3
@@ -54517,7 +54977,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-m4-test-multitenant-concurrent-sessions-js"></a>
-### `tests/adversarial_m4/test_multitenant_concurrent_sessions.js`
+#### File: `tests/adversarial_m4/test_multitenant_concurrent_sessions.js`
 
 ```javascript
 /**
@@ -54692,7 +55152,7 @@ runMultiTenantConcurrencyStress().catch(err => {
 ```
 
 <a id="tests-adversarial-native-run-all-m1-stress-tests-sh"></a>
-### `tests/adversarial_native/run_all_m1_stress_tests.sh`
+#### File: `tests/adversarial_native/run_all_m1_stress_tests.sh`
 
 ```bash
 #!/bin/bash
@@ -54730,7 +55190,7 @@ echo "========================================================"
 ```
 
 <a id="tests-adversarial-native-run-all-m2-stress-tests-sh"></a>
-### `tests/adversarial_native/run_all_m2_stress_tests.sh`
+#### File: `tests/adversarial_native/run_all_m2_stress_tests.sh`
 
 ```bash
 #!/bin/bash
@@ -54774,7 +55234,7 @@ echo "========================================================"
 ```
 
 <a id="tests-adversarial-native-test-decoder-rotation-cpp"></a>
-### `tests/adversarial_native/test_decoder_rotation.cpp`
+#### File: `tests/adversarial_native/test_decoder_rotation.cpp`
 
 ```cpp
 #include "decoder.h"
@@ -54949,7 +55409,7 @@ int main() {
 ```
 
 <a id="tests-adversarial-native-test-decoder-stress-cpp"></a>
-### `tests/adversarial_native/test_decoder_stress.cpp`
+#### File: `tests/adversarial_native/test_decoder_stress.cpp`
 
 ```cpp
 #include <iostream>
@@ -55659,7 +56119,7 @@ int main() {
 ```
 
 <a id="tests-adversarial-native-test-handshake-stress-py"></a>
-### `tests/adversarial_native/test_handshake_stress.py`
+#### File: `tests/adversarial_native/test_handshake_stress.py`
 
 ```python
 #!/usr/bin/env python3
@@ -55922,7 +56382,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-native-test-m2-decoder-resilience-stress-cpp"></a>
-### `tests/adversarial_native/test_m2_decoder_resilience_stress.cpp`
+#### File: `tests/adversarial_native/test_m2_decoder_resilience_stress.cpp`
 
 ```cpp
 #include "decoder.h"
@@ -56251,7 +56711,7 @@ int main() {
 ```
 
 <a id="tests-adversarial-native-test-m2-renderer-rapid-flips-mm"></a>
-### `tests/adversarial_native/test_m2_renderer_rapid_flips.mm`
+#### File: `tests/adversarial_native/test_m2_renderer_rapid_flips.mm`
 
 ```objectivec
 #import <Cocoa/Cocoa.h>
@@ -56493,7 +56953,7 @@ int main() {
 ```
 
 <a id="tests-adversarial-native-test-python-bindings-stream-py"></a>
-### `tests/adversarial_native/test_python_bindings_stream.py`
+#### File: `tests/adversarial_native/test_python_bindings_stream.py`
 
 ```python
 #!/usr/bin/env python3
@@ -56666,7 +57126,7 @@ if __name__ == "__main__":
 ```
 
 <a id="tests-adversarial-native-test-resize-stress-cpp"></a>
-### `tests/adversarial_native/test_resize_stress.cpp`
+#### File: `tests/adversarial_native/test_resize_stress.cpp`
 
 ```cpp
 #include "renderer.h"
@@ -56935,7 +57395,7 @@ int main() {
 ```
 
 <a id="tests-adversarial-native-test-scroll-stress-cpp"></a>
-### `tests/adversarial_native/test_scroll_stress.cpp`
+#### File: `tests/adversarial_native/test_scroll_stress.cpp`
 
 ```cpp
 #include "input_handler.h"
@@ -57337,10 +57797,10 @@ int main() {
 }
 ```
 
-## Other Project Files
+### Category: Other Project Files
 
 <a id="public-index-html"></a>
-### `public/index.html`
+#### File: `public/index.html`
 
 ```html
 <!DOCTYPE html>
@@ -57769,7 +58229,7 @@ int main() {
 ```
 
 <a id="release-INSTALL-md"></a>
-### `release/INSTALL.md`
+#### File: `release/INSTALL.md`
 
 ````markdown
 # LinkToMac — Installation Guide
@@ -57814,7 +58274,7 @@ adb install -r LinkToMac.apk
 ````
 
 <a id="release-SHA256SUMS-txt"></a>
-### `release/SHA256SUMS.txt`
+#### File: `release/SHA256SUMS.txt`
 
 ```text
 18bb0db5fd859aa918ad2c641de5b46cbbf1f1b38b08733d25c05080f68133c5  LinkToMac.dmg
