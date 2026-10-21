@@ -10,27 +10,19 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.ExitToApp
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,6 +41,8 @@ class MainActivity : ComponentActivity() {
 
         handleIncomingShareIntent(intent)
 
+        enableEdgeToEdge()
+
         setContent {
             LinkToMacTheme {
                 LinkToMacAndroidScreen()
@@ -61,8 +55,6 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun LinkToMacAndroidScreen() {
         val prefs = getSharedPreferences("linktomac", MODE_PRIVATE)
-        var hostInput by remember { mutableStateOf(prefs.getString("lastHost", "192.168.1.100") ?: "") }
-        var portInput by remember { mutableStateOf(prefs.getInt("lastPort", 54921).toString()) }
         var tokenInput by remember { mutableStateOf(prefs.getString("lastToken", "") ?: "") }
         var statusText by remember { mutableStateOf(LinkConnectionService.statusMessage) }
         var discoveredHost by remember { mutableStateOf(LinkConnectionService.discoveredMacHost) }
@@ -91,62 +83,36 @@ class MainActivity : ComponentActivity() {
                 val h = json.optString("host")
                 val p = json.optInt("port", 54921)
                 val t = json.optString("token")
+                val n = json.optString("macName")
                 if (h.isNotEmpty()) {
-                    hostInput = h
-                    portInput = p.toString()
                     tokenInput = t
-                    triggerConnect(h, p, t)
+                    triggerConnect(h, p, t, n)
                 }
             } catch (_: Exception) {}
         }
 
         val perms = remember(permissionTick) { permissionStates() }
+        val connected = LinkConnectionService.isConnectedState
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = LS.l)
-                .verticalScroll(rememberScrollState()),
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = LS.xxl),
             verticalArrangement = Arrangement.spacedBy(LS.l)
         ) {
             Spacer(Modifier.height(LS.xl))
 
-            // ---- Brand + status
-            Text(
-                "LinkToMac",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            BrandHeader()
+
             StatusCard(
                 statusText = statusText,
                 discoveredHost = discoveredHost,
+                connected = connected,
                 onAutoConnect = {
-                    hostInput = discoveredHost
                     triggerConnect(discoveredHost, LinkConnectionService.discoveredMacPort, tokenInput)
-                }
-            )
-
-            // ---- Pairing
-            PairingCard(
-                hostInput = hostInput,
-                portInput = portInput,
-                tokenInput = tokenInput,
-                onHostChange = { hostInput = it },
-                onPortChange = { portInput = it },
-                onTokenChange = { tokenInput = it },
-                onScanQR = {
-                    val options = ScanOptions().apply {
-                        setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                        setPrompt("Scan the LinkToMac QR Code on your Mac")
-                        setBeepEnabled(false)
-                    }
-                    qrLauncher.launch(options)
-                },
-                onConnectUSB = { triggerConnect("127.0.0.1", 54921, tokenInput) },
-                onConnectWiFi = {
-                    triggerConnect(hostInput.trim(), portInput.toIntOrNull() ?: 54921, tokenInput.trim())
                 },
                 onDisconnect = {
                     startService(Intent(this@MainActivity, LinkConnectionService::class.java).apply {
@@ -155,42 +121,54 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
-            // ---- Quick actions
-            QuickActionsCard(
-                onPushClipboard = { ClipboardManagerBridge.sendCurrentClipboardToMac(this@MainActivity) },
-                onSyncSms = { SmsContactsCallBridge.syncSmsAndContactsToMac(this@MainActivity) }
-            )
+            if (!connected) {
+                PairingCard(
+                    tokenInput = tokenInput,
+                    onScanQR = {
+                        val options = ScanOptions().apply {
+                            setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                            setPrompt("Scan the LinkToMac QR Code on your Mac")
+                            setBeepEnabled(false)
+                            setOrientationLocked(true)
+                        }
+                        qrLauncher.launch(options)
+                    },
+                    onConnectUSB = { triggerConnect("127.0.0.1", 54921, tokenInput) }
+                )
+            }
 
-            // ---- Permissions checklist (stateful)
-            PermissionsCard(
-                states = perms,
-                onRequestRuntime = { permLauncher.launch(runtimePermissionBundle()) },
-                onOpenNotificationSettings = {
-                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                },
-                onOpenStorageSettings = {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-                        val intent = Intent(
-                            Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                            android.net.Uri.parse("package:$packageName")
-                        )
-                        startActivity(intent)
+            // ---- Permissions checklist (only what is still missing)
+            if (!perms.allGranted) {
+                PermissionsCard(
+                    states = perms,
+                    onRequestRuntime = { permLauncher.launch(runtimePermissionBundle()) },
+                    onOpenNotificationSettings = {
+                        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    },
+                    onOpenStorageSettings = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+                            val intent = Intent(
+                                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                android.net.Uri.parse("package:$packageName")
+                            )
+                            startActivity(intent)
+                        }
+                    },
+                    onOpenBatterySettings = {
+                        val pm = getSystemService(POWER_SERVICE) as PowerManager
+                        if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                            val intent = Intent(
+                                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                android.net.Uri.parse("package:$packageName")
+                            )
+                            startActivity(intent)
+                        }
+                    },
+                    onOpenAccessibilitySettings = {
+                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     }
-                },
-                onOpenBatterySettings = {
-                    val pm = getSystemService(POWER_SERVICE) as PowerManager
-                    if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                        val intent = Intent(
-                            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                            android.net.Uri.parse("package:$packageName")
-                        )
-                        startActivity(intent)
-                    }
-                },
-                onOpenAccessibilitySettings = {
-                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                }
-            )
+                )
+            }
 
             Spacer(Modifier.height(LS.xxl))
         }
@@ -199,10 +177,47 @@ class MainActivity : ComponentActivity() {
     // ---------------------------------------------------- composable pieces
 
     @Composable
+    private fun BrandHeader() {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(LS.m)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(MaterialTheme.colorScheme.primary, LR.control)
+                    .padding(5.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_link),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Column {
+                Text(
+                    "LinkToMac",
+                    fontSize = LT.hero,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    "Local & private",
+                    fontSize = LT.caption,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+
+    @Composable
     private fun AppCard(content: @Composable ColumnScope.() -> Unit) {
+        val status = linkStatusColors()
         Surface(
             color = MaterialTheme.colorScheme.surface,
             shape = LR.card,
+            border = BorderStroke(1.dp, status.hairline),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -214,126 +229,136 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun CardTitle(text: String) {
-        Text(
-            text,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface
+    private fun StatusDot(connected: Boolean) {
+        val status = linkStatusColors()
+        Box(
+            Modifier
+                .size(8.dp)
+                .background(
+                    if (connected) status.success else status.warning,
+                    CircleShape
+                )
         )
+    }
+
+    @Composable
+    private fun QuietDangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+        val status = linkStatusColors()
+        FilledTonalButton(
+            onClick = onClick,
+            shape = LR.control,
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = status.dangerQuiet,
+                contentColor = status.danger
+            ),
+            modifier = modifier
+        ) {
+            Text(text)
+        }
+    }
+
+    private fun friendlyStatus(raw: String): String = when {
+        raw.startsWith("Connection failed") || raw.contains("ECONNREFUSED") ->
+            "Couldn't reach your Mac. Keep LinkToMac open on the Mac, then try USB or QR again."
+        raw.startsWith("Connected") ->
+            if (raw.contains("USB")) "Connected over USB" else "Connected over Wi-Fi"
+        raw.startsWith("Connecting to") -> "Connecting to your Mac…"
+        raw.startsWith("Reconnecting to") -> "Reconnecting…"
+        raw.startsWith("Waiting for Mac") -> "Waiting for your Mac…"
+        raw == "Disconnected" -> "Not connected"
+        else -> raw
     }
 
     @Composable
     private fun StatusCard(
         statusText: String,
         discoveredHost: String,
-        onAutoConnect: () -> Unit
+        connected: Boolean,
+        onAutoConnect: () -> Unit,
+        onDisconnect: () -> Unit
     ) {
-        val connected = LinkConnectionService.isConnectedState
-        val status = linkStatusColors()
         AppCard {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(LS.s)
             ) {
-                Box(
-                    Modifier
-                        .size(8.dp)
-                        .background(
-                            when {
-                                connected -> status.success
-                                else -> status.warning
-                            },
-                            CircleShape
-                        )
-                )
+                StatusDot(connected)
                 Text(
-                    if (connected) "Connected to Mac" else "Not connected",
-                    fontSize = 16.sp,
+                    if (connected) {
+                        val macName = LinkConnectionService.connectedMacName
+                        if (macName.isNotBlank()) "Connected to $macName" else "Connected to Mac"
+                    } else {
+                        "Not connected"
+                    },
+                    fontSize = LT.section,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
             Text(
-                statusText,
+                friendlyStatus(statusText),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (discoveredHost.isNotEmpty() && !connected) {
-                FilledTonalButton(onClick = onAutoConnect, modifier = Modifier.fillMaxWidth()) {
+                FilledTonalButton(onClick = onAutoConnect, shape = LR.control, modifier = Modifier.fillMaxWidth()) {
                     Text("Connect to discovered Mac")
                 }
+            }
+            if (connected) {
+                QuietDangerButton("Disconnect", onClick = onDisconnect, modifier = Modifier.fillMaxWidth())
             }
         }
     }
 
     @Composable
     private fun PairingCard(
-        hostInput: String, portInput: String, tokenInput: String,
-        onHostChange: (String) -> Unit,
-        onPortChange: (String) -> Unit,
-        onTokenChange: (String) -> Unit,
+        tokenInput: String,
         onScanQR: () -> Unit,
-        onConnectUSB: () -> Unit,
-        onConnectWiFi: () -> Unit,
-        onDisconnect: () -> Unit
+        onConnectUSB: () -> Unit
     ) {
         AppCard {
-            CardTitle("Pair with your Mac")
-
-            Button(onClick = onScanQR, modifier = Modifier.fillMaxWidth()) {
-                Text("Scan Mac QR code", fontWeight = FontWeight.SemiBold)
+            Button(onClick = onScanQR, shape = LR.control, modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_qr),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(LS.s))
+                Text("Scan Mac QR code")
             }
-            FilledTonalButton(onClick = onConnectUSB, modifier = Modifier.fillMaxWidth()) {
+            FilledTonalButton(onClick = onConnectUSB, shape = LR.control, modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_usb),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(LS.s))
                 Text("Connect via USB")
-            }
-
-            OutlinedTextField(
-                value = hostInput,
-                onValueChange = onHostChange,
-                label = { Text("Mac local Wi-Fi address") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(LS.s)) {
-                OutlinedTextField(
-                    value = portInput,
-                    onValueChange = onPortChange,
-                    label = { Text("Port") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f)
-                )
-                OutlinedTextField(
-                    value = tokenInput,
-                    onValueChange = onTokenChange,
-                    label = { Text("Pairing token") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(LS.s)) {
-                Button(onClick = onConnectWiFi, modifier = Modifier.weight(1f)) {
-                    Text("Connect")
-                }
-                OutlinedButton(onClick = onDisconnect, modifier = Modifier.weight(1f)) {
-                    Text("Disconnect")
-                }
             }
         }
     }
 
     @Composable
-    private fun QuickActionsCard(onPushClipboard: () -> Unit, onSyncSms: () -> Unit) {
-        AppCard {
-            CardTitle("Quick actions")
-            Row(horizontalArrangement = Arrangement.spacedBy(LS.s)) {
-                FilledTonalButton(onClick = onPushClipboard, modifier = Modifier.weight(1f)) {
-                    Text("Push clipboard")
-                }
-                FilledTonalButton(onClick = onSyncSms, modifier = Modifier.weight(1f)) {
-                    Text("Sync SMS & contacts")
-                }
-            }
+    private fun HairlineDivider() {
+        val status = linkStatusColors()
+        HorizontalDivider(color = status.hairline)
+    }
+
+    @Composable
+    private fun PermissionTile(iconRes: Int) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, LR.control)
+                .padding(7.dp)
+        ) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 
@@ -346,94 +371,85 @@ class MainActivity : ComponentActivity() {
         onOpenBatterySettings: () -> Unit,
         onOpenAccessibilitySettings: () -> Unit
     ) {
-        val status = linkStatusColors()
-        AppCard {
-            CardTitle("Companion permissions")
+        data class Row(
+            val icon: Int,
+            val title: String,
+            val subtitle: String,
+            val granted: Boolean,
+            val onFix: () -> Unit
+        )
 
-            PermissionRow(
+        val missing = listOf(
+            Row(
+                icon = R.drawable.ic_chat,
                 title = "Messages, calls & camera",
                 subtitle = "SMS, contacts, phone state, camera and microphone",
                 granted = states.runtime,
                 onFix = onRequestRuntime
-            )
-            PermissionRow(
+            ),
+            Row(
+                icon = R.drawable.ic_bell,
                 title = "Notification mirroring",
                 subtitle = "Read and reply to phone notifications from your Mac",
                 granted = states.notificationListener,
                 onFix = onOpenNotificationSettings
-            )
-            PermissionRow(
+            ),
+            Row(
+                icon = R.drawable.ic_folder,
                 title = "File access",
                 subtitle = "Browse and transfer files & photos",
                 granted = states.storage,
                 onFix = onOpenStorageSettings
-            )
-            PermissionRow(
+            ),
+            Row(
+                icon = R.drawable.ic_battery,
                 title = "Unrestricted battery",
                 subtitle = "Keep the connection alive in the background",
                 granted = states.battery,
                 onFix = onOpenBatterySettings
-            )
-            PermissionRow(
+            ),
+            Row(
+                icon = R.drawable.ic_accessibility,
                 title = "Accessibility service",
                 subtitle = "Wireless touch, mirroring and background clipboard",
                 granted = states.accessibility,
                 onFix = onOpenAccessibilitySettings
             )
+        ).filter { !it.granted }
 
-            if (states.allGranted) {
+        if (missing.isEmpty()) return
+
+        AppCard {
+            Text(
+                "Permissions needed",
+                fontSize = LT.section,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            missing.forEachIndexed { index, row ->
+                if (index > 0) HairlineDivider()
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(LS.m),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        Icons.Outlined.Check,
-                        contentDescription = null,
-                        tint = status.success
-                    )
-                    Text(
-                        "Everything is set up — LinkToMac is ready.",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    PermissionTile(row.icon)
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            row.title,
+                            fontSize = LT.body,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            row.subtitle,
+                            fontSize = LT.caption,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    FilledTonalButton(onClick = row.onFix, shape = LR.control) { Text("Fix") }
                 }
-            }
-        }
-    }
-
-    @Composable
-    private fun PermissionRow(
-        title: String,
-        subtitle: String,
-        granted: Boolean,
-        onFix: () -> Unit
-    ) {
-        val status = linkStatusColors()
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(LS.m),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Check,
-                contentDescription = if (granted) "Granted" else null,
-                tint = if (granted) status.success else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-            Column(Modifier.weight(1f)) {
-                Text(
-                    title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    subtitle,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (!granted) {
-                FilledTonalButton(onClick = onFix) { Text("Fix") }
             }
         }
     }
@@ -581,12 +597,13 @@ class MainActivity : ComponentActivity() {
         }.start()
     }
 
-    private fun triggerConnect(host: String, port: Int, token: String) {
+    private fun triggerConnect(host: String, port: Int, token: String, macName: String = "") {
         startService(Intent(this, LinkConnectionService::class.java).apply {
             action = "CONNECT_HOST"
             putExtra("host", host)
             putExtra("port", port)
             putExtra("token", token)
+            putExtra("macName", macName)
         })
     }
 }

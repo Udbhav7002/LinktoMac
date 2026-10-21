@@ -82,7 +82,6 @@ EXCLUDED_EXTS = {
 
 EXCLUDED_FILES = {
     "all_code.md",
-    "export_all_code.py",
     "gradle-wrapper.jar",
     "server.jar",
     "app-debug.apk",

@@ -26,6 +26,7 @@ class LinkConnectionService : Service() {
         var statusMessage: String = "Disconnected"
         var discoveredMacHost: String = ""
         var discoveredMacPort: Int = 54921
+        var connectedMacName: String = ""
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -47,6 +48,7 @@ class LinkConnectionService : Service() {
         SmsContactsCallBridge.registerCallStateReceiver(this)
 
         // Automatically connect to remembered device on startup
+        connectedMacName = getSharedPreferences("linktomac", MODE_PRIVATE).getString("lastMacName", "") ?: ""
         autoConnectRemembered()
     }
 
@@ -68,6 +70,13 @@ class LinkConnectionService : Service() {
             val host = intent.getStringExtra("host") ?: "127.0.0.1"
             val port = intent.getIntExtra("port", 54921)
             val token = intent.getStringExtra("token") ?: ""
+            val macName = intent.getStringExtra("macName") ?: ""
+            if (macName.isNotBlank()) {
+                connectedMacName = macName
+                getSharedPreferences("linktomac", MODE_PRIVATE).edit()
+                    .putString("lastMacName", macName)
+                    .apply()
+            }
             connectToMac(host, port, token)
         } else if (action == "DISCONNECT") {
             userRequestedDisconnect = true
@@ -104,6 +113,7 @@ class LinkConnectionService : Service() {
 
                 sendHelloAndStatus(transport, token)
                 startStatusHeartbeat(transport)
+                runAutoSync()
                 readLoop(DataInputStream(s.getInputStream()))
             } catch (e: Exception) {
                 isConnectedState = false
@@ -112,6 +122,17 @@ class LinkConnectionService : Service() {
                     scheduleReconnect()
                 }
             }
+        }
+    }
+
+    // Push the current clipboard and a fresh SMS/contacts snapshot on every
+    // successful connection so the Mac is always up to date without manual taps.
+    private fun runAutoSync() {
+        ClipboardManagerBridge.sendCurrentClipboardToMac(this)
+        serviceScope.launch {
+            try {
+                SmsContactsCallBridge.syncSmsAndContactsToMac(this@LinkConnectionService)
+            } catch (_: Exception) {}
         }
     }
 
@@ -392,6 +413,7 @@ class LinkConnectionService : Service() {
 
                         sendHelloAndStatus(transport, targetToken)
                         startStatusHeartbeat(transport)
+                        runAutoSync()
                         readLoop(DataInputStream(s.getInputStream()))
                         break
                     } catch (_: Exception) {

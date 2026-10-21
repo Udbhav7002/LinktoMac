@@ -4,6 +4,7 @@ update_allcode_bundles.py
 Syncs all source code files from allcode/ directly into
 docs/bundles/linktomac_complete_android_source_code.md and
 docs/bundles/linktomac_complete_macos_source_code.md.
+Dynamically discovers all files so no piece of code is ever missed.
 """
 
 import os
@@ -19,47 +20,74 @@ EXT_TO_LANG = {
     ".plist": "xml",
     ".properties": "properties",
     ".sh": "bash",
+    "": "bash",
 }
 
-ANDROID_FILES = [
-    "allcode/LinkToMac-Android/settings.gradle.kts",
-    "allcode/LinkToMac-Android/gradle.properties",
-    "allcode/LinkToMac-Android/gradle/wrapper/gradle-wrapper.properties",
-    "allcode/LinkToMac-Android/build.gradle.kts",
-    "allcode/LinkToMac-Android/app/build.gradle.kts",
-    "allcode/LinkToMac-Android/app/src/main/AndroidManifest.xml",
-    "allcode/LinkToMac-Android/app/src/main/res/values/strings.xml",
-    "allcode/LinkToMac-Android/app/src/main/res/xml/accessibility_service_config.xml",
-    "allcode/LinkToMac-Android/app/src/main/res/xml/link_accessibility_config.xml",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ProtocolModels.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkTouchAccessibilityService.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkConnectionService.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/LinkNotificationService.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/SmsContactsCallBridge.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/FilePhotosBridge.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/ScreenCameraStreamer.kt",
-    "allcode/LinkToMac-Android/app/src/main/java/com/linktomac/android/MainActivity.kt",
-]
+EXCLUDED_NAMES = {
+    "local.properties",
+    ".DS_Store",
+}
 
-MACOS_FILES = [
-    "allcode/LinkToMac-macOS/Package.swift",
-    "allcode/LinkToMac-macOS/Info.plist",
-    "allcode/LinkToMac-macOS/build_mac_app.sh",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/ConnectionManager.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift",
-    "allcode/LinkToMac-macOS/Sources/LinkToMac/LinkToMacApp.swift",
-]
+EXCLUDED_PARTS = {
+    ".git",
+    ".gradle",
+    ".build",
+    "build",
+    "__pycache__",
+    ".idea",
+    ".vscode",
+}
+
+EXCLUDED_EXTS = {
+    ".jar",
+    ".class",
+    ".dex",
+    ".apk",
+    ".app",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".ico",
+    ".dylib",
+    ".so",
+    ".a",
+    ".o",
+}
+
+def discover_files(directory: str) -> list[str]:
+    target_dir = REPO_ROOT / directory
+    if not target_dir.exists():
+        return []
+
+    collected = []
+    for f in target_dir.rglob("*"):
+        if not f.is_file():
+            continue
+        if any(part in EXCLUDED_PARTS for part in f.parts):
+            continue
+        if f.name in EXCLUDED_NAMES or f.suffix.lower() in EXCLUDED_EXTS:
+            continue
+        rel = f.relative_to(REPO_ROOT).as_posix()
+        collected.append(rel)
+
+    def sort_key(path_str: str):
+        # Sort priority: Root configs -> manifests / resources -> sources
+        name = Path(path_str).name
+        if name in ("Package.swift", "settings.gradle.kts", "build.gradle.kts"):
+            return (0, path_str)
+        if name.endswith((".properties", ".plist", ".xml")):
+            return (1, path_str)
+        if name.endswith((".swift", ".kt", ".kts")):
+            return (2, path_str)
+        return (3, path_str)
+
+    return sorted(collected, key=sort_key)
 
 def generate_markdown(title: str, file_list: list[str]) -> str:
     lines = [
         f"# {title}",
         "",
-        f"Every file below belongs inside the codebase. Run `python3 scripts/stitch_allcode.py` to extract them automatically.",
+        "Every file below belongs inside the codebase. Run `python3 scripts/stitch_allcode.py` to extract them automatically.",
         "",
         "---",
         ""
@@ -71,10 +99,10 @@ def generate_markdown(title: str, file_list: list[str]) -> str:
             continue
         ext = p.suffix.lower()
         lang = EXT_TO_LANG.get(ext, "text")
-        content = p.read_text(encoding="utf-8")
+        content = p.read_text(encoding="utf-8", errors="replace")
         lines.append(f"### FILE: {rel_path}")
         lines.append(f"```{lang}")
-        lines.append(content)
+        lines.append(content.rstrip())
         lines.append("```")
         lines.append("")
         lines.append("---")
@@ -85,21 +113,23 @@ def main():
     bundles_dir = REPO_ROOT / "docs" / "bundles"
     bundles_dir.mkdir(parents=True, exist_ok=True)
 
+    android_files = discover_files("allcode/LinkToMac-Android")
     android_md = generate_markdown(
         "LinkToMac — Complete Android Source Code (`allcode/LinkToMac-Android`)",
-        ANDROID_FILES
+        android_files
     )
     android_target = bundles_dir / "linktomac_complete_android_source_code.md"
     android_target.write_text(android_md, encoding="utf-8")
-    print(f"[OK] Updated {android_target.relative_to(REPO_ROOT)} ({len(ANDROID_FILES)} files)")
+    print(f"[OK] Updated {android_target.relative_to(REPO_ROOT)} ({len(android_files)} files)")
 
+    macos_files = discover_files("allcode/LinkToMac-macOS")
     macos_md = generate_markdown(
         "LinkToMac — Complete macOS Source Code (`allcode/LinkToMac-macOS`)",
-        MACOS_FILES
+        macos_files
     )
     macos_target = bundles_dir / "linktomac_complete_macos_source_code.md"
     macos_target.write_text(macos_md, encoding="utf-8")
-    print(f"[OK] Updated {macos_target.relative_to(REPO_ROOT)} ({len(MACOS_FILES)} files)")
+    print(f"[OK] Updated {macos_target.relative_to(REPO_ROOT)} ({len(macos_files)} files)")
 
 if __name__ == "__main__":
     main()

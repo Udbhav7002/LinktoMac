@@ -24,15 +24,6 @@ let package = Package(
         )
     ]
 )
-
-
-
-
-
-
-
-
-
 ```
 
 ---
@@ -73,242 +64,425 @@ let package = Package(
     </array>
 </dict>
 </plist>
-
-
-
-
-
-
-
-
-
 ```
 
 ---
 
-### FILE: allcode/LinkToMac-macOS/build_mac_app.sh
-```bash
-#!/usr/bin/env bash
-set -e
-
-echo "=========================================="
-echo " Building LinkToMac for macOS (v1.61)..."
-echo "=========================================="
-
-swift build -c release
-
-APP_DIR="build/LinkToMac.app"
-CONTENTS_DIR="$APP_DIR/Contents"
-MACOS_DIR="$CONTENTS_DIR/MacOS"
-RESOURCES_DIR="$CONTENTS_DIR/Resources"
-
-rm -rf "$APP_DIR"
-mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
-
-cp ".build/release/LinkToMac" "$MACOS_DIR/LinkToMac"
-cp "Info.plist" "$CONTENTS_DIR/Info.plist"
-chmod +x "$MACOS_DIR/LinkToMac"
-
-# Ad-hoc sign so macOS Local Network & Notification permissions work smoothly
-codesign --force --deep --sign - "$APP_DIR"
-
-echo "=========================================="
-echo " SUCCESS: Built $APP_DIR"
-echo " Run with: open $APP_DIR"
-echo "=========================================="
-
-
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift
 ```swift
 import Foundation
 
-// MARK: - Binary Wire Frame Constants
-enum WireFrameType: UInt8 {
-    case jsonControl = 0x01
-    case fileChunk   = 0x02
-    case videoFrame  = 0x03
-    case audioFrame  = 0x04
-}
+@MainActor
+final class ADBBridge: ObservableObject {
+    static let shared = ADBBridge()
 
-// MARK: - Top-Level JSON Envelope
-struct LinkEnvelope: Codable {
-    var type: String
-    var timestamp: Int64 = Int64(Date().timeIntervalSince1970 * 1000)
-    var payload: [String: String] = [:]
-    var notifications: [AndroidNotificationItem]? = nil
-    var smsThreads: [SmsThreadItem]? = nil
-    var contacts: [AndroidContactItem]? = nil
-    var files: [RemoteFileItem]? = nil
-    var photos: [RemotePhotoItem]? = nil
-}
+    @Published var isUSBDeviceConnected: Bool = false
+    @Published var usbSerial: String = ""
+    @Published var isScrcpyAvailable: Bool = false
+    @Published var deviceScreenWidth: Int = 1080
+    @Published var deviceScreenHeight: Int = 2400
 
-// MARK: - Feature Models
-struct AndroidNotificationItem: Identifiable, Codable, Hashable {
-    var id: String
-    var packageName: String
-    var appName: String
-    var title: String
-    var body: String
-    var timestamp: Int64
-    var canReply: Bool
-    var otpCode: String?
-    var replySentText: String?
-}
+    private var timer: Timer?
 
-struct SmsMessageItem: Identifiable, Codable, Hashable {
-    var id: String
-    var address: String
-    var body: String
-    var date: Int64
-    var isIncoming: Bool
-}
-
-struct SmsThreadItem: Identifiable, Codable, Hashable {
-    var id: String // phone number / address
-    var contactName: String
-    var address: String
-    var lastMessage: String
-    var timestamp: Int64
-    var messages: [SmsMessageItem]
-}
-
-struct AndroidContactItem: Identifiable, Codable, Hashable {
-    var id: String
-    var name: String
-    var phoneNumber: String
-}
-
-struct RemoteFileItem: Identifiable, Codable, Hashable {
-    var id: String { path }
-    var name: String
-    var path: String
-    var sizeBytes: Int64
-    var isDirectory: Bool
-    var lastModified: Int64
-}
-
-struct RemotePhotoItem: Identifiable, Codable, Hashable {
-    var id: String
-    var name: String
-    var path: String
-    var dateTaken: Int64
-    var sizeBytes: Int64
-    var isVideo: Bool
-    var thumbnailBase64: String?
-}
-
-struct ClipboardHistoryItem: Identifiable, Hashable {
-    let id = UUID()
-    let content: String
-    let isUrl: Bool
-    let source: String // "Android" or "This Mac"
-    let timestamp: Date
-}
-
-struct ActiveTransferItem: Identifiable {
-    let id: String
-    var fileName: String
-    var direction: String // "Sending to Android" or "Receiving from Android"
-    var totalBytes: Int64
-    var transferredBytes: Int64
-    var transport: String
-    var isCompleted: Bool = false
-
-    var progress: Double {
-        guard totalBytes > 0 else { return 0 }
-        return min(1.0, Double(transferredBytes) / Double(totalBytes))
-    }
-}
-
-struct IncomingCallState: Equatable {
-    var isActive: Bool = false
-    var state: String = "IDLE" // "RINGING", "OFFHOOK", "IDLE"
-    var phoneNumber: String = ""
-    var contactName: String = ""
-    var isMuted: Bool = false
-}
-
-// MARK: - Wire Framing Helper
-enum WireFramer {
-    static func packJSON(_ envelope: LinkEnvelope) -> Data? {
-        guard let jsonData = try? JSONEncoder().encode(envelope) else { return nil }
-        return packFrame(type: .jsonControl, payload: jsonData)
+    private init() {
+        checkScrcpyInstalled()
+        startPolling()
     }
 
-    static func packFrame(type: WireFrameType, payload: Data) -> Data {
-        var lengthBE = UInt32(payload.count).bigEndian
-        var header = Data(bytes: &lengthBE, count: 4)
-        header.append(type.rawValue)
-        header.append(payload)
-        return header
+    func startPolling() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.pollUSBDevices()
+            }
+        }
+        pollUSBDevices()
+    }
+
+    private func findBinary(_ name: String) -> String? {
+        let candidates = [
+            "/opt/homebrew/bin/\(name)",
+            "/usr/local/bin/\(name)",
+            "\(NSHomeDirectory())/Library/Android/sdk/platform-tools/\(name)",
+            "/usr/bin/\(name)"
+        ]
+        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
+    }
+
+    func checkScrcpyInstalled() {
+        isScrcpyAvailable = (findBinary("scrcpy") != nil)
+    }
+
+    func pollUSBDevices() {
+        guard let adbPath = findBinary("adb") else { return }
+        Task.detached {
+            let output = Self.runCommand(adbPath, args: ["devices"])
+            let lines = output.components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty && !$0.hasPrefix("List of devices") && $0.hasSuffix("\tdevice") }
+
+            if let firstLine = lines.first,
+               let serial = firstLine.components(separatedBy: "\t").first {
+                // Ensure port 54921 is reversed so the Android app can connect over USB via 127.0.0.1:54921
+                _ = Self.runCommand(adbPath, args: ["-s", serial, "reverse", "tcp:54921", "tcp:54921"])
+
+                // Query actual screen width/height via adb shell wm size
+                let wmOutput = Self.runCommand(adbPath, args: ["-s", serial, "shell", "wm", "size"])
+                var detectedW = 0
+                var detectedH = 0
+                for line in wmOutput.components(separatedBy: .newlines) {
+                    let trimmed = line.trimmingCharacters(in: .whitespaces)
+                    if trimmed.contains("size:") {
+                        let parts = trimmed.components(separatedBy: "size:")
+                        if parts.count > 1 {
+                            let dims = parts[1].trimmingCharacters(in: .whitespaces).components(separatedBy: "x")
+                            if dims.count == 2, let w = Int(dims[0]), let h = Int(dims[1]) {
+                                detectedW = w
+                                detectedH = h
+                            }
+                        }
+                    }
+                }
+
+                let finalW = detectedW
+                let finalH = detectedH
+
+                await MainActor.run {
+                    let wasConnected = ADBBridge.shared.isUSBDeviceConnected
+                    ADBBridge.shared.isUSBDeviceConnected = true
+                    ADBBridge.shared.usbSerial = serial
+                    if !wasConnected {
+                        ADBBridge.shared.unlockBackgroundClipboardViaADB()
+                    }
+                    if finalW > 0 && finalH > 0 {
+                        ADBBridge.shared.deviceScreenWidth = finalW
+                        ADBBridge.shared.deviceScreenHeight = finalH
+                        ConnectionManager.shared.androidScreenWidth = Double(finalW)
+                        ConnectionManager.shared.androidScreenHeight = Double(finalH)
+                        ConnectionManager.shared.deviceScreenWidth = finalW
+                        ConnectionManager.shared.deviceScreenHeight = finalH
+                    }
+                    if ConnectionManager.shared.isConnected {
+                        ConnectionManager.shared.connectionTransport = "USB"
+                    }
+                }
+            } else {
+                await MainActor.run {
+                    ADBBridge.shared.isUSBDeviceConnected = false
+                    ADBBridge.shared.usbSerial = ""
+                    if ConnectionManager.shared.isConnected && ConnectionManager.shared.connectionTransport == "USB" {
+                        ConnectionManager.shared.connectionTransport = "Local Wi-Fi"
+                    }
+                }
+            }
+        }
+    }
+
+    func launchNativeScrcpy(screenOff: Bool, stayAwake: Bool) {
+        guard let scrcpyPath = findBinary("scrcpy") else { return }
+        var args = ["--window-title", "LinkToMac — \(ConnectionManager.shared.connectedDeviceName)"]
+        if screenOff {
+            args.append("--turn-screen-off")
+        }
+        if stayAwake {
+            args.append("--stay-awake")
+        }
+        Task.detached {
+            let proc = Process()
+            proc.executableURL = URL(fileURLWithPath: scrcpyPath)
+            proc.arguments = args
+            try? proc.run()
+        }
+    }
+
+    func injectTapNormalized(x: Double, y: Double) {
+        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
+        let w = ConnectionManager.shared.androidScreenWidth > 0 ? ConnectionManager.shared.androidScreenWidth : 1080.0
+        let h = ConnectionManager.shared.androidScreenHeight > 0 ? ConnectionManager.shared.androidScreenHeight : 2400.0
+        let px = Int(x * w)
+        let py = Int(y * h)
+        Task.detached {
+            _ = Self.runCommand(adbPath, args: ["shell", "input", "tap", "\(px)", "\(py)"])
+        }
+    }
+
+    func injectKeyEvent(_ keyCode: Int) {
+        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
+        Task.detached {
+            _ = Self.runCommand(adbPath, args: ["shell", "input", "keyevent", "\(keyCode)"])
+        }
+    }
+
+    func unlockBackgroundClipboardViaADB() {
+        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
+        Task.detached {
+            _ = Self.runCommand(adbPath, args: ["shell", "cmd", "appops", "set", "com.linktomac.android", "SYSTEM_ALERT_WINDOW", "allow"])
+            _ = Self.runCommand(adbPath, args: ["shell", "pm", "grant", "com.linktomac.android", "android.permission.READ_LOGS"])
+        }
+    }
+
+    nonisolated private static func runCommand(_ executable: String, args: [String]) -> String {
+        let process = Process()
+        let pipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = args
+        process.standardOutput = pipe
+        process.standardError = pipe
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            return String(data: data, encoding: .utf8) ?? ""
+        } catch {
+            return ""
+        }
     }
 }
-
-
-
-
-
-
-
-
-
 ```
 
 ---
 
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift
+```swift
+import Foundation
+import AppKit
+
+@MainActor
+final class ClipboardSyncManager: ObservableObject {
+    static let shared = ClipboardSyncManager()
+
+    @Published var isSyncEnabled: Bool = true
+    @Published var ignoreConcealedPasswords: Bool = true
+    @Published var history: [ClipboardHistoryItem] = []
+
+    private var lastChangeCount: Int = NSPasteboard.general.changeCount
+    private var lastSyncedString: String = ""
+    private var pollTimer: Timer?
+
+    private init() {
+        startMonitoring()
+    }
+
+    func startMonitoring() {
+        pollTimer?.invalidate()
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.65, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.checkMacPasteboard()
+            }
+        }
+    }
+
+    private func checkMacPasteboard() {
+        guard isSyncEnabled else { return }
+        let pb = NSPasteboard.general
+        guard pb.changeCount != lastChangeCount else { return }
+        lastChangeCount = pb.changeCount
+
+        // Respect password managers (1Password, Bitwarden, Keychain)
+        if ignoreConcealedPasswords {
+            let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+            if pb.types?.contains(concealedType) == true {
+                return
+            }
+        }
+
+        guard let copied = pb.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !copied.isEmpty,
+              copied != lastSyncedString else { return }
+
+        lastSyncedString = copied
+        let isUrl = copied.hasPrefix("http://") || copied.hasPrefix("https://")
+        recordHistory(content: copied, isUrl: isUrl, source: "This Mac")
+
+        if ConnectionManager.shared.isConnected {
+            ConnectionManager.shared.sendEnvelope(LinkEnvelope(
+                type: "CLIPBOARD_SYNC",
+                payload: [
+                    "content": copied,
+                    "isUrl": isUrl ? "true" : "false"
+                ]
+            ))
+        }
+    }
+
+    func applyIncomingFromAndroid(text: String) {
+        guard isSyncEnabled, text != lastSyncedString else { return }
+        lastSyncedString = text
+
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(text, forType: .string)
+        lastChangeCount = pb.changeCount
+
+        let isUrl = text.hasPrefix("http://") || text.hasPrefix("https://")
+        recordHistory(content: text, isUrl: isUrl, source: "Android")
+    }
+
+    func copyItemToMac(_ item: ClipboardHistoryItem) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(item.content, forType: .string)
+        lastChangeCount = pb.changeCount
+        lastSyncedString = item.content
+    }
+
+    func handoffURLToAndroid(_ urlString: String) {
+        ConnectionManager.shared.sendEnvelope(LinkEnvelope(
+            type: "URL_HANDOFF",
+            payload: ["url": urlString]
+        ))
+    }
+
+    private func recordHistory(content: String, isUrl: Bool, source: String) {
+        history.removeAll { $0.content == content }
+        history.insert(ClipboardHistoryItem(
+            content: content,
+            isUrl: isUrl,
+            source: source,
+            timestamp: Date()
+        ), at: 0)
+        if history.count > 40 {
+            history.removeLast()
+        }
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardView.swift
 ```swift
 import SwiftUI
+import AppKit
 
-@propertyWrapper
-public struct LocalState<Value>: DynamicProperty {
-    @StateObject private var container: Container
+// MARK: - Universal clipboard & URL handoff workspace
+struct ClipboardWorkspaceView: View {
+    @ObservedObject var clip = ClipboardSyncManager.shared
+    @LocalState private var handoffURLInput: String = ""
 
-    final class Container: ObservableObject {
-        @Published var value: Value
-        init(_ value: Value) { self.value = value }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SectionHeader(title: "Clipboard",
+                          subtitle: "Copy on Android, paste on Mac — and the other way around") {
+                Toggle("Sync", isOn: $clip.isSyncEnabled)
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .help("Keep both clipboards in sync")
+                Toggle("Ignore password managers", isOn: $clip.ignoreConcealedPasswords)
+                    .toggleStyle(.checkbox)
+                    .help("Never sync concealed pasteboard items (1Password, Bitwarden, Keychain)")
+            }
+
+            // URL handoff bar
+            HStack(spacing: LS.s) {
+                Image(systemName: "link")
+                    .foregroundStyle(LinkTheme.textTertiary)
+                TextField("Paste a URL to open it on your Android phone", text: $handoffURLInput)
+                    .textFieldStyle(LinkTextFieldStyle())
+                    .onSubmit { sendHandoff() }
+                Button {
+                    sendHandoff()
+                } label: {
+                    Label("Open on phone", systemImage: "arrow.up.forward")
+                }
+                .buttonStyle(.primary)
+                .disabled(handoffURLInput.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .padding(.horizontal, LS.xl)
+            .padding(.bottom, LS.m)
+
+            if clip.history.isEmpty {
+                EmptyStateView(
+                    icon: "doc.on.clipboard",
+                    title: "Nothing synced yet",
+                    message: "Copy text or a link on either device and it will appear here, ready to use on the other."
+                )
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: LS.s) {
+                        ForEach(clip.history) { item in
+                            ClipboardRow(item: item)
+                        }
+                    }
+                    .padding(.horizontal, LS.xl)
+                    .padding(.bottom, LS.xl)
+                }
+            }
+        }
+        .background(LinkTheme.canvas)
     }
 
-    public init(wrappedValue: Value) {
-        _container = StateObject(wrappedValue: Container(wrappedValue))
-    }
-
-    public init() where Value: ExpressibleByNilLiteral {
-        self.init(wrappedValue: nil)
-    }
-
-    public var wrappedValue: Value {
-        get { container.value }
-        nonmutating set { container.value = newValue }
-    }
-
-    public var projectedValue: Binding<Value> {
-        Binding(
-            get: { self.container.value },
-            set: { self.container.value = $0 }
-        )
+    private func sendHandoff() {
+        let trimmed = handoffURLInput.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        clip.handoffURLToAndroid(trimmed)
+        handoffURLInput = ""
     }
 }
 
+// MARK: - One clipboard history row
+struct ClipboardRow: View {
+    let item: ClipboardHistoryItem
+    @ObservedObject private var clip = ClipboardSyncManager.shared
 
+    var body: some View {
+        HStack(spacing: LS.m) {
+            Image(systemName: item.isUrl ? "link" : "doc.on.clipboard")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(item.isUrl ? LinkTheme.accent : LinkTheme.textTertiary)
+                .frame(width: 20)
 
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.content)
+                    .font(.subheadline.monospaced() as Font)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                    .lineLimit(2)
+                HStack(spacing: LS.s) {
+                    Text(item.source)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(LinkTheme.textSecondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(LinkTheme.surfaceAlt)
+                        .clipShape(Capsule())
+                    Text(item.timestamp.formatted(date: .omitted, time: .standard))
+                        .font(.caption2)
+                        .foregroundStyle(LinkTheme.textTertiary)
+                }
+            }
 
+            Spacer(minLength: LS.s)
 
+            HStack(spacing: LS.xs) {
+                if item.isUrl, let url = URL(string: item.content) {
+                    Button {
+                        NSWorkspace.shared.open(url)
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    }
+                    .buttonStyle(.icon)
+                    .help("Open on this Mac")
 
-
-
-
+                    Button {
+                        clip.handoffURLToAndroid(item.content)
+                    } label: {
+                        Image(systemName: "arrow.up.forward")
+                    }
+                    .buttonStyle(.icon)
+                    .help("Open on your Android phone")
+                }
+                Button {
+                    clip.copyItemToMac(item)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                }
+                .buttonStyle(.icon)
+                .help("Copy to this Mac's clipboard")
+            }
+        }
+        .linkCard(padding: LS.m)
+    }
+}
 ```
 
 ---
@@ -336,7 +510,7 @@ final class ConnectionManager: ObservableObject {
     @Published var listenPort: UInt16 = 54921
     @Published var pairingToken: String = ""
 
-    // Feature State
+    @Published var isRingingPhone: Bool = false
     @Published var notifications: [AndroidNotificationItem] = []
     @Published var mutedApps: Set<String> = []
     @Published var smsThreads: [SmsThreadItem] = []
@@ -370,6 +544,9 @@ final class ConnectionManager: ObservableObject {
 
     private init() {
         self.localIPAddress = Self.detectLocalIPAddress() ?? "127.0.0.1"
+        if let savedName = UserDefaults.standard.string(forKey: "LinkToMacLastDeviceName"), !savedName.isEmpty {
+            self.connectedDeviceName = savedName
+        }
         if let savedToken = UserDefaults.standard.string(forKey: "LinkToMacPairingToken"), !savedToken.isEmpty {
             self.pairingToken = savedToken
         } else {
@@ -387,7 +564,12 @@ final class ConnectionManager: ObservableObject {
     func startServer() {
         listener?.cancel()
         do {
-            let params = NWParameters.tcp
+            let tcpOptions = NWProtocolTCP.Options()
+            tcpOptions.enableKeepalive = true
+            tcpOptions.keepaliveIdle = 5
+            tcpOptions.keepaliveInterval = 5
+            tcpOptions.keepaliveCount = 3
+            let params = NWParameters(tls: nil, tcp: tcpOptions)
             params.allowLocalEndpointReuse = true
             let nwPort = NWEndpoint.Port(rawValue: listenPort)!
             let newListener = try NWListener(using: params, on: nwPort)
@@ -428,6 +610,7 @@ final class ConnectionManager: ObservableObject {
                 case .failed, .cancelled:
                     if self.activeConnection === connection {
                         self.isConnected = false
+                        self.isRingingPhone = false
                         self.connectionTransport = "Disconnected"
                     }
                 default:
@@ -490,7 +673,10 @@ final class ConnectionManager: ObservableObject {
 
         switch env.type {
         case "HELLO", "STATUS_UPDATE":
-            if let name = env.payload["deviceName"] { self.connectedDeviceName = name }
+            if let name = env.payload["deviceName"] {
+                self.connectedDeviceName = name
+                UserDefaults.standard.set(name, forKey: "LinkToMacLastDeviceName")
+            }
             if let batStr = env.payload["battery"], let bat = Int(batStr) { self.batteryLevel = bat }
             if let chg = env.payload["charging"] { self.isCharging = (chg == "true") }
             if let trans = env.payload["transport"] {
@@ -827,7 +1013,22 @@ final class ConnectionManager: ObservableObject {
         }
     }
 
+    func ringPhone() {
+        isRingingPhone = true
+        sendMediaAction("RING_PHONE")
+    }
+
+    func stopRingingPhone() {
+        isRingingPhone = false
+        sendMediaAction("STOP_RING")
+    }
+
     func sendMediaAction(_ action: String) {
+        if action == "RING_PHONE" {
+            isRingingPhone = true
+        } else if action == "STOP_RING" || action == "STOP_RINGING" {
+            isRingingPhone = false
+        }
         sendEnvelope(LinkEnvelope(
             type: "MEDIA_ACTION",
             payload: ["action": action]
@@ -949,1149 +1150,164 @@ final class ConnectionManager: ObservableObject {
         return address
     }
 }
-
-
-
-
-
-
-
-
-
 ```
 
 ---
 
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ADBBridge.swift
-```swift
-import Foundation
-
-@MainActor
-final class ADBBridge: ObservableObject {
-    static let shared = ADBBridge()
-
-    @Published var isUSBDeviceConnected: Bool = false
-    @Published var usbSerial: String = ""
-    @Published var isScrcpyAvailable: Bool = false
-    @Published var deviceScreenWidth: Int = 1080
-    @Published var deviceScreenHeight: Int = 2400
-
-    private var timer: Timer?
-
-    private init() {
-        checkScrcpyInstalled()
-        startPolling()
-    }
-
-    func startPolling() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.pollUSBDevices()
-            }
-        }
-        pollUSBDevices()
-    }
-
-    private func findBinary(_ name: String) -> String? {
-        let candidates = [
-            "/opt/homebrew/bin/\(name)",
-            "/usr/local/bin/\(name)",
-            "\(NSHomeDirectory())/Library/Android/sdk/platform-tools/\(name)",
-            "/usr/bin/\(name)"
-        ]
-        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
-    }
-
-    func checkScrcpyInstalled() {
-        isScrcpyAvailable = (findBinary("scrcpy") != nil)
-    }
-
-    func pollUSBDevices() {
-        guard let adbPath = findBinary("adb") else { return }
-        Task.detached {
-            let output = Self.runCommand(adbPath, args: ["devices"])
-            let lines = output.components(separatedBy: .newlines)
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty && !$0.hasPrefix("List of devices") && $0.hasSuffix("\tdevice") }
-
-            if let firstLine = lines.first,
-               let serial = firstLine.components(separatedBy: "\t").first {
-                // Ensure port 54921 is reversed so the Android app can connect over USB via 127.0.0.1:54921
-                _ = Self.runCommand(adbPath, args: ["-s", serial, "reverse", "tcp:54921", "tcp:54921"])
-
-                // Query actual screen width/height via adb shell wm size
-                let wmOutput = Self.runCommand(adbPath, args: ["-s", serial, "shell", "wm", "size"])
-                var detectedW = 0
-                var detectedH = 0
-                for line in wmOutput.components(separatedBy: .newlines) {
-                    let trimmed = line.trimmingCharacters(in: .whitespaces)
-                    if trimmed.contains("size:") {
-                        let parts = trimmed.components(separatedBy: "size:")
-                        if parts.count > 1 {
-                            let dims = parts[1].trimmingCharacters(in: .whitespaces).components(separatedBy: "x")
-                            if dims.count == 2, let w = Int(dims[0]), let h = Int(dims[1]) {
-                                detectedW = w
-                                detectedH = h
-                            }
-                        }
-                    }
-                }
-
-                let finalW = detectedW
-                let finalH = detectedH
-
-                await MainActor.run {
-                    let wasConnected = ADBBridge.shared.isUSBDeviceConnected
-                    ADBBridge.shared.isUSBDeviceConnected = true
-                    ADBBridge.shared.usbSerial = serial
-                    if !wasConnected {
-                        ADBBridge.shared.unlockBackgroundClipboardViaADB()
-                    }
-                    if finalW > 0 && finalH > 0 {
-                        ADBBridge.shared.deviceScreenWidth = finalW
-                        ADBBridge.shared.deviceScreenHeight = finalH
-                        ConnectionManager.shared.androidScreenWidth = Double(finalW)
-                        ConnectionManager.shared.androidScreenHeight = Double(finalH)
-                        ConnectionManager.shared.deviceScreenWidth = finalW
-                        ConnectionManager.shared.deviceScreenHeight = finalH
-                    }
-                    if ConnectionManager.shared.isConnected {
-                        ConnectionManager.shared.connectionTransport = "USB"
-                    }
-                }
-            } else {
-                await MainActor.run {
-                    ADBBridge.shared.isUSBDeviceConnected = false
-                    ADBBridge.shared.usbSerial = ""
-                    if ConnectionManager.shared.isConnected && ConnectionManager.shared.connectionTransport == "USB" {
-                        ConnectionManager.shared.connectionTransport = "Local Wi-Fi"
-                    }
-                }
-            }
-        }
-    }
-
-    func launchNativeScrcpy(screenOff: Bool, stayAwake: Bool) {
-        guard let scrcpyPath = findBinary("scrcpy") else { return }
-        var args = ["--window-title", "LinkToMac — \(ConnectionManager.shared.connectedDeviceName)"]
-        if screenOff {
-            args.append("--turn-screen-off")
-        }
-        if stayAwake {
-            args.append("--stay-awake")
-        }
-        Task.detached {
-            let proc = Process()
-            proc.executableURL = URL(fileURLWithPath: scrcpyPath)
-            proc.arguments = args
-            try? proc.run()
-        }
-    }
-
-    func injectTapNormalized(x: Double, y: Double) {
-        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
-        let w = ConnectionManager.shared.androidScreenWidth > 0 ? ConnectionManager.shared.androidScreenWidth : 1080.0
-        let h = ConnectionManager.shared.androidScreenHeight > 0 ? ConnectionManager.shared.androidScreenHeight : 2400.0
-        let px = Int(x * w)
-        let py = Int(y * h)
-        Task.detached {
-            _ = Self.runCommand(adbPath, args: ["shell", "input", "tap", "\(px)", "\(py)"])
-        }
-    }
-
-    func injectKeyEvent(_ keyCode: Int) {
-        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
-        Task.detached {
-            _ = Self.runCommand(adbPath, args: ["shell", "input", "keyevent", "\(keyCode)"])
-        }
-    }
-
-    func unlockBackgroundClipboardViaADB() {
-        guard isUSBDeviceConnected, let adbPath = findBinary("adb") else { return }
-        Task.detached {
-            _ = Self.runCommand(adbPath, args: ["shell", "cmd", "appops", "set", "com.linktomac.android", "SYSTEM_ALERT_WINDOW", "allow"])
-            _ = Self.runCommand(adbPath, args: ["shell", "pm", "grant", "com.linktomac.android", "android.permission.READ_LOGS"])
-        }
-    }
-
-    nonisolated private static func runCommand(_ executable: String, args: [String]) -> String {
-        let process = Process()
-        let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = args
-        process.standardOutput = pipe
-        process.standardError = pipe
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            return String(data: data, encoding: .utf8) ?? ""
-        } catch {
-            return ""
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ClipboardSyncManager.swift
-```swift
-import Foundation
-import AppKit
-
-@MainActor
-final class ClipboardSyncManager: ObservableObject {
-    static let shared = ClipboardSyncManager()
-
-    @Published var isSyncEnabled: Bool = true
-    @Published var ignoreConcealedPasswords: Bool = true
-    @Published var history: [ClipboardHistoryItem] = []
-
-    private var lastChangeCount: Int = NSPasteboard.general.changeCount
-    private var lastSyncedString: String = ""
-    private var pollTimer: Timer?
-
-    private init() {
-        startMonitoring()
-    }
-
-    func startMonitoring() {
-        pollTimer?.invalidate()
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.65, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.checkMacPasteboard()
-            }
-        }
-    }
-
-    private func checkMacPasteboard() {
-        guard isSyncEnabled else { return }
-        let pb = NSPasteboard.general
-        guard pb.changeCount != lastChangeCount else { return }
-        lastChangeCount = pb.changeCount
-
-        // Respect password managers (1Password, Bitwarden, Keychain)
-        if ignoreConcealedPasswords {
-            let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
-            if pb.types?.contains(concealedType) == true {
-                return
-            }
-        }
-
-        guard let copied = pb.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !copied.isEmpty,
-              copied != lastSyncedString else { return }
-
-        lastSyncedString = copied
-        let isUrl = copied.hasPrefix("http://") || copied.hasPrefix("https://")
-        recordHistory(content: copied, isUrl: isUrl, source: "This Mac")
-
-        if ConnectionManager.shared.isConnected {
-            ConnectionManager.shared.sendEnvelope(LinkEnvelope(
-                type: "CLIPBOARD_SYNC",
-                payload: [
-                    "content": copied,
-                    "isUrl": isUrl ? "true" : "false"
-                ]
-            ))
-        }
-    }
-
-    func applyIncomingFromAndroid(text: String) {
-        guard isSyncEnabled, text != lastSyncedString else { return }
-        lastSyncedString = text
-
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(text, forType: .string)
-        lastChangeCount = pb.changeCount
-
-        let isUrl = text.hasPrefix("http://") || text.hasPrefix("https://")
-        recordHistory(content: text, isUrl: isUrl, source: "Android")
-    }
-
-    func copyItemToMac(_ item: ClipboardHistoryItem) {
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(item.content, forType: .string)
-        lastChangeCount = pb.changeCount
-        lastSyncedString = item.content
-    }
-
-    func handoffURLToAndroid(_ urlString: String) {
-        ConnectionManager.shared.sendEnvelope(LinkEnvelope(
-            type: "URL_HANDOFF",
-            payload: ["url": urlString]
-        ))
-    }
-
-    private func recordHistory(content: String, isUrl: Bool, source: String) {
-        history.removeAll { $0.content == content }
-        history.insert(ClipboardHistoryItem(
-            content: content,
-            isUrl: isUrl,
-            source: source,
-            timestamp: Date()
-        ), at: 0)
-        if history.count > 40 {
-            history.removeLast()
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift
-```swift
-import SwiftUI
-import CoreImage.CIFilterBuiltins
-
-enum DashboardSection: String, CaseIterable, Identifiable {
-    case overview      = "Dashboard"
-    case messages      = "Messages"
-    case notifications = "Notifications"
-    case files         = "Files"
-    case photos        = "Photos"
-    case clipboard     = "Clipboard"
-    case mirrorCamera  = "Mirror & Camera"
-    case pairSetup     = "Pair Device (QR)"
-
-    var id: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .overview:      return "laptopcomputer.and.iphone"
-        case .messages:      return "message.fill"
-        case .notifications: return "bell.badge.fill"
-        case .files:         return "folder.fill"
-        case .photos:        return "photo.on.rectangle.angled"
-        case .clipboard:     return "doc.on.clipboard.fill"
-        case .mirrorCamera:  return "rectangle.inset.filled.and.person.filled"
-        case .pairSetup:     return "qrcode.viewfinder"
-        }
-    }
-}
-
-struct MainDashboardView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var adb = ADBBridge.shared
-    @ObservedObject var clip = ClipboardSyncManager.shared
-    @LocalState private var selectedSection: DashboardSection = .overview
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            NavigationSplitView {
-                VStack(alignment: .leading, spacing: 12) {
-                    // Brand Header
-                    HStack(spacing: 10) {
-                        Image(systemName: "link.circle.fill")
-                            .font(.system(size: 26))
-                            .foregroundStyle(.green)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("LinkToMac")
-                                .font(.headline.bold())
-                            Text("v1.61 • Local & Private")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-
-                    // Live Connection Pill
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Circle()
-                                .fill(conn.isConnected ? Color.green : Color.orange)
-                                .frame(width: 9, height: 9)
-                            Text(conn.isConnected ? conn.connectedDeviceName : "Waiting for Android")
-                                .font(.subheadline.weight(.semibold))
-                                .lineLimit(1)
-                        }
-                        HStack(spacing: 8) {
-                            Label(conn.isConnected ? conn.connectionTransport : "Port \(conn.listenPort)", systemImage: conn.connectionTransport == "USB" ? "cable.connector" : "wifi")
-                            if conn.isConnected {
-                                Text("•")
-                                Label("\(conn.batteryLevel)%\(conn.isCharging ? " ⚡" : "")", systemImage: "battery.75")
-                            }
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .padding(.horizontal, 10)
-
-                    List(DashboardSection.allCases, id: \.self, selection: $selectedSection) { section in
-                        NavigationLink(value: section) {
-                            HStack {
-                                Label(section.rawValue, systemImage: section.icon)
-                                Spacer()
-                                if section == .notifications && !conn.notifications.isEmpty {
-                                    Text("\(conn.notifications.count)")
-                                        .font(.caption2.bold())
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.green.opacity(0.25))
-                                        .clipShape(Capsule())
-                                }
-                            }
-                        }
-                    }
-                    .listStyle(.sidebar)
-                }
-                .frame(minWidth: 220)
-            } detail: {
-                Group {
-                    switch selectedSection {
-                    case .overview:
-                        OverviewWorkflowView(selectedSection: $selectedSection)
-                    case .messages:
-                        MessagesWorkspaceView()
-                    case .notifications:
-                        NotificationsWorkspaceView()
-                    case .files:
-                        FilesWorkspaceView()
-                    case .photos:
-                        PhotosWorkspaceView()
-                    case .clipboard:
-                        ClipboardWorkspaceView()
-                    case .mirrorCamera:
-                        MirrorAndCameraWorkspaceView()
-                    case .pairSetup:
-                        PairingQRSetupView()
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-
-            // Floating Incoming Call HUD Overlay (Appears automatically when phone rings)
-            if conn.callState.isActive {
-                IncomingCallHUDView()
-                    .padding(20)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(response: 0.3), value: conn.callState.isActive)
-    }
-}
-
-// MARK: - Overview Morning Workflow Dashboard
-struct OverviewWorkflowView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var clip = ClipboardSyncManager.shared
-    @Binding var selectedSection: DashboardSection
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Hero Status Banner
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(conn.isConnected ? "\(conn.connectedDeviceName) is ready." : "Make Android feel at home on your Mac.")
-                            .font(.title.bold())
-                        Text("Messages, notifications, files, photos, clipboard, call controls, camera, and mirroring over USB or private local Wi-Fi. Cellular call audio and the microphone remain on your Android phone.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button {
-                        selectedSection = .pairSetup
-                    } label: {
-                        Label(conn.isConnected ? "Connection Details" : "Scan Pairing QR", systemImage: "qrcode")
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                }
-                .padding(20)
-                .background(Color.primary.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-
-                // 3 Core Workflows Grid
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    WorkflowCard(
-                        number: "01",
-                        title: "Stay in the conversation",
-                        subtitle: "\(conn.notifications.count) active notifications • \(conn.smsThreads.count) SMS threads",
-                        icon: "bubble.left.and.bubble.right.fill",
-                        buttonTitle: "Open Messages & Alerts"
-                    ) {
-                        selectedSection = .messages
-                    }
-
-                    WorkflowCard(
-                        number: "02",
-                        title: "Move the thing you need",
-                        subtitle: "Drag & drop files, browse \(conn.remotePhotos.count) photos, sync clipboard",
-                        icon: "folder.fill.badge.plus",
-                        buttonTitle: "Browse Files & Photos"
-                    ) {
-                        selectedSection = .files
-                    }
-
-                    WorkflowCard(
-                        number: "03",
-                        title: "Use the phone from your desk",
-                        subtitle: "Screen mirroring, screen-off mode, webcam & media remote",
-                        icon: "iphone.smartbatterycase.gen2",
-                        buttonTitle: "Open Mirror & Camera"
-                    ) {
-                        selectedSection = .mirrorCamera
-                    }
-                }
-
-                // Quick Media Remote & Quick Actions Row
-                HStack(spacing: 16) {
-                    // Media Remote Card
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("Android Media Remote", systemImage: "music.note.list")
-                            .font(.headline)
-                        Text(conn.nowPlayingTitle)
-                            .font(.title3.bold())
-                            .lineLimit(1)
-                        Text(conn.nowPlayingArtist)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        HStack(spacing: 12) {
-                            Button { conn.sendMediaAction("PREV") } label: { Image(systemName: "backward.fill") }
-                            Button { conn.sendMediaAction("PLAY_PAUSE") } label: { Image(systemName: "playpause.fill") }
-                            Button { conn.sendMediaAction("NEXT") } label: { Image(systemName: "forward.fill") }
-                            Divider().frame(height: 18)
-                            Button { conn.sendMediaAction("VOL_DOWN") } label: { Image(systemName: "speaker.minus.fill") }
-                            Button { conn.sendMediaAction("VOL_UP") } label: { Image(systemName: "speaker.plus.fill") }
-                            Spacer()
-                            Button("Ring Phone") {
-                                conn.sendMediaAction("RING_PHONE")
-                            }
-                            .tint(.orange)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                    // Latest Clipboard Card
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Label("Universal Clipboard", systemImage: "doc.on.clipboard")
-                                .font(.headline)
-                            Spacer()
-                            Toggle("Sync On", isOn: $clip.isSyncEnabled)
-                                .toggleStyle(.switch)
-                                .controlSize(.small)
-                        }
-                        if let latest = clip.history.first {
-                            Text(latest.content)
-                                .font(.subheadline.monospaced())
-                                .lineLimit(2)
-                            Text("Copied on \(latest.source) • Ready to paste ⌘V")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text("Copy text or links on Android or Mac to sync instantly.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-            }
-            .padding(24)
-        }
-    }
-}
-
-struct WorkflowCard: View {
-    let number: String
-    let title: String
-    let subtitle: String
-    let icon: String
-    let buttonTitle: String
-    let action: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(number)
-                    .font(.caption.monospaced().bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.green.opacity(0.2))
-                    .clipShape(Capsule())
-                Spacer()
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(.green)
-            }
-            Text(title)
-                .font(.headline)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(minHeight: 34, alignment: .topLeading)
-            Button(buttonTitle, action: action)
-                .buttonStyle(.bordered)
-        }
-        .padding(16)
-        .background(Color.primary.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-// MARK: - Pairing QR Code & Guided Setup View
-struct PairingQRSetupView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var adb = ADBBridge.shared
-
-    var qrPayloadString: String {
-        "{\"host\":\"\(conn.localIPAddress)\",\"port\":\(conn.listenPort),\"token\":\"\(conn.pairingToken)\",\"macName\":\"\(Host.current().localizedName ?? "Mac")\"}"
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                Text("Pair once. Then your Android feels nearby.")
-                    .font(.title.bold())
-                Text("Scan this QR code inside the LinkToMac Android companion app, or plug in a USB cable.")
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 32) {
-                    // Generated QR Code
-                    if let qrImg = generateQRCode(from: qrPayloadString) {
-                        Image(nsImage: qrImg)
-                            .interpolation(.none)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 210, height: 210)
-                            .padding(16)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-
-                    // Manual & USB Status Details
-                    VStack(alignment: .leading, spacing: 14) {
-                        GroupBox("01 • Local Wi-Fi Pairing Details") {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Mac IP Address:  \(conn.localIPAddress)")
-                                    .font(.system(.body, design: .monospaced))
-                                Text("Port:            \(conn.listenPort)")
-                                    .font(.system(.body, design: .monospaced))
-                                Text("6-Digit Token:   \(conn.pairingToken)")
-                                    .font(.system(.body, design: .monospaced).bold())
-                                    .foregroundStyle(.green)
-                            }
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-
-                        GroupBox("02 • High-Speed USB (ADB) Bridge") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Circle()
-                                        .fill(adb.isUSBDeviceConnected ? Color.green : Color.secondary)
-                                        .frame(width: 10, height: 10)
-                                    Text(adb.isUSBDeviceConnected ? "USB Phone Detected (\(adb.usbSerial))" : "No USB Android Detected")
-                                        .font(.subheadline.bold())
-                                }
-                                Text("When connected via USB with USB Debugging enabled, port 54921 is automatically bridged for zero-latency transfers and screen-off mirroring.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Button("Refresh USB & Local Network") {
-                                    conn.localIPAddress = ConnectionManager.detectLocalIPAddress() ?? "127.0.0.1"
-                                    conn.startServer()
-                                    adb.pollUSBDevices()
-                                }
-                            }
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .frame(maxWidth: 420)
-                }
-            }
-            .padding(32)
-        }
-    }
-
-    private func generateQRCode(from string: String) -> NSImage? {
-        let context = CIContext()
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(string.utf8)
-        filter.correctionLevel = "M"
-        guard let outputImage = filter.outputImage else { return nil }
-        let transformed = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
-        guard let cgImg = context.createCGImage(transformed, from: transformed.extent) else { return nil }
-        return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
-    }
-}
-
-
-
-
-
-
-
-
-
-```
-
----
-
-### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/FeatureViews.swift
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/FilesPhotosView.swift
 ```swift
 import SwiftUI
 import UniformTypeIdentifiers
 
-// MARK: - 01 Messages (SMS/MMS + Contacts) Workspace
-struct MessagesWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @LocalState private var selectedThreadId: String?
-    @LocalState private var draftMessage: String = ""
-    @LocalState private var newRecipientNumber: String = ""
-    @LocalState private var searchContactText: String = ""
-
-    var body: some View {
-        HSplitView {
-            // Left Column: SMS Threads & Contacts Search
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Messages & Contacts")
-                        .font(.headline)
-                    Spacer()
-                    Button {
-                        conn.requestSmsAndContacts()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .help("Sync SMS & Contacts from Android")
-                }
-                .padding(.horizontal, 12)
-                .padding(.top, 12)
-
-                HStack {
-                    TextField("Dial or New SMS #...", text: $newRecipientNumber)
-                        .textFieldStyle(.roundedBorder)
-                    Button("Chat") {
-                        let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
-                        guard !trimmed.isEmpty else { return }
-                        if !conn.smsThreads.contains(where: { $0.address == trimmed }) {
-                            conn.smsThreads.insert(SmsThreadItem(
-                                id: trimmed,
-                                contactName: trimmed,
-                                address: trimmed,
-                                lastMessage: "New conversation",
-                                timestamp: Int64(Date().timeIntervalSince1970 * 1000),
-                                messages: []
-                            ), at: 0)
-                        }
-                        selectedThreadId = trimmed
-                        newRecipientNumber = ""
-                    }
-                    Button {
-                        let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
-                        if !trimmed.isEmpty { conn.dialPhoneNumber(trimmed) }
-                    } label: {
-                        Image(systemName: "phone.fill")
-                    }
-                }
-                .padding(.horizontal, 12)
-
-                List(conn.smsThreads, selection: $selectedThreadId) { thread in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(thread.contactName)
-                                .font(.subheadline.bold())
-                            Spacer()
-                            Text(thread.address)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text(thread.lastMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    .padding(.vertical, 4)
-                    .tag(thread.id)
-                }
-            }
-            .frame(minWidth: 250, maxWidth: 320)
-
-            // Right Column: Active Conversation
-            VStack(spacing: 0) {
-                if let threadId = selectedThreadId,
-                   let thread = conn.smsThreads.first(where: { $0.id == threadId }) {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(thread.contactName)
-                                .font(.headline)
-                            Text(thread.address)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button {
-                            conn.dialPhoneNumber(thread.address)
-                        } label: {
-                            Label("Call on Phone", systemImage: "phone.arrow.up.right.fill")
-                        }
-                    }
-                    .padding(14)
-                    .background(Color.primary.opacity(0.05))
-
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 10) {
-                            ForEach(thread.messages) { msg in
-                                HStack {
-                                    if !msg.isIncoming { Spacer() }
-                                    Text(msg.body)
-                                        .padding(10)
-                                        .background(msg.isIncoming ? Color.primary.opacity(0.1) : Color.green.opacity(0.85))
-                                        .foregroundStyle(msg.isIncoming ? Color.primary : Color.black)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    if msg.isIncoming { Spacer() }
-                                }
-                            }
-                        }
-                        .padding(16)
-                    }
-
-                    Divider()
-                    HStack(spacing: 10) {
-                        TextField("Reply via Android SMS...", text: $draftMessage)
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit {
-                                sendCurrentDraft(to: thread.address)
-                            }
-                        Button("Send ↵") {
-                            sendCurrentDraft(to: thread.address)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                    }
-                    .padding(12)
-                } else {
-                    VStack(spacing: 10) {
-                        Image(systemName: "message.and.waveform.fill")
-                            .font(.system(size: 42))
-                            .foregroundStyle(.secondary)
-                        Text("Select a conversation or start a new SMS")
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-        }
-    }
-
-    private func sendCurrentDraft(to address: String) {
-        let text = draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        conn.sendSms(address: address, body: text)
-        draftMessage = ""
-    }
-}
-
-// MARK: - 01 Notifications Mirror & Inline Reply Workspace
-struct NotificationsWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @LocalState private var replyDrafts: [String: String] = [:]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Android Notification Mirroring")
-                    .font(.title2.bold())
-                Spacer()
-                if !conn.mutedApps.isEmpty {
-                    Button("Unmute All Apps (\(conn.mutedApps.count))") {
-                        conn.mutedApps.removeAll()
-                    }
-                }
-                Button("Clear All") {
-                    conn.notifications.removeAll()
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-
-            if conn.notifications.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "bell.slash")
-                        .font(.system(size: 42))
-                        .foregroundStyle(.secondary)
-                    Text("No recent Android notifications")
-                        .font(.headline)
-                    Text("Incoming messages and alerts from your phone will appear here with inline keyboard reply.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List {
-                    ForEach(conn.notifications) { item in
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text(item.appName.uppercased())
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.green)
-                                Text("•")
-                                    .foregroundStyle(.secondary)
-                                Text(item.title)
-                                    .font(.headline)
-                                Spacer()
-                                if let otp = item.otpCode, !otp.isEmpty {
-                                    Button("Copy 2FA: \(otp)") {
-                                        NSPasteboard.general.clearContents()
-                                        NSPasteboard.general.setString(otp, forType: .string)
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.blue)
-                                    .controlSize(.small)
-                                }
-                                Button("Mute App") {
-                                    conn.mutedApps.insert(item.packageName)
-                                    conn.notifications.removeAll { $0.packageName == item.packageName }
-                                }
-                                .controlSize(.small)
-                                Button {
-                                    conn.dismissNotification(notificationId: item.id)
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                }
-                                .buttonStyle(.plain)
-                            }
-
-                            Text(item.body)
-                                .font(.body)
-
-                            if let sent = item.replySentText {
-                                Label("Reply sent: \"\(sent)\"", systemImage: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                            } else if item.canReply {
-                                HStack {
-                                    TextField("Reply from keyboard...", text: Binding(
-                                        get: { replyDrafts[item.id] ?? "" },
-                                        set: { replyDrafts[item.id] = $0 }
-                                    ))
-                                    .textFieldStyle(.roundedBorder)
-                                    .onSubmit {
-                                        let txt = replyDrafts[item.id] ?? ""
-                                        conn.sendNotificationReply(notificationId: item.id, replyText: txt)
-                                        replyDrafts[item.id] = ""
-                                    }
-                                    Button("Reply ↵") {
-                                        let txt = replyDrafts[item.id] ?? ""
-                                        conn.sendNotificationReply(notificationId: item.id, replyText: txt)
-                                        replyDrafts[item.id] = ""
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.green)
-                                }
-                            }
-                        }
-                        .padding(10)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 02 File Browser & Drag-and-Drop Transfer Workspace
+// MARK: - Files browser & transfers workspace
 struct FilesWorkspaceView: View {
     @ObservedObject var conn = ConnectionManager.shared
     @LocalState private var isDropTargeted: Bool = false
 
-    let quickBookmarks = [
+    let quickBookmarks: [(String, String)] = [
         ("Downloads", "/sdcard/Download"),
-        ("Camera (DCIM)", "/sdcard/DCIM/Camera"),
+        ("Camera", "/sdcard/DCIM/Camera"),
         ("Pictures", "/sdcard/Pictures"),
         ("Movies", "/sdcard/Movies"),
         ("Documents", "/sdcard/Documents"),
-        ("Root /sdcard", "/sdcard")
+        ("Storage", "/sdcard")
     ]
 
     var body: some View {
         HSplitView {
-            // Left Pane: Android Storage Browser
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Android Storage")
-                        .font(.title3.bold())
-                    Spacer()
-                    Button("Send File from Mac...") {
-                        pickMacFilesToSend()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                    Button {
-                        conn.requestDirectoryListing(path: conn.currentDirectoryPath)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
+            storagePane
+            transfersPane
+        }
+        .background(LinkTheme.canvas)
+    }
 
-                // Quick Folder Bookmarks
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(quickBookmarks, id: \.1) { name, path in
-                            Button(name) {
-                                conn.requestDirectoryListing(path: path)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-
-                // Current Path Bar
-                HStack {
-                    Button {
-                        let parent = (conn.currentDirectoryPath as NSString).deletingLastPathComponent
-                        if !parent.isEmpty {
-                            conn.requestDirectoryListing(path: parent)
-                        }
-                    } label: {
-                        Image(systemName: "chevron.left")
-                    }
-                    Text(conn.currentDirectoryPath)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-
-                List(conn.remoteFiles) { file in
-                    HStack {
-                        Image(systemName: file.isDirectory ? "folder.fill" : "doc.fill")
-                            .foregroundStyle(file.isDirectory ? .yellow : .blue)
-                        VStack(alignment: .leading) {
-                            Text(file.name)
-                                .font(.body)
-                            if !file.isDirectory {
-                                Text(ByteCountFormatter.string(fromByteCount: file.sizeBytes, countStyle: .file))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        Spacer()
-                        if file.isDirectory {
-                            Button("Open") {
-                                conn.requestDirectoryListing(path: file.path)
-                            }
-                            .controlSize(.small)
-                        } else {
-                            Button("Download to Finder") {
-                                conn.pullRemoteFileToMac(remotePath: file.path, fileName: file.name, revealInFinder: true)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                }
-            }
-            .frame(minWidth: 420)
-            .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
-                handleDroppedMacFiles(providers: providers)
-                return true
-            }
-            .overlay {
-                if isDropTargeted {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.green, lineWidth: 3)
-                        .background(Color.green.opacity(0.12))
-                        .overlay {
-                            Label("Drop files to send to \(conn.currentDirectoryPath)", systemImage: "arrow.down.doc.fill")
-                                .font(.title2.bold())
-                        }
-                }
-            }
-
-            // Right Pane: Active & Recent Transfers Queue
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Transfers Queue")
+    // MARK: Left — Android storage
+    private var storagePane: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: LS.s) {
+                Text("Android storage")
                     .font(.headline)
-                    .padding(.top, 14)
-                    .padding(.horizontal, 14)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                Spacer()
+                Button("Send files") { pickMacFilesToSend() }
+                    .buttonStyle(.primary)
+                Button {
+                    conn.requestDirectoryListing(path: conn.currentDirectoryPath)
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.icon)
+                .help("Refresh this folder")
+            }
+            .padding(.horizontal, LS.l)
+            .padding(.top, LS.m)
+            .padding(.bottom, LS.s)
 
-                if conn.transfers.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "arrow.left.arrow.right.square")
-                            .font(.system(size: 34))
-                            .foregroundStyle(.secondary)
-                        Text("Drag files from Finder here to send to Android")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List(conn.transfers) { item in
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(item.fileName)
-                                    .font(.subheadline.bold())
-                                    .lineLimit(1)
-                                Spacer()
-                                Text(item.transport)
-                                    .font(.caption2.bold())
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.green.opacity(0.2))
-                                    .clipShape(Capsule())
-                            }
-                            ProgressView(value: item.progress)
-                                .tint(.green)
-                            HStack {
-                                Text(item.direction)
-                                Spacer()
-                                Text(item.isCompleted ? "Completed ✓" : "\(Int(item.progress * 100))%")
-                            }
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: LS.s) {
+                    ForEach(quickBookmarks, id: \.1) { name, path in
+                        Button(name) {
+                            conn.requestDirectoryListing(path: path)
                         }
-                        .padding(.vertical, 4)
+                        .buttonStyle(.quiet)
+                        .controlSize(.small)
                     }
                 }
+                .padding(.horizontal, LS.l)
+                .padding(.bottom, LS.s)
             }
-            .frame(minWidth: 260, maxWidth: 320)
+
+            HStack(spacing: LS.s) {
+                Button {
+                    let parent = (conn.currentDirectoryPath as NSString).deletingLastPathComponent
+                    if !parent.isEmpty { conn.requestDirectoryListing(path: parent) }
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .buttonStyle(.icon)
+                .help("Go to parent folder")
+                Text(conn.currentDirectoryPath)
+                    .font(.caption.monospaced() as Font)
+                    .foregroundStyle(LinkTheme.textSecondary)
+                    .textSelection(.enabled)
+                    .lineLimit(1)
+                    .truncationMode(.head)
+                Spacer()
+            }
+            .padding(.horizontal, LS.l)
+            .padding(.bottom, LS.s)
+
+            List(conn.remoteFiles) { file in
+                FileRow(file: file)
+            }
+            .listStyle(.plain)
+        }
+        .frame(minWidth: 420)
+        .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+            handleDroppedMacFiles(providers: providers)
+            return true
+        }
+        .overlay {
+            if isDropTargeted {
+                dropOverlay
+            }
         }
     }
 
+    /// Quiet drop target: hairline accent stroke + faint tint. No glow, no heavy border.
+    private var dropOverlay: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: LR.card)
+                .fill(LinkTheme.accent.opacity(0.06))
+            RoundedRectangle(cornerRadius: LR.card)
+                .strokeBorder(LinkTheme.accent, lineWidth: 1.5)
+            Label("Drop files to send to \(conn.currentDirectoryPath)",
+                  systemImage: "arrow.down.doc")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(LinkTheme.accent)
+                .padding(.horizontal, LS.l)
+                .background(LinkTheme.surface)
+                .clipShape(Capsule())
+        }
+        .padding(LS.s)
+    }
+
+    // MARK: Right — transfers
+    private var transfersPane: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Transfers")
+                .font(.headline)
+                .foregroundStyle(LinkTheme.textPrimary)
+                .padding(.horizontal, LS.m)
+                .padding(.top, LS.m)
+                .padding(.bottom, LS.s)
+
+            if conn.transfers.isEmpty {
+                EmptyStateView(
+                    icon: "arrow.left.arrow.right",
+                    title: "No transfers yet",
+                    message: "Drag files from Finder onto the storage pane to send them to Android."
+                )
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: LS.s) {
+                        ForEach(conn.transfers) { item in
+                            TransferRow(item: item)
+                        }
+                    }
+                    .padding(.horizontal, LS.m)
+                    .padding(.bottom, LS.m)
+                }
+            }
+        }
+        .frame(minWidth: 260, maxWidth: 320)
+        .background(LinkTheme.surface)
+        .overlay(
+            Rectangle().fill(LinkTheme.hairline).frame(width: 1)
+        )
+    }
+
+    // MARK: Helpers (behavior preserved from original)
     private func pickMacFilesToSend() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
@@ -2121,325 +1337,559 @@ struct FilesWorkspaceView: View {
     }
 }
 
-// MARK: - 02 Photos Browser Workspace
+// MARK: - File row: monochrome icons (no yellow folder / blue doc pair)
+struct FileRow: View {
+    let file: RemoteFileItem
+    @ObservedObject private var conn = ConnectionManager.shared
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: file.isDirectory ? "folder" : "doc")
+                .font(.system(size: 15, weight: .regular))
+                .foregroundStyle(file.isDirectory ? LinkTheme.accent : LinkTheme.textTertiary)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(file.name)
+                    .font(.subheadline)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                    .lineLimit(1)
+                if !file.isDirectory {
+                    Text(ByteCountFormatter.string(fromByteCount: file.sizeBytes, countStyle: .file))
+                        .font(.caption2)
+                        .foregroundStyle(LinkTheme.textTertiary)
+                }
+            }
+
+            Spacer(minLength: LS.s)
+
+            if file.isDirectory {
+                Button("Open") {
+                    conn.requestDirectoryListing(path: file.path)
+                }
+                .buttonStyle(.quiet)
+                .controlSize(.small)
+            } else {
+                Button("Download") {
+                    conn.pullRemoteFileToMac(remotePath: file.path, fileName: file.name, revealInFinder: true)
+                }
+                .buttonStyle(.quiet)
+                .controlSize(.small)
+                .help("Download to ~/Downloads/LinkToMac and reveal in Finder")
+            }
+        }
+        .padding(.vertical, 3)
+    }
+}
+
+// MARK: - Transfer row: accent progress, neutral transport chip
+struct TransferRow: View {
+    let item: ActiveTransferItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: LS.xs) {
+            HStack(spacing: LS.s) {
+                Image(systemName: directionIcon)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(LinkTheme.textSecondary)
+                Text(item.fileName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(LinkTheme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer(minLength: LS.s)
+                Text(item.transport)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(LinkTheme.textSecondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(LinkTheme.surfaceAlt)
+                    .clipShape(Capsule())
+            }
+            ProgressView(value: item.progress)
+                .tint(LinkTheme.accent)
+            HStack {
+                Text(item.direction)
+                Spacer()
+                Text(item.isCompleted ? "Completed" : "\(Int(item.progress * 100))%")
+                    .foregroundStyle(item.isCompleted ? LinkTheme.success : LinkTheme.textSecondary)
+            }
+            .font(.caption2)
+            .foregroundStyle(LinkTheme.textTertiary)
+        }
+        .padding(LS.m)
+        .background(LinkTheme.surfaceAlt.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: LR.control))
+    }
+
+    private var directionIcon: String {
+        item.direction.contains("Sending") ? "arrow.up" : "arrow.down"
+    }
+}
+
+// MARK: - Photos workspace
 struct PhotosWorkspaceView: View {
     @ObservedObject var conn = ConnectionManager.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Android Photos & Gallery")
-                    .font(.title2.bold())
-                Spacer()
+        VStack(alignment: .leading, spacing: 0) {
+            SectionHeader(title: "Photos",
+                          subtitle: "\(conn.remotePhotos.count) recent items from your Android gallery") {
                 Button {
                     conn.requestPhotosList()
                 } label: {
-                    Label("Refresh Gallery", systemImage: "arrow.clockwise")
+                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
+                .buttonStyle(.quiet)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
 
             if conn.remotePhotos.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "photo.stack")
-                        .font(.system(size: 42))
-                        .foregroundStyle(.secondary)
-                    Text("No photos loaded yet")
-                    Button("Load Recent Android Photos") {
-                        conn.requestPhotosList()
-                    }
+                EmptyStateView(
+                    icon: "photo",
+                    title: "No photos loaded",
+                    message: "Load your recent Android photos to browse and save them to Finder.",
+                    actionTitle: "Load recent photos"
+                ) {
+                    conn.requestPhotosList()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 14)], spacing: 14) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: LS.m)],
+                              spacing: LS.m) {
                         ForEach(conn.remotePhotos) { photo in
-                            VStack(alignment: .leading, spacing: 6) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color.primary.opacity(0.08))
-                                        .frame(height: 120)
-
-                                    if let b64 = photo.thumbnailBase64,
-                                       let data = Data(base64Encoded: b64),
-                                       let img = NSImage(data: data) {
-                                        Image(nsImage: img)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(height: 120)
-                                            .clipped()
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    } else {
-                                        Image(systemName: photo.isVideo ? "video.fill" : "photo.fill")
-                                            .font(.largeTitle)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                Text(photo.name)
-                                    .font(.caption.bold())
-                                    .lineLimit(1)
-                                Button("Save to Finder") {
-                                    conn.pullRemoteFileToMac(remotePath: photo.path, fileName: photo.name, revealInFinder: true)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                            }
-                            .padding(8)
-                            .background(Color.primary.opacity(0.04))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            PhotoCard(photo: photo)
                         }
                     }
-                    .padding(20)
+                    .padding(.horizontal, LS.xl)
+                    .padding(.bottom, LS.xl)
                 }
             }
         }
+        .background(LinkTheme.canvas)
     }
 }
 
-// MARK: - 02 Universal Clipboard & URL Handoff Workspace
-struct ClipboardWorkspaceView: View {
-    @ObservedObject var clip = ClipboardSyncManager.shared
-    @LocalState private var handoffURLInput: String = ""
+// MARK: - Photo card: hover-reveal save action
+struct PhotoCard: View {
+    let photo: RemotePhotoItem
+    @ObservedObject private var conn = ConnectionManager.shared
+    @LocalState private var isHovering: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Universal Clipboard & URL Handoff")
-                        .font(.title2.bold())
-                    Text("Copy on Android, paste on Mac (⌘V) — and vice versa.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Toggle("Clipboard Sync", isOn: $clip.isSyncEnabled)
-                    .toggleStyle(.switch)
-                Toggle("Ignore Password Managers", isOn: $clip.ignoreConcealedPasswords)
-                    .toggleStyle(.checkbox)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+        VStack(alignment: .leading, spacing: LS.xs) {
+            ZStack {
+                RoundedRectangle(cornerRadius: LR.control)
+                    .fill(LinkTheme.surfaceAlt)
+                    .frame(height: 120)
 
-            // URL Handoff Bar
-            HStack {
-                TextField("https://example.com — Open URL directly on Android phone...", text: $handoffURLInput)
-                    .textFieldStyle(.roundedBorder)
-                Button("Send URL to Phone ↗") {
-                    guard !handoffURLInput.isEmpty else { return }
-                    clip.handoffURLToAndroid(handoffURLInput)
-                    handoffURLInput = ""
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
-            }
-            .padding(.horizontal, 20)
-
-            List(clip.history) { item in
-                HStack {
-                    Image(systemName: item.isUrl ? "link.circle.fill" : "doc.on.clipboard")
-                        .foregroundStyle(item.isUrl ? .blue : .green)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.content)
-                            .font(.body.monospaced())
-                            .lineLimit(2)
-                        Text("Copied on \(item.source) • \(item.timestamp.formatted(date: .omitted, time: .standard))")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    if item.isUrl, let url = URL(string: item.content) {
-                        Button("Open on Mac") {
-                            NSWorkspace.shared.open(url)
-                        }
-                        Button("Open on Phone") {
-                            clip.handoffURLToAndroid(item.content)
-                        }
-                    }
-                    Button("Copy ⌘C") {
-                        clip.copyItemToMac(item)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-        }
-    }
-}
-
-// MARK: - 03 Screen Mirroring, Virtual Webcam & Microphone Workspace
-struct MirrorAndCameraWorkspaceView: View {
-    @ObservedObject var conn = ConnectionManager.shared
-    @ObservedObject var adb = ADBBridge.shared
-
-    var body: some View {
-        HSplitView {
-            // Left Control Panel
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Desk Controls")
-                    .font(.title2.bold())
-
-                GroupBox("Screen Mirroring") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Toggle("Turn Android Screen Off while Mirroring", isOn: $conn.isScreenOffMirror)
-                        HStack {
-                            Button("Start Wireless/Socket Mirror") {
-                                conn.setStreamMode("MIRROR")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.green)
-
-                            if adb.isScrcpyAvailable && adb.isUSBDeviceConnected {
-                                Button("Launch Pro USB Mirror (scrcpy)") {
-                                    adb.launchNativeScrcpy(screenOff: conn.isScreenOffMirror, stayAwake: true)
-                                }
-                            }
-                        }
-                        HStack(spacing: 8) {
-                            Button("Home") { conn.sendRemoteKeyEvent(3) }
-                            Button("Back") { conn.sendRemoteKeyEvent(4) }
-                            Button("App Switcher") { conn.sendRemoteKeyEvent(187) }
-                            Button("Lock/Wake") { conn.sendRemoteKeyEvent(26) }
-                        }
-                        .controlSize(.small)
-                    }
-                    .padding(8)
-                }
-
-                GroupBox("Android Camera & Microphone Stream") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Use your Android phone's high-res camera and microphone right from your desk.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        HStack {
-                            Button("Rear Camera") {
-                                conn.setStreamMode("WEBCAM_BACK")
-                            }
-                            Button("Front Camera") {
-                                conn.setStreamMode("WEBCAM_FRONT")
-                            }
-                            Button("Stream Mic Audio") {
-                                conn.setStreamMode("MIC_STREAM")
-                            }
-                        }
-                        Button("Stop All Streams") {
-                            conn.setStreamMode("NONE")
-                        }
-                        .tint(.red)
-                    }
-                    .padding(8)
-                }
-
-                Spacer()
-            }
-            .padding(20)
-            .frame(minWidth: 320, maxWidth: 360)
-
-            // Right Live Video Canvas (Interactive click-to-tap on phone!)
-            VStack {
-                if let frame = conn.liveVideoFrame {
-                    GeometryReader { geo in
-                        Image(nsImage: frame)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .gesture(
-                                SpatialTapGesture()
-                                    .onEnded { event in
-                                        let normX = max(0, min(1, event.location.x / max(1, geo.size.width)))
-                                        let normY = max(0, min(1, event.location.y / max(1, geo.size.height)))
-                                        conn.sendRemoteTap(normalizedX: normX, normalizedY: normY)
-                                    }
-                            )
-                    }
-                    .padding(12)
+                if let b64 = photo.thumbnailBase64,
+                   let data = Data(base64Encoded: b64),
+                   let img = NSImage(data: data) {
+                    Image(nsImage: img)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 120)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: LR.control))
                 } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "iphone.gen3.radiowaves.left.and.right")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-                        Text("Live Screen Mirror / Camera Feed")
-                            .font(.headline)
-                        Text("Click 'Start Wireless/Socket Mirror' or 'Rear Camera' on the left to stream live video.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    Image(systemName: photo.isVideo ? "video" : "photo")
+                        .font(.title2)
+                        .foregroundStyle(LinkTheme.textTertiary)
+                }
+
+                if isHovering {
+                    Button {
+                        conn.pullRemoteFileToMac(remotePath: photo.path, fileName: photo.name, revealInFinder: true)
+                    } label: {
+                        Label("Save", systemImage: "arrow.down.circle")
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .buttonStyle(.primary)
+                    .controlSize(.small)
+                    .padding(6)
+                    .background(LinkTheme.surface)
+                    .clipShape(Capsule())
+                    .shadow(color: .black.opacity(0.15), radius: 4, y: 1)  // overlay affordance only
                 }
             }
-            .background(Color.black.opacity(0.85))
+            .onHover { isHovering = $0 }
+
+            Text(photo.name)
+                .font(.caption)
+                .foregroundStyle(LinkTheme.textSecondary)
+                .lineLimit(1)
         }
+        .padding(LS.s)
+        .background(LinkTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: LR.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: LR.card)
+                .strokeBorder(LinkTheme.hairline, lineWidth: 1)
+        )
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LinkComponents.swift
+```swift
+import SwiftUI
+
+// MARK: - Card surface: matte fill + 1px hairline. NO shadow, NO border, NO GroupBox.
+struct LinkCardModifier: ViewModifier {
+    var padding: CGFloat = LS.l
+    var corner: CGFloat = LR.card
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(LinkTheme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: corner))
+            .overlay(
+                RoundedRectangle(cornerRadius: corner)
+                    .strokeBorder(LinkTheme.hairline, lineWidth: 1)
+            )
     }
 }
 
-// MARK: - Floating Incoming Call HUD Overlay
-struct IncomingCallHUDView: View {
-    @ObservedObject var conn = ConnectionManager.shared
+extension View {
+    func linkCard(padding: CGFloat = LS.l, corner: CGFloat = LR.card) -> some View {
+        modifier(LinkCardModifier(padding: padding, corner: corner))
+    }
+}
+
+// MARK: - Buttons
+
+/// Solid accent button (primary action). White label, matte fill, opacity press feedback.
+struct PrimaryButtonStyle: ButtonStyle {
+    var tint: Color = LinkTheme.accent
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .frame(minHeight: 28)
+            .background(tint)
+            .clipShape(RoundedRectangle(cornerRadius: LR.control))
+            .opacity(configuration.isPressed ? 0.85 : 1.0)
+    }
+}
+
+/// Tinted quiet button (secondary action). Accent label on accent@10% fill.
+struct QuietButtonStyle: ButtonStyle {
+    var tint: Color = LinkTheme.accent
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(tint.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: LR.control))
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+    }
+}
+
+/// Small square icon button for toolbars/lists.
+struct IconButtonStyle: ButtonStyle {
+    var tint: Color = LinkTheme.textSecondary
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(tint)
+            .frame(width: 28, height: 28)
+            .background(LinkTheme.surfaceAlt.opacity(configuration.isPressed ? 1.0 : 0.0))
+            .clipShape(RoundedRectangle(cornerRadius: LR.control))
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.7 : 1.0)
+    }
+}
+
+extension ButtonStyle where Self == PrimaryButtonStyle {
+    static var primary: PrimaryButtonStyle { PrimaryButtonStyle() }
+    static var dangerPrimary: PrimaryButtonStyle { PrimaryButtonStyle(tint: LinkTheme.danger) }
+}
+extension ButtonStyle where Self == QuietButtonStyle {
+    static var quiet: QuietButtonStyle { QuietButtonStyle() }
+    static var quietDanger: QuietButtonStyle { QuietButtonStyle(tint: LinkTheme.danger) }
+    static var quietWarning: QuietButtonStyle { QuietButtonStyle(tint: LinkTheme.warning) }
+}
+extension ButtonStyle where Self == IconButtonStyle {
+    static var icon: IconButtonStyle { IconButtonStyle() }
+}
+
+// MARK: - Filled text field (replaces .roundedBorder everywhere)
+struct LinkTextFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<_Label>) -> some View {
+        configuration
+            .font(.subheadline)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(LinkTheme.surfaceAlt)
+            .clipShape(RoundedRectangle(cornerRadius: LR.control))
+            .overlay(
+                RoundedRectangle(cornerRadius: LR.control)
+                    .strokeBorder(LinkTheme.hairline, lineWidth: 1)
+            )
+    }
+}
+
+// MARK: - Semantic status dot
+enum LinkStatus { case connected, waiting, disconnected }
+
+struct StatusDot: View {
+    let state: LinkStatus
+    var size: CGFloat = 7
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Image(systemName: "phone.down.waves.left.and.right")
-                    .font(.title)
-                    .foregroundStyle(.green)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(conn.callState.state == "RINGING" ? "Incoming Android Call" : "Active Cellular Call (Audio on Phone)")
-                        .font(.caption.bold())
-                        .foregroundStyle(.green)
-                    Text(conn.callState.contactName)
-                        .font(.headline)
-                    Text(conn.callState.phoneNumber)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+        Circle()
+            .fill(color)
+            .frame(width: size, height: size)
+    }
 
-            HStack(spacing: 10) {
-                if conn.callState.state == "RINGING" {
-                    Button("Answer") {
-                        conn.sendCallAction("ANSWER")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-
-                    Button("Decline") {
-                        conn.sendCallAction("DECLINE")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-
-                    Button("SMS: In a meeting") {
-                        conn.sendCallAction("DECLINE_WITH_SMS", smsReply: "I'm at my desk right now — I'll call you back shortly.")
-                    }
-                    .buttonStyle(.bordered)
-                } else {
-                    Button(conn.callState.isMuted ? "Unmute" : "Mute") {
-                        conn.sendCallAction("MUTE")
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("End Call") {
-                        conn.sendCallAction("END")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                }
-            }
+    private var color: Color {
+        switch state {
+        case .connected:   return LinkTheme.success
+        case .waiting:     return LinkTheme.warning
+        case .disconnected: return LinkTheme.textTertiary
         }
-        .padding(16)
-        .background(.ultraThickMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(radius: 16)
     }
 }
 
+// MARK: - Neutral capsule badge (replaces green count badges)
+struct CountBadge: View {
+    let count: Int
 
+    var body: some View {
+        Text("\(count)")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(LinkTheme.textSecondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(LinkTheme.surfaceAlt)
+            .clipShape(Capsule())
+    }
+}
 
+// MARK: - Deterministic muted initials avatar
+struct AvatarView: View {
+    let name: String
+    var size: CGFloat = 32
 
+    var body: some View {
+        ZStack {
+            Circle().fill(LinkAvatar.color(for: name))
+            Text(String(name.prefix(1)).uppercased())
+                .font(.system(size: size * 0.42, weight: .semibold))
+                .foregroundStyle(Color.white)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+}
 
+// MARK: - Empty state (quiet, tertiary) with optional action button
+struct EmptyStateView: View {
+    let icon: String
+    let title: String
+    let message: String
+    var actionTitle: String? = nil
+    var action: (() -> Void)? = nil
 
+    var body: some View {
+        VStack(spacing: LS.m) {
+            Image(systemName: icon)
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(LinkTheme.textTertiary)
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(LinkTheme.textSecondary)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(LinkTheme.textTertiary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 380)
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .buttonStyle(.primary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+}
 
+// MARK: - Section header: title + trailing actions, consistent padding
+struct SectionHeader<Trailing: View>: View {
+    let title: String
+    var subtitle: String? = nil
+    @ViewBuilder var trailing: () -> Trailing
 
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: LS.m) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.title2.bold()).foregroundStyle(LinkTheme.textPrimary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(LinkTheme.textSecondary)
+                }
+            }
+            Spacer()
+            trailing()
+        }
+        .padding(.horizontal, LS.xl)
+        .padding(.top, LS.xl)
+        .padding(.bottom, LS.s)
+    }
+}
 
+// MARK: - Hairline divider
+struct HairlineDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(LinkTheme.separator)
+            .frame(height: 1)
+    }
+}
+
+// MARK: - Small monospaced value line (IP, port, token, paths)
+struct MonoValue: View {
+    let label: String
+    let value: String
+    var prominent: Bool = false
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(LinkTheme.textSecondary)
+            Spacer(minLength: 12)
+            Text(value)
+                .font(.system(.subheadline, design: .monospaced))
+                .foregroundStyle(prominent ? LinkTheme.accent : LinkTheme.textPrimary)
+                .bold(prominent)
+                .textSelection(.enabled)
+        }
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LinkTheme.swift
+```swift
+import SwiftUI
+
+// MARK: - LinktoMac Design Tokens — "Quiet Premium"
+// Matte, minimal, no gradients, no neon. One brand accent (blue) + semantic status colors.
+// This is the ONLY file allowed to define colors. Views must reference LinkTheme.* / LS.* / LR.*.
+
+extension Color {
+    /// Dynamic color that resolves per system appearance (macOS 13+).
+    static func adaptive(light: NSColor, dark: NSColor) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [
+                .darkAqua, .vibrantDark,
+                .accessibilityHighContrastDarkAqua, .accessibilityHighContrastVibrantDark
+            ]) != nil
+            return isDark ? dark : light
+        })
+    }
+}
+
+enum LinkTheme {
+
+    // MARK: Brand
+    static let accent = Color.adaptive(
+        light: NSColor(red: 0x00/255, green: 0x71/255, blue: 0xE3/255, alpha: 1),
+        dark:  NSColor(red: 0x0A/255, green: 0x84/255, blue: 0xFF/255, alpha: 1)
+    )
+
+    // MARK: Semantic status (ONLY for status meaning — never decoration)
+    static let success = Color.adaptive(
+        light: NSColor(red: 0x34/255, green: 0xC7/255, blue: 0x59/255, alpha: 1),
+        dark:  NSColor(red: 0x30/255, green: 0xD1/255, blue: 0x58/255, alpha: 1)
+    )
+    static let warning = Color.adaptive(
+        light: NSColor(red: 0xFF/255, green: 0x95/255, blue: 0x00/255, alpha: 1),
+        dark:  NSColor(red: 0xFF/255, green: 0x9F/255, blue: 0x0A/255, alpha: 1)
+    )
+    static let danger = Color.adaptive(
+        light: NSColor(red: 0xFF/255, green: 0x3B/255, blue: 0x30/255, alpha: 1),
+        dark:  NSColor(red: 0xFF/255, green: 0x45/255, blue: 0x3A/255, alpha: 1)
+    )
+
+    // MARK: Surfaces
+    static let canvas     = Color.adaptive(light: NSColor(hex: 0xF5F5F7), dark: NSColor(hex: 0x1C1C1E))
+    static let surface    = Color.adaptive(light: NSColor(hex: 0xFFFFFF), dark: NSColor(hex: 0x2C2C2E))
+    static let surfaceAlt = Color.adaptive(light: NSColor(hex: 0xF2F2F7), dark: NSColor(hex: 0x38383A))
+
+    // MARK: Text
+    static let textPrimary   = Color.adaptive(light: NSColor(hex: 0x1D1D1F), dark: NSColor(hex: 0xF5F5F7))
+    static let textSecondary = Color.adaptive(light: NSColor(hex: 0x6E6E73), dark: NSColor(hex: 0x98989D))
+    static let textTertiary  = Color.adaptive(light: NSColor(hex: 0xAEAEB2), dark: NSColor(hex: 0x636366))
+
+    // MARK: Hairlines & separators (matte borders instead of shadows)
+    static let hairline = Color.adaptive(
+        light: NSColor.black.withAlphaComponent(0.08),
+        dark:  NSColor.white.withAlphaComponent(0.10)
+    )
+    static let separator = Color.adaptive(
+        light: NSColor.black.withAlphaComponent(0.06),
+        dark:  NSColor.white.withAlphaComponent(0.08)
+    )
+}
+
+extension NSColor {
+    convenience init(hex: UInt32) {
+        self.init(
+            red:   CGFloat((hex >> 16) & 0xFF) / 255.0,
+            green: CGFloat((hex >>  8) & 0xFF) / 255.0,
+            blue:  CGFloat((hex      ) & 0xFF) / 255.0,
+            alpha: 1
+        )
+    }
+}
+
+// MARK: - Spacing (4pt grid)
+enum LS {
+    static let xs:  CGFloat = 4
+    static let s:   CGFloat = 8
+    static let m:   CGFloat = 12
+    static let l:   CGFloat = 16
+    static let xl:  CGFloat = 20
+    static let xxl: CGFloat = 24
+    static let xxxl: CGFloat = 32
+}
+
+// MARK: - Corner radii
+enum LR {
+    static let control: CGFloat = 8
+    static let card:    CGFloat = 12
+    static let overlay: CGFloat = 16
+}
+
+// MARK: - Muted avatar palette (deterministic, works in both themes)
+enum LinkAvatar {
+    static let palette: [Color] = [
+        Color.adaptive(light: NSColor(hex: 0x7D8A9C), dark: NSColor(hex: 0x8E9AAB)),
+        Color.adaptive(light: NSColor(hex: 0x8FA07A), dark: NSColor(hex: 0x9BAC86)),
+        Color.adaptive(light: NSColor(hex: 0xB5977C), dark: NSColor(hex: 0xC2A68C)),
+        Color.adaptive(light: NSColor(hex: 0x9C7D9C), dark: NSColor(hex: 0xAC8DAC)),
+        Color.adaptive(light: NSColor(hex: 0x7C9C93), dark: NSColor(hex: 0x8AAFA6))
+    ]
+
+    static func color(for name: String) -> Color {
+        var hash = 5381
+        for scalar in name.unicodeScalars { hash = (hash << 5) &+ hash &+ Int(scalar.value) }
+        return palette[abs(hash) % palette.count]
+    }
+}
 ```
 
 ---
@@ -2457,62 +1907,1469 @@ struct LinkToMacApp: App {
         WindowGroup("LinkToMac") {
             MainDashboardView()
                 .frame(minWidth: 980, minHeight: 640)
-                .preferredColorScheme(.dark)
+            // NOTE: no .preferredColorScheme(.dark) — Quiet Premium follows the system appearance.
         }
 
-        // Native macOS Menu Bar Companion Popover
+        // Native macOS menu bar companion popover
         MenuBarExtra {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Circle()
-                        .fill(conn.isConnected ? Color.green : Color.orange)
-                        .frame(width: 8, height: 8)
-                    Text(conn.isConnected ? "\(conn.connectedDeviceName) (\(conn.connectionTransport))" : "LinkToMac: Waiting for Phone")
-                        .font(.headline)
+            VStack(alignment: .leading, spacing: LS.m) {
+                HStack(spacing: LS.s) {
+                    StatusDot(state: conn.isConnected ? .connected : .waiting)
+                    Text(conn.isConnected
+                         ? "\(conn.connectedDeviceName) · \(conn.connectionTransport)"
+                         : (conn.connectedDeviceName != "No Android Connected" ? "Waiting for \(conn.connectedDeviceName)" : "Waiting for your phone"))
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
                 }
 
                 if conn.isConnected {
-                    Text("Battery: \(conn.batteryLevel)% • Notifications: \(conn.notifications.count)")
+                    Text("Battery \(conn.batteryLevel)%\(conn.isCharging ? " · charging" : "") · \(conn.notifications.count) notifications")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(LinkTheme.textSecondary)
                 }
 
-                Divider()
+                HairlineDivider()
+                    .padding(.vertical, 2)
 
                 Toggle("Universal Clipboard Sync", isOn: $clip.isSyncEnabled)
+                    .font(.subheadline)
 
-                Button("Play / Pause Android Media") {
-                    conn.sendMediaAction("PLAY_PAUSE")
-                }
-                Button("Ring My Android Phone") {
-                    conn.sendMediaAction("RING_PHONE")
+                Button("Play / Pause Android Media") { conn.sendMediaAction("PLAY_PAUSE") }
+                if conn.isRingingPhone {
+                    Button("Stop Ringing Phone") { conn.stopRingingPhone() }
+                        .foregroundStyle(LinkTheme.danger)
+                } else {
+                    Button("Ring My Android Phone") { conn.ringPhone() }
                 }
 
-                Divider()
+                HairlineDivider()
+                    .padding(.vertical, 2)
+
                 Button("Quit LinkToMac") {
                     NSApplication.shared.terminate(nil)
                 }
+                .foregroundStyle(LinkTheme.danger)
             }
-            .padding(12)
+            .padding(LS.m)
+            .frame(minWidth: 260)
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: conn.isConnected ? "iphone.radiowaves.left.and.right" : "iphone.slash")
-                if conn.isConnected {
-                    Text("\(conn.batteryLevel)%")
-                }
-            }
+            Image(systemName: conn.isConnected ? "iphone.radiowaves.left.and.right" : "iphone")
+        }
+        .menuBarExtraStyle(.window)
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/LocalState.swift
+```swift
+import SwiftUI
+
+@propertyWrapper
+public struct LocalState<Value>: DynamicProperty {
+    @StateObject private var container: Container
+
+    final class Container: ObservableObject {
+        @Published var value: Value
+        init(_ value: Value) { self.value = value }
+    }
+
+    public init(wrappedValue: Value) {
+        _container = StateObject(wrappedValue: Container(wrappedValue))
+    }
+
+    public init() where Value: ExpressibleByNilLiteral {
+        self.init(wrappedValue: nil)
+    }
+
+    public var wrappedValue: Value {
+        get { container.value }
+        nonmutating set { container.value = newValue }
+    }
+
+    public var projectedValue: Binding<Value> {
+        Binding(
+            get: { self.container.value },
+            set: { self.container.value = $0 }
+        )
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/MainDashboardView.swift
+```swift
+import SwiftUI
+
+// MARK: - Sidebar sections (quiet SF Symbols, no .fill)
+enum DashboardSection: String, CaseIterable, Identifiable {
+    case overview      = "Dashboard"
+    case messages      = "Messages"
+    case notifications = "Notifications"
+    case files         = "Files"
+    case photos        = "Photos"
+    case clipboard     = "Clipboard"
+    case mirrorCamera  = "Mirror & Camera"
+    case pairSetup     = "Pair Device"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .overview:      return "square.grid.2x2"
+        case .messages:      return "message"
+        case .notifications: return "bell"
+        case .files:         return "folder"
+        case .photos:        return "photo"
+        case .clipboard:     return "doc.on.clipboard"
+        case .mirrorCamera:  return "video"
+        case .pairSetup:     return "qrcode"
         }
     }
 }
 
+struct MainDashboardView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var adb = ADBBridge.shared
+    @ObservedObject var clip = ClipboardSyncManager.shared
+    @LocalState private var selectedSection: DashboardSection = .overview
 
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            NavigationSplitView {
+                SidebarView(selectedSection: $selectedSection)
+                    .frame(minWidth: 220)
+            } detail: {
+                Group {
+                    switch selectedSection {
+                    case .overview:      OverviewWorkflowView(selectedSection: $selectedSection) // Task 03
+                    case .messages:      MessagesWorkspaceView()                                  // Task 04
+                    case .notifications: NotificationsWorkspaceView()                            // Task 05
+                    case .files:         FilesWorkspaceView()                                     // Task 06
+                    case .photos:        PhotosWorkspaceView()                                    // Task 06
+                    case .clipboard:     ClipboardWorkspaceView()                                 // Task 07
+                    case .mirrorCamera:  MirrorAndCameraWorkspaceView()                           // Task 08
+                    case .pairSetup:     PairingQRSetupView()                                     // Task 09
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(LinkTheme.canvas)
+            }
 
+            // Floating incoming-call HUD — the ONLY animated overlay (functional motion)
+            if conn.callState.isActive {
+                IncomingCallHUDView() // Task 09
+                    .padding(LS.xl)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.28, dampingFraction: 0.9), value: conn.callState.isActive)
+    }
+}
 
+// MARK: - Sidebar
+private struct SidebarView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @Binding var selectedSection: DashboardSection
 
+    var body: some View {
+        VStack(alignment: .leading, spacing: LS.m) {
+            brandHeader
+            StatusPill()
+            sectionList
+        }
+        .padding(.vertical, LS.m)
+        .frame(minWidth: 220)
+    }
 
+    private var brandHeader: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(LinkTheme.accent)
+                    .frame(width: 26, height: 26)
+                Image(systemName: "link")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.white)
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                Text("LinkToMac")
+                    .font(.headline)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                Text("Local & private")
+                    .font(.caption2)
+                    .foregroundStyle(LinkTheme.textTertiary)
+            }
+        }
+        .padding(.horizontal, LS.m)
+        .padding(.top, LS.s)
+        .accessibilityElement(children: .combine)
+    }
 
+    private var sectionList: some View {
+        List(DashboardSection.allCases, id: \.self, selection: $selectedSection) { section in
+            NavigationLink(value: section) {
+                HStack(spacing: 10) {
+                    Label(section.rawValue, systemImage: section.icon)
+                        .foregroundStyle(LinkTheme.textPrimary)
+                    Spacer(minLength: 0)
+                    if section == .notifications, !conn.notifications.isEmpty {
+                        CountBadge(count: conn.notifications.count)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .listStyle(.sidebar)
+    }
+}
 
+// MARK: - Unified live connection pill (reused concept on Android + web)
+struct StatusPill: View {
+    @ObservedObject var conn = ConnectionManager.shared
 
+    var body: some View {
+        VStack(alignment: .leading, spacing: LS.s) {
+            HStack(spacing: LS.s) {
+                StatusDot(state: conn.isConnected ? .connected : .waiting)
+                Text(conn.isConnected ? conn.connectedDeviceName : "Waiting for Android")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(LinkTheme.textPrimary)
+                    .lineLimit(1)
+            }
+            HStack(spacing: LS.s) {
+                Label(
+                    conn.isConnected ? conn.connectionTransport : "Port \(conn.listenPort)",
+                    systemImage: conn.connectionTransport == "USB" ? "cable.connector" : "wifi"
+                )
+                if conn.isConnected {
+                    Text("·").foregroundStyle(LinkTheme.textTertiary)
+                    Label("\(conn.batteryLevel)%", systemImage: batterySymbol)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(LinkTheme.textSecondary)
+        }
+        .padding(LS.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(LinkTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: LR.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: LR.card)
+                .strokeBorder(LinkTheme.hairline, lineWidth: 1)
+        )
+        .padding(.horizontal, LS.m)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var batterySymbol: String {
+        if conn.isCharging { return "battery.100.bolt" }
+        switch conn.batteryLevel {
+        case 90...:    return "battery.100"
+        case 70..<90:  return "battery.75"
+        case 40..<70:  return "battery.50"
+        case 15..<40:  return "battery.25"
+        default:       return "battery.0"
+        }
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/MessagesView.swift
+```swift
+import SwiftUI
+
+// MARK: - Messages (SMS + contacts) workspace
+struct MessagesWorkspaceView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @LocalState private var selectedThreadId: String?
+    @LocalState private var draftMessage: String = ""
+    @LocalState private var newRecipientNumber: String = ""
+
+    var body: some View {
+        HSplitView {
+            threadListPane
+            conversationPane
+        }
+        .background(LinkTheme.canvas)
+    }
+
+    // MARK: Left — threads
+    private var threadListPane: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: LS.s) {
+                Text("Messages")
+                    .font(.headline)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                Spacer()
+                Button {
+                    conn.requestSmsAndContacts()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.icon)
+                .help("Sync SMS & contacts from Android")
+            }
+            .padding(.horizontal, LS.m)
+            .padding(.top, LS.m)
+            .padding(.bottom, LS.s)
+
+            HStack(spacing: LS.s) {
+                TextField("Dial or new SMS number", text: $newRecipientNumber)
+                    .textFieldStyle(LinkTextFieldStyle())
+                Button {
+                    let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
+                    guard !trimmed.isEmpty else { return }
+                    if !conn.smsThreads.contains(where: { $0.address == trimmed }) {
+                        conn.smsThreads.insert(SmsThreadItem(
+                            id: trimmed,
+                            contactName: trimmed,
+                            address: trimmed,
+                            lastMessage: "New conversation",
+                            timestamp: Int64(Date().timeIntervalSince1970 * 1000),
+                            messages: []
+                        ), at: 0)
+                    }
+                    selectedThreadId = trimmed
+                    newRecipientNumber = ""
+                } label: {
+                    Text("Chat")
+                }
+                .buttonStyle(.quiet)
+                Button {
+                    let trimmed = newRecipientNumber.trimmingCharacters(in: .whitespaces)
+                    if !trimmed.isEmpty { conn.dialPhoneNumber(trimmed) }
+                } label: {
+                    Image(systemName: "phone")
+                }
+                .buttonStyle(.icon)
+                .help("Dial this number on your Android phone")
+            }
+            .padding(.horizontal, LS.m)
+            .padding(.bottom, LS.s)
+
+            List(conn.smsThreads, selection: $selectedThreadId) { thread in
+                ThreadRow(thread: thread)
+                    .tag(thread.id)
+            }
+            .listStyle(.plain)
+        }
+        .frame(minWidth: 250, maxWidth: 320)
+    }
+
+    // MARK: Right — conversation
+    private var conversationPane: some View {
+        VStack(spacing: 0) {
+            if let threadId = selectedThreadId,
+               let thread = conn.smsThreads.first(where: { $0.id == threadId }) {
+                conversationHeader(thread)
+                messageList(thread)
+                replyBar(thread)
+            } else {
+                EmptyStateView(
+                    icon: "message",
+                    title: "No conversation selected",
+                    message: "Pick a thread on the left, or start a new SMS with a phone number."
+                )
+            }
+        }
+        .background(LinkTheme.canvas)
+    }
+
+    private func conversationHeader(_ thread: SmsThreadItem) -> some View {
+        HStack(spacing: LS.m) {
+            AvatarView(name: thread.contactName, size: 34)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(thread.contactName)
+                    .font(.headline)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                    .lineLimit(1)
+                Text(thread.address)
+                    .font(.caption)
+                    .foregroundStyle(LinkTheme.textSecondary)
+            }
+            Spacer()
+            Button {
+                conn.dialPhoneNumber(thread.address)
+            } label: {
+                Label("Call on phone", systemImage: "phone")
+            }
+            .buttonStyle(.quiet)
+        }
+        .padding(.horizontal, LS.l)
+        .padding(.vertical, LS.m)
+        .background(LinkTheme.surface)
+        .overlay(alignment: .bottom) { HairlineDivider() }
+    }
+
+    private func messageList(_ thread: SmsThreadItem) -> some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: LS.s) {
+                ForEach(thread.messages) { msg in
+                    ChatBubble(message: msg)
+                }
+            }
+            .padding(.horizontal, LS.l)
+            .padding(.vertical, LS.l)
+        }
+    }
+
+    private func replyBar(_ thread: SmsThreadItem) -> some View {
+        HStack(spacing: LS.s) {
+            TextField("Reply via Android SMS", text: $draftMessage)
+                .textFieldStyle(LinkTextFieldStyle())
+                .onSubmit { sendCurrentDraft(to: thread.address) }
+            Button {
+                sendCurrentDraft(to: thread.address)
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 20))
+            }
+            .buttonStyle(.icon)
+            .disabled(draftMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .help("Send SMS via Android")
+        }
+        .padding(.horizontal, LS.l)
+        .padding(.vertical, LS.m)
+        .background(LinkTheme.surface)
+        .overlay(alignment: .top) { HairlineDivider() }
+    }
+
+    private func sendCurrentDraft(to address: String) {
+        let text = draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        conn.sendSms(address: address, body: text)
+        draftMessage = ""
+    }
+}
+
+// MARK: - Thread row with muted initials avatar
+struct ThreadRow: View {
+    let thread: SmsThreadItem
+
+    var body: some View {
+        HStack(spacing: 10) {
+            AvatarView(name: thread.contactName, size: 30)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(thread.contactName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(LinkTheme.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text(timestamp)
+                        .font(.caption2)
+                        .foregroundStyle(LinkTheme.textTertiary)
+                }
+                Text(thread.lastMessage)
+                    .font(.caption)
+                    .foregroundStyle(LinkTheme.textSecondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var timestamp: String {
+        Date(timeIntervalSince1970: Double(thread.timestamp) / 1000)
+            .formatted(.relative(presentation: .named))
+    }
+}
+
+// MARK: - Matte chat bubble: incoming surfaceAlt / outgoing solid accent
+struct ChatBubble: View {
+    let message: SmsMessageItem
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: LS.s) {
+            if !message.isIncoming { Spacer(minLength: 48) }
+            VStack(alignment: message.isIncoming ? .leading : .trailing, spacing: 2) {
+                Text(message.body)
+                    .font(.subheadline)
+                    .foregroundStyle(message.isIncoming
+                                     ? LinkTheme.textPrimary
+                                     : Color.white)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(message.isIncoming
+                                ? LinkTheme.surfaceAlt
+                                : LinkTheme.accent)
+                    .clipShape(RoundedRectangle(cornerRadius: LR.card))
+                Text(timestamp)
+                    .font(.caption2)
+                    .foregroundStyle(LinkTheme.textTertiary)
+            }
+            if message.isIncoming { Spacer(minLength: 48) }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var timestamp: String {
+        Date(timeIntervalSince1970: Double(message.date) / 1000)
+            .formatted(date: .omitted, time: .shortened)
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/MirrorCameraView.swift
+```swift
+import SwiftUI
+
+// MARK: - Screen mirroring, virtual webcam & microphone workspace
+struct MirrorAndCameraWorkspaceView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var adb = ADBBridge.shared
+
+    var body: some View {
+        HSplitView {
+            controlPanel
+            videoCanvas
+        }
+        .background(LinkTheme.canvas)
+    }
+
+    // MARK: Left — controls
+    private var controlPanel: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: LS.l) {
+                Text("Controls")
+                    .font(.title2.bold())
+                    .foregroundStyle(LinkTheme.textPrimary)
+                    .padding(.horizontal, LS.xs)
+
+                // Screen mirroring card
+                VStack(alignment: .leading, spacing: LS.m) {
+                    Label("Screen mirroring", systemImage: "video")
+                        .font(.headline)
+                        .foregroundStyle(LinkTheme.textPrimary)
+
+                    Toggle("Turn phone screen off while mirroring", isOn: $conn.isScreenOffMirror)
+                        .font(.subheadline)
+
+                    HStack(spacing: LS.s) {
+                        Button {
+                            conn.setStreamMode("MIRROR")
+                        } label: {
+                            Label(conn.activeStreamMode == "MIRROR" ? "Mirroring" : "Start mirror",
+                                  systemImage: "play")
+                        }
+                        .buttonStyle(.primary)
+
+                        if adb.isScrcpyAvailable && adb.isUSBDeviceConnected {
+                            Button("USB mirror") {
+                                adb.launchNativeScrcpy(screenOff: conn.isScreenOffMirror, stayAwake: true)
+                            }
+                            .buttonStyle(.quiet)
+                            .help("Launch scrcpy over the USB ADB bridge — lowest latency")
+                        }
+                    }
+
+                    HStack(spacing: LS.xs) {
+                        KeyButton(title: "Home", key: 3)
+                        KeyButton(title: "Back", key: 4)
+                        KeyButton(title: "Apps", key: 187)
+                        KeyButton(title: "Lock", key: 26)
+                    }
+                }
+                .linkCard()
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Camera & microphone card
+                VStack(alignment: .leading, spacing: LS.m) {
+                    Label("Camera & microphone", systemImage: "video.badge.ellipsis")
+                        .font(.headline)
+                        .foregroundStyle(LinkTheme.textPrimary)
+
+                    Text("Use your phone's high-resolution camera or microphone as a desk device.")
+                        .font(.caption)
+                        .foregroundStyle(LinkTheme.textSecondary)
+
+                    VStack(spacing: LS.s) {
+                        streamOption(title: "Rear camera", mode: "WEBCAM_BACK", icon: "camera")
+                        streamOption(title: "Front camera", mode: "WEBCAM_FRONT", icon: "person.crop.circle")
+                        streamOption(title: "Microphone audio", mode: "MIC_STREAM", icon: "mic")
+                    }
+
+                    Button {
+                        conn.setStreamMode("NONE")
+                    } label: {
+                        Label("Stop all streams", systemImage: "stop.fill")
+                    }
+                    .buttonStyle(.dangerPrimary)
+                    .disabled(conn.activeStreamMode == "NONE")
+                }
+                .linkCard()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(LS.xl)
+        }
+        .frame(minWidth: 300, maxWidth: 360)
+        .background(LinkTheme.surface)
+        .overlay(
+            Rectangle().fill(LinkTheme.hairline).frame(width: 1)
+        )
+    }
+
+    private func streamOption(title: String, mode: String, icon: String) -> some View {
+        let isActive = conn.activeStreamMode == mode
+        return Button {
+            conn.setStreamMode(mode)
+        } label: {
+            HStack(spacing: LS.s) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .medium))
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                if isActive {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+            }
+            .foregroundStyle(isActive ? LinkTheme.accent : LinkTheme.textPrimary)
+            .padding(.horizontal, LS.m)
+            .padding(.vertical, 8)
+            .background(isActive ? LinkTheme.accent.opacity(0.10) : LinkTheme.surfaceAlt)
+            .clipShape(RoundedRectangle(cornerRadius: LR.control))
+            .overlay(
+                RoundedRectangle(cornerRadius: LR.control)
+                    .strokeBorder(isActive ? LinkTheme.accent.opacity(0.35) : .clear, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Right — live video canvas
+    private var videoCanvas: some View {
+        ZStack(alignment: .top) {
+            Color.black  // video well — functional, allowed
+
+            if let frame = conn.liveVideoFrame {
+                GeometryReader { geo in
+                    Image(nsImage: frame)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .gesture(
+                            SpatialTapGesture()
+                                .onEnded { event in
+                                    let normX = max(0, min(1, event.location.x / max(1, geo.size.width)))
+                                    let normY = max(0, min(1, event.location.y / max(1, geo.size.height)))
+                                    conn.sendRemoteTap(normalizedX: normX, normalizedY: normY)
+                                }
+                        )
+                }
+                .padding(LS.m)
+
+                // Mode chip — where am I streaming from (functional label)
+                VStack {
+                    HStack(spacing: LS.s) {
+                        StatusDot(state: .connected)
+                        Text(streamModeLabel)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.white)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.black.opacity(0.55))
+                    .clipShape(Capsule())
+                    .padding(LS.m)
+
+                    Spacer()
+
+                    // Floating key controls over live video (functional overlay)
+                    HStack(spacing: LS.xs) {
+                        videoKey(icon: "house.fill", key: 3, label: "Home")
+                        videoKey(icon: "chevron.backward", key: 4, label: "Back")
+                        videoKey(icon: "square.on.square", key: 187, label: "Apps")
+                        videoKey(icon: "lock.fill", key: 26, label: "Lock")
+                    }
+                    .padding(LS.s)
+                    .background(Color.black.opacity(0.55))
+                    .clipShape(Capsule())
+                    .padding(.bottom, LS.l)
+                }
+            } else {
+                // The video well is ALWAYS black (both themes) — use white-on-black grays here,
+                // NOT the theme tokens (tokens are for light/dark surfaces).
+                VStack(spacing: LS.m) {
+                    Image(systemName: "video")
+                        .font(.system(size: 36, weight: .light))
+                        .foregroundStyle(Color(white: 0.55))
+                    Text("No live stream")
+                        .font(.headline)
+                        .foregroundStyle(Color(white: 0.8))
+                    Text("Start mirroring or a camera stream from the controls. Click the video to tap your phone.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color(white: 0.55))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 380)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(minWidth: 480)
+    }
+
+    private var streamModeLabel: String {
+        switch conn.activeStreamMode {
+        case "MIRROR":        return "Screen mirror"
+        case "WEBCAM_BACK":   return "Rear camera"
+        case "WEBCAM_FRONT":  return "Front camera"
+        case "MIC_STREAM":    return "Microphone"
+        default:              return "Streaming"
+        }
+    }
+}
+
+// MARK: - Quiet key button for the control panel
+struct KeyButton: View {
+    let title: String
+    let key: Int
+    @ObservedObject private var conn = ConnectionManager.shared
+
+    var body: some View {
+        Button(title) { conn.sendRemoteKeyEvent(key) }
+            .buttonStyle(.quiet)
+            .controlSize(.small)
+    }
+}
+
+// MARK: - Small translucent control over live video
+struct VideoKeyButton: View {
+    let icon: String
+    let key: Int
+    let label: String
+    @ObservedObject private var conn = ConnectionManager.shared
+
+    var body: some View {
+        Button {
+            conn.sendRemoteKeyEvent(key)
+        } label: {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Color.white)
+                .frame(width: 30, height: 30)
+        }
+        .buttonStyle(.plain)
+        .help(label)
+        .accessibilityLabel(label)
+    }
+}
+
+private extension MirrorAndCameraWorkspaceView {
+    func videoKey(icon: String, key: Int, label: String) -> some View {
+        VideoKeyButton(icon: icon, key: key, label: label)
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/NotificationsView.swift
+```swift
+import SwiftUI
+import AppKit
+
+// MARK: - Android notification mirroring workspace
+struct NotificationsWorkspaceView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @LocalState private var replyDrafts: [String: String] = [:]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SectionHeader(title: "Notifications",
+                          subtitle: "Live from your Android — reply inline with your keyboard") {
+                HStack(spacing: LS.s) {
+                    if !conn.mutedApps.isEmpty {
+                        Button("Unmute all apps") { conn.mutedApps.removeAll() }
+                            .buttonStyle(.quiet)
+                            .help("Stop hiding notifications from \(conn.mutedApps.count) muted apps")
+                    }
+                    Button("Clear all") { conn.notifications.removeAll() }
+                        .buttonStyle(.quietDanger)
+                }
+            }
+
+            if conn.notifications.isEmpty {
+                EmptyStateView(
+                    icon: "bell",
+                    title: "No recent notifications",
+                    message: "Incoming alerts from your phone appear here with one-tap 2FA codes and inline replies."
+                )
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: LS.s) {
+                        ForEach(conn.notifications) { item in
+                            NotificationRow(
+                                item: item,
+                                draft: Binding(
+                                    get: { replyDrafts[item.id] ?? "" },
+                                    set: { replyDrafts[item.id] = $0 }
+                                ),
+                                onReply: { text in
+                                    conn.sendNotificationReply(notificationId: item.id, replyText: text)
+                                    replyDrafts[item.id] = ""
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, LS.xl)
+                    .padding(.bottom, LS.xl)
+                }
+            }
+        }
+        .background(LinkTheme.canvas)
+    }
+}
+
+// MARK: - One notification row
+struct NotificationRow: View {
+    let item: AndroidNotificationItem
+    @Binding var draft: String
+    let onReply: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: LS.s) {
+            header
+            Text(item.body)
+                .font(.subheadline)
+                .foregroundStyle(LinkTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let sent = item.replySentText {
+                Label("Reply sent — “\(sent)”", systemImage: "checkmark.circle")
+                    .font(.caption)
+                    .foregroundStyle(LinkTheme.success)   // semantic: action completed
+            } else if item.canReply {
+                replyBar
+            }
+        }
+        .linkCard(padding: LS.l)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline, spacing: LS.s) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.appName.uppercased())
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(LinkTheme.textTertiary)
+                    .kerning(0.4)
+                Text(item.title)
+                    .font(.headline)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: LS.s)
+
+            if let otp = item.otpCode, !otp.isEmpty {
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(otp, forType: .string)
+                } label: {
+                    Label("Copy code \(otp)", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(.quiet)
+                .controlSize(.small)
+                .help("Copy the 2FA code to your clipboard")
+            }
+
+            Button("Mute") {
+                ConnectionManager.shared.mutedApps.insert(item.packageName)
+                ConnectionManager.shared.notifications.removeAll {
+                    $0.packageName == item.packageName
+                }
+            }
+            .buttonStyle(.quiet)
+            .controlSize(.small)
+            .help("Hide future notifications from \(item.appName)")
+
+            Button {
+                ConnectionManager.shared.dismissNotification(notificationId: item.id)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .buttonStyle(.icon)
+            .help("Dismiss this notification")
+        }
+    }
+
+    private var replyBar: some View {
+        HStack(spacing: LS.s) {
+            TextField("Reply from your keyboard", text: $draft)
+                .textFieldStyle(LinkTextFieldStyle())
+                .onSubmit { onReply(draft) }
+            Button {
+                onReply(draft)
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 20))
+            }
+            .buttonStyle(.icon)
+            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/OverviewView.swift
+```swift
+import SwiftUI
+
+// MARK: - Overview: the quiet morning dashboard
+struct OverviewWorkflowView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var clip = ClipboardSyncManager.shared
+    @Binding var selectedSection: DashboardSection
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: LS.xl) {
+                heroCard
+                quickAccessGrid
+                HStack(alignment: .top, spacing: LS.l) {
+                    mediaRemoteCard
+                    clipboardCard
+                }
+            }
+            .padding(LS.xxl)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(LinkTheme.canvas)
+    }
+
+    // MARK: Hero — one sentence, one action
+    private var heroCard: some View {
+        HStack(alignment: .firstTextBaseline, spacing: LS.xl) {
+            VStack(alignment: .leading, spacing: LS.s) {
+                Text(conn.isConnected
+                     ? "\(conn.connectedDeviceName) is ready."
+                     : "Make Android feel at home on your Mac.")
+                    .font(.title2.bold())
+                    .foregroundStyle(LinkTheme.textPrimary)
+                Text("Messages, files, photos, clipboard and mirroring over USB or private local Wi-Fi. Call audio stays on your phone.")
+                    .font(.subheadline)
+                    .foregroundStyle(LinkTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: LS.l)
+            Button {
+                selectedSection = .pairSetup
+            } label: {
+                Label(conn.isConnected ? "Connection details" : "Pair a device",
+                      systemImage: "qrcode")
+            }
+            .buttonStyle(.primary)
+        }
+        .linkCard(padding: LS.xl)
+    }
+
+    // MARK: Quick access — three quiet cards
+    private var quickAccessGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                  spacing: LS.l) {
+            QuickAccessCard(
+                title: "Stay in the conversation",
+                subtitle: "\(conn.notifications.count) notifications · \(conn.smsThreads.count) message threads",
+                icon: "message",
+                buttonTitle: "Open Messages"
+            ) { selectedSection = .messages }
+
+            QuickAccessCard(
+                title: "Move what you need",
+                subtitle: "Drag & drop files · \(conn.remotePhotos.count) photos · synced clipboard",
+                icon: "arrow.left.arrow.right",
+                buttonTitle: "Browse Files & Photos"
+            ) { selectedSection = .files }
+
+            QuickAccessCard(
+                title: "Use your phone from the desk",
+                subtitle: "Screen mirroring, screen-off mode, webcam & media remote",
+                icon: "video",
+                buttonTitle: "Open Mirror & Camera"
+            ) { selectedSection = .mirrorCamera }
+        }
+    }
+
+    // MARK: Media remote
+    private var mediaRemoteCard: some View {
+        VStack(alignment: .leading, spacing: LS.m) {
+            Label("Media remote", systemImage: "music.note")
+                .font(.headline)
+                .foregroundStyle(LinkTheme.textPrimary)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(conn.nowPlayingTitle)
+                    .font(.headline)
+                    .lineLimit(1)
+                Text(conn.nowPlayingArtist)
+                    .font(.caption)
+                    .foregroundStyle(LinkTheme.textSecondary)
+                    .lineLimit(1)
+            }
+
+            HStack(spacing: LS.xs) {
+                ImageToolbarButton(icon: "backward.fill")  { conn.sendMediaAction("PREV") }
+                ImageToolbarButton(icon: "playpause.fill") { conn.sendMediaAction("PLAY_PAUSE") }
+                ImageToolbarButton(icon: "forward.fill")   { conn.sendMediaAction("NEXT") }
+                HairlineDivider().frame(width: 1, height: 18).padding(.horizontal, LS.s)
+                ImageToolbarButton(icon: "speaker.minus.fill") { conn.sendMediaAction("VOL_DOWN") }
+                ImageToolbarButton(icon: "speaker.plus.fill")  { conn.sendMediaAction("VOL_UP") }
+                Spacer(minLength: LS.m)
+                if conn.isRingingPhone {
+                    Button("Stop ringing") { conn.stopRingingPhone() }
+                        .buttonStyle(.dangerPrimary)
+                } else {
+                    Button("Ring phone") { conn.ringPhone() }
+                        .buttonStyle(.quietWarning)
+                }
+            }
+        }
+        .linkCard()
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: Latest clipboard
+    private var clipboardCard: some View {
+        VStack(alignment: .leading, spacing: LS.m) {
+            HStack {
+                Label("Universal clipboard", systemImage: "doc.on.clipboard")
+                    .font(.headline)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                Spacer()
+                Toggle("Sync", isOn: $clip.isSyncEnabled)
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .labelsHidden()
+                    .help("Universal clipboard sync")
+            }
+            if let latest = clip.history.first {
+                Text(latest.content)
+                    .font(.subheadline.monospaced() as Font)
+                    .lineLimit(2)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                Text("Copied on \(latest.source) · ready to paste with ⌘V")
+                    .font(.caption)
+                    .foregroundStyle(LinkTheme.textTertiary)
+            } else {
+                Text("Copy text or a link on either device and it appears here, ready to paste.")
+                    .font(.subheadline)
+                    .foregroundStyle(LinkTheme.textSecondary)
+            }
+        }
+        .linkCard()
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Quick access card (replaces WorkflowCard — no numbers, no green)
+struct QuickAccessCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let buttonTitle: String
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: LS.m) {
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(LinkTheme.accent)
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(LinkTheme.textPrimary)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(LinkTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: 30, alignment: .topLeading)
+            Button(buttonTitle, action: action)
+                .buttonStyle(.quiet)
+        }
+        .linkCard()
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Small square icon control used by the media remote
+struct ImageToolbarButton: View {
+    let icon: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .medium))
+                .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.icon)
+        .accessibilityLabel(accessibilityName)
+    }
+
+    private var accessibilityName: String {
+        switch icon {
+        case "backward.fill":       return "Previous track"
+        case "playpause.fill":      return "Play or pause"
+        case "forward.fill":        return "Next track"
+        case "speaker.minus.fill":  return "Volume down"
+        case "speaker.plus.fill":   return "Volume up"
+        default:                    return icon
+        }
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/PairingCallHUDView.swift
+```swift
+import SwiftUI
+import CoreImage.CIFilterBuiltins
+
+// MARK: - Pairing: QR card + connection facts + USB bridge
+struct PairingQRSetupView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var adb = ADBBridge.shared
+
+    var qrPayloadString: String {
+        "{\"host\":\"\(conn.localIPAddress)\",\"port\":\(conn.listenPort),\"token\":\"\(conn.pairingToken)\",\"macName\":\"\(Host.current().localizedName ?? "Mac")\"}"
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: LS.xl) {
+                SectionHeader(title: "Pair your Android",
+                              subtitle: "Scan once in the LinkToMac Android app — or plug in a USB cable.") {}
+
+                HStack(alignment: .top, spacing: LS.xl) {
+                    qrCard
+                    connectionFacts
+                }
+                .frame(maxWidth: 940, alignment: .leading)
+            }
+            .padding(.bottom, LS.xxl)
+        }
+        .background(LinkTheme.canvas)
+    }
+
+    // MARK: QR — white backing is functional (scanner contrast), not decoration
+    private var qrCard: some View {
+        VStack(spacing: LS.m) {
+            if let qrImg = generateQRCode(from: qrPayloadString) {
+                Image(nsImage: qrImg)
+                    .interpolation(.none)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 196, height: 196)
+                    .padding(LS.m)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: LR.control))
+            }
+            Text("Scan in the Android app")
+                .font(.caption)
+                .foregroundStyle(LinkTheme.textTertiary)
+        }
+        .linkCard(padding: LS.l)
+    }
+
+    // MARK: Facts — IP, port, token, USB bridge
+    private var connectionFacts: some View {
+        VStack(alignment: .leading, spacing: LS.l) {
+            VStack(alignment: .leading, spacing: LS.m) {
+                Label("Local Wi-Fi", systemImage: "wifi")
+                    .font(.headline)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                MonoValue(label: "Mac address", value: conn.localIPAddress)
+                MonoValue(label: "Port", value: "\(conn.listenPort)")
+                MonoValue(label: "Pairing token", value: conn.pairingToken, prominent: true)
+            }
+
+            HairlineDivider()
+
+            VStack(alignment: .leading, spacing: LS.m) {
+                Label("USB bridge", systemImage: "cable.connector")
+                    .font(.headline)
+                    .foregroundStyle(LinkTheme.textPrimary)
+
+                HStack(spacing: LS.s) {
+                    StatusDot(state: adb.isUSBDeviceConnected ? .connected : .disconnected)
+                    Text(adb.isUSBDeviceConnected
+                         ? "Phone detected"
+                         : "No USB phone detected")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(LinkTheme.textPrimary)
+                    if adb.isUSBDeviceConnected {
+                        Text(adb.usbSerial)
+                            .font(.caption2.monospaced() as Font)
+                            .foregroundStyle(LinkTheme.textTertiary)
+                            .lineLimit(1)
+                    }
+                }
+
+                Text("With USB debugging on, port 54921 is bridged automatically for zero-latency transfers and screen-off mirroring.")
+                    .font(.caption)
+                    .foregroundStyle(LinkTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button("Refresh network & USB") {
+                    conn.localIPAddress = ConnectionManager.detectLocalIPAddress() ?? "127.0.0.1"
+                    conn.startServer()
+                    adb.pollUSBDevices()
+                }
+                .buttonStyle(.quiet)
+            }
+        }
+        .linkCard(padding: LS.l)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: QR generation (identical to original)
+    private func generateQRCode(from string: String) -> NSImage? {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(string.utf8)
+        filter.correctionLevel = "M"
+        guard let outputImage = filter.outputImage else { return nil }
+        let transformed = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+        guard let cgImg = context.createCGImage(transformed, from: transformed.extent) else { return nil }
+        return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
+    }
+}
+
+// MARK: - Floating incoming call HUD
+struct IncomingCallHUDView: View {
+    @ObservedObject var conn = ConnectionManager.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: LS.m) {
+            HStack(spacing: LS.m) {
+                Image(systemName: "phone.down.waves.left.and.right")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(LinkTheme.accent)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(conn.callState.state == "RINGING"
+                         ? "Incoming call"
+                         : "Active call · audio on phone")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LinkTheme.textSecondary)
+                    Text(conn.callState.contactName)
+                        .font(.headline)
+                        .foregroundStyle(LinkTheme.textPrimary)
+                    Text(conn.callState.phoneNumber)
+                        .font(.caption)
+                        .foregroundStyle(LinkTheme.textSecondary)
+                }
+            }
+
+            HStack(spacing: LS.s) {
+                if conn.callState.state == "RINGING" {
+                    Button("Answer") { conn.sendCallAction("ANSWER") }
+                        .buttonStyle(.primary)
+                    Button("Decline") { conn.sendCallAction("DECLINE") }
+                        .buttonStyle(.dangerPrimary)
+                    Button("Reply by SMS") {
+                        conn.sendCallAction(
+                            "DECLINE_WITH_SMS",
+                            smsReply: "I'm at my desk right now — I'll call you back shortly."
+                        )
+                    }
+                    .buttonStyle(.quiet)
+                } else {
+                    Button(conn.callState.isMuted ? "Unmute" : "Mute") {
+                        conn.sendCallAction("MUTE")
+                    }
+                    .buttonStyle(.quiet)
+                    Button("End call") { conn.sendCallAction("END") }
+                        .buttonStyle(.dangerPrimary)
+                }
+            }
+        }
+        .padding(LS.l)
+        .background(.ultraThickMaterial)   // system material — allowed (HIG overlay)
+        .clipShape(RoundedRectangle(cornerRadius: LR.overlay))
+        .overlay(
+            RoundedRectangle(cornerRadius: LR.overlay)
+                .strokeBorder(LinkTheme.hairline, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.15), radius: 24, y: 8)  // the ONE allowed shadow (floating overlay)
+        .frame(minWidth: 300)
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/ProtocolModels.swift
+```swift
+import Foundation
+
+// MARK: - Binary Wire Frame Constants
+enum WireFrameType: UInt8 {
+    case jsonControl = 0x01
+    case fileChunk   = 0x02
+    case videoFrame  = 0x03
+    case audioFrame  = 0x04
+}
+
+// MARK: - Top-Level JSON Envelope
+struct LinkEnvelope: Codable {
+    var type: String
+    var timestamp: Int64 = Int64(Date().timeIntervalSince1970 * 1000)
+    var payload: [String: String] = [:]
+    var notifications: [AndroidNotificationItem]? = nil
+    var smsThreads: [SmsThreadItem]? = nil
+    var contacts: [AndroidContactItem]? = nil
+    var files: [RemoteFileItem]? = nil
+    var photos: [RemotePhotoItem]? = nil
+}
+
+// MARK: - Feature Models
+struct AndroidNotificationItem: Identifiable, Codable, Hashable {
+    var id: String
+    var packageName: String
+    var appName: String
+    var title: String
+    var body: String
+    var timestamp: Int64
+    var canReply: Bool
+    var otpCode: String?
+    var replySentText: String?
+}
+
+struct SmsMessageItem: Identifiable, Codable, Hashable {
+    var id: String
+    var address: String
+    var body: String
+    var date: Int64
+    var isIncoming: Bool
+}
+
+struct SmsThreadItem: Identifiable, Codable, Hashable {
+    var id: String // phone number / address
+    var contactName: String
+    var address: String
+    var lastMessage: String
+    var timestamp: Int64
+    var messages: [SmsMessageItem]
+}
+
+struct AndroidContactItem: Identifiable, Codable, Hashable {
+    var id: String
+    var name: String
+    var phoneNumber: String
+}
+
+struct RemoteFileItem: Identifiable, Codable, Hashable {
+    var id: String { path }
+    var name: String
+    var path: String
+    var sizeBytes: Int64
+    var isDirectory: Bool
+    var lastModified: Int64
+}
+
+struct RemotePhotoItem: Identifiable, Codable, Hashable {
+    var id: String
+    var name: String
+    var path: String
+    var dateTaken: Int64
+    var sizeBytes: Int64
+    var isVideo: Bool
+    var thumbnailBase64: String?
+}
+
+struct ClipboardHistoryItem: Identifiable, Hashable {
+    let id = UUID()
+    let content: String
+    let isUrl: Bool
+    let source: String // "Android" or "This Mac"
+    let timestamp: Date
+}
+
+struct ActiveTransferItem: Identifiable {
+    let id: String
+    var fileName: String
+    var direction: String // "Sending to Android" or "Receiving from Android"
+    var totalBytes: Int64
+    var transferredBytes: Int64
+    var transport: String
+    var isCompleted: Bool = false
+
+    var progress: Double {
+        guard totalBytes > 0 else { return 0 }
+        return min(1.0, Double(transferredBytes) / Double(totalBytes))
+    }
+}
+
+struct IncomingCallState: Equatable {
+    var isActive: Bool = false
+    var state: String = "IDLE" // "RINGING", "OFFHOOK", "IDLE"
+    var phoneNumber: String = ""
+    var contactName: String = ""
+    var isMuted: Bool = false
+}
+
+// MARK: - Wire Framing Helper
+enum WireFramer {
+    static func packJSON(_ envelope: LinkEnvelope) -> Data? {
+        guard let jsonData = try? JSONEncoder().encode(envelope) else { return nil }
+        return packFrame(type: .jsonControl, payload: jsonData)
+    }
+
+    static func packFrame(type: WireFrameType, payload: Data) -> Data {
+        var lengthBE = UInt32(payload.count).bigEndian
+        var header = Data(bytes: &lengthBE, count: 4)
+        header.append(type.rawValue)
+        header.append(payload)
+        return header
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/build_mac_app.sh
+```bash
+#!/usr/bin/env bash
+set -e
+
+echo "=========================================="
+echo " Building LinkToMac for macOS (v1.61)..."
+echo "=========================================="
+
+swift build -c release
+
+APP_DIR="build/LinkToMac.app"
+CONTENTS_DIR="$APP_DIR/Contents"
+MACOS_DIR="$CONTENTS_DIR/MacOS"
+RESOURCES_DIR="$CONTENTS_DIR/Resources"
+
+rm -rf "$APP_DIR"
+mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
+
+cp ".build/release/LinkToMac" "$MACOS_DIR/LinkToMac"
+cp "Info.plist" "$CONTENTS_DIR/Info.plist"
+chmod +x "$MACOS_DIR/LinkToMac"
+
+# Ad-hoc sign so macOS Local Network & Notification permissions work smoothly
+codesign --force --deep --sign - "$APP_DIR"
+
+echo "=========================================="
+echo " SUCCESS: Built $APP_DIR"
+echo " Run with: open $APP_DIR"
+echo "=========================================="
 ```
 
 ---
