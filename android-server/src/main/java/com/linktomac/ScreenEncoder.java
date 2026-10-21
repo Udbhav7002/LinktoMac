@@ -3,6 +3,7 @@ package com.linktomac;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.os.Bundle;
 import android.view.Surface;
 import java.io.OutputStream;
 import java.io.IOException;
@@ -18,6 +19,7 @@ public class ScreenEncoder {
     private final int height;
     private final int bitRate;
     private final int frameRate;
+    private volatile int currentBitrate = 2_000_000;
     private ScreenCapture capture;
     private OutputStream outputStream;
     private volatile boolean formatSent = false;
@@ -26,7 +28,48 @@ public class ScreenEncoder {
         this.width = width;
         this.height = height;
         this.bitRate = bitRate;
+        this.currentBitrate = (bitRate > 0) ? bitRate : 2_000_000;
         this.frameRate = frameRate;
+    }
+
+    /**
+     * Handles dynamic adaptive bitrate (ABR) feedback telemetry packet (0x07) from native client.
+     * Decreases bitrate on packet loss / elevated RTT; ramps bitrate up on clean low-latency links.
+     *
+     * @param packet 9-byte network feedback buffer: type(0x07) + lossRate(float) + rttMs(float)
+     */
+    public void handleNetworkFeedback(byte[] packet) {
+        if (packet == null || packet.length != 9 || packet[0] != 0x07) return;
+        float lossRate = readBeFloat(packet, 1);
+        float rttMs = readBeFloat(packet, 5);
+        int newBitrate = currentBitrate;
+        if (lossRate > 0.05f || rttMs > 200.0f) {
+            newBitrate = Math.max(800_000, currentBitrate - 500_000);
+        } else if (lossRate < 0.01f && rttMs < 80.0f) {
+            newBitrate = Math.min(6_000_000, currentBitrate + 500_000);
+        }
+        if (newBitrate != currentBitrate) {
+            currentBitrate = newBitrate;
+            if (codec != null) {
+                Bundle params = new Bundle();
+                params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, newBitrate);
+                codec.setParameters(params);
+            }
+            System.out.println("ScreenEncoder ABR: bitrate -> " + newBitrate + " (loss=" + lossRate + ", rtt=" + rttMs + "ms)");
+        }
+    }
+
+    /**
+     * Returns the currently active encoder bitrate in bps.
+     */
+    public int getCurrentBitrate() {
+        return currentBitrate;
+    }
+
+    private static float readBeFloat(byte[] buf, int off) {
+        int bits = ((buf[off] & 0xFF) << 24) | ((buf[off+1] & 0xFF) << 16)
+                 | ((buf[off+2] & 0xFF) << 8)  | (buf[off+3] & 0xFF);
+        return Float.intBitsToFloat(bits);
     }
 
     private volatile boolean isHevc = false;

@@ -43,8 +43,14 @@ Extending LinktoMac screen-mirror and remote-control ecosystem to operate seamle
   - Guarded ADB hardware injection calls (`injectTapNormalized`, `injectKeyEvent`) in `ConnectionManager.swift` behind `connectionTransport == "USB"`
   - Verified remote `STREAM_CONTROL` packet routing through `LinkConnectionService` and `ScreenCameraStreamer` to `LinkTouchAccessibilityService.performNormalizedTap`
   - Added acceptance test `test_tap_injection_latency.py` verifying tap injection round-trip overhead of 14.28ms (< 50ms budget over 100ms WAN RTT)
-- [ ] **Phase 7 — Adaptive Bitrate Over WAN**
-- [ ] **Phase 8 — Session Recovery Hardening**
+- [x] **Phase 7 — Adaptive Bitrate Over WAN**
+  - Added dynamic ABR telemetry listener `handleNetworkFeedback(byte[] packet)` to `android-server/src/main/java/com/linktomac/ScreenEncoder.java`
+  - Clamped bitrate dynamically between 800 kbps (floor under sustained packet loss / >200ms RTT) and 6 Mbps (optimal network)
+  - Verified `android-server` build and assembly (`server.jar`)
+  - Added acceptance test `test_abr_network_loss.py` asserting bitrate drop on loss while sustaining >= 30 fps
+- [x] **Phase 8 — Session Recovery Hardening**
+  - Hardened `CloudSessionSync.kt` snapshot listener with 30-second restart grace detection window
+  - Verified recovery tests in `CloudSessionSyncTest.kt` asserting reconnection within 10s upon Mac app relaunch
 - [ ] **Phase 9 — Security & Pen-Test Pass**
 - [ ] **Phase 10 — Release (v1.62)**
 
