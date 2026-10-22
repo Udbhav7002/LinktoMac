@@ -145,11 +145,13 @@ class LinkConnectionService : Service() {
             closeSocketInternal()
             try {
                 statusMessage = "Connecting to $host:$port..."
-                val isLocal = host == "127.0.0.1" || host == "localhost"
+                val isLocal = host == "127.0.0.1" || host == "localhost" ||
+                    host.startsWith("10.") || host.startsWith("192.168.") ||
+                    host.startsWith("172.") || host.endsWith(".local")
                 val caPem = getSharedPreferences("linktomac", MODE_PRIVATE)
                     .getString("ca_cert_pem", null)
 
-                val s = if (isLocal) {
+                val s = if (isLocal || caPem.isNullOrEmpty()) {
                     val raw = Socket()
                     raw.tcpNoDelay = true
                     raw.keepAlive = true
@@ -165,13 +167,6 @@ class LinkConnectionService : Service() {
                 val transport = if (host == "127.0.0.1") "USB" else if (isLocal) "Local Wi-Fi" else "Remote Relay"
                 statusMessage = "Connected ($transport • $host)"
                 startForegroundNotification("Connected to Mac ($transport)")
-
-                // Phase 5: send 36-byte token first
-                if (token.isNotEmpty()) {
-                    val tokenBytes = token.padEnd(36, 0.toChar()).toByteArray(Charsets.US_ASCII)
-                    outputStream?.write(tokenBytes)
-                    outputStream?.flush()
-                }
 
                 // Save last successful host
                 getSharedPreferences("linktomac", MODE_PRIVATE).edit()
@@ -307,6 +302,16 @@ class LinkConnectionService : Service() {
         val payload = obj.optJSONObject("payload") ?: JSONObject()
 
         when (type) {
+            "HELLO" -> {
+                val macName = payload.optString("deviceName", "Mac")
+                connectedMacName = macName
+                val pairToken = payload.optString("pairToken", "")
+                if (pairToken.isNotEmpty()) {
+                    getSharedPreferences("linktomac", MODE_PRIVATE).edit()
+                        .putString("lastToken", pairToken)
+                        .apply()
+                }
+            }
             "NOTIFICATION_REPLY" -> {
                 val id = payload.optString("id")
                 val replyText = payload.optString("replyText")

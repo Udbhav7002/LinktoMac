@@ -134,7 +134,8 @@ class MainActivity : ComponentActivity() {
                         }
                         qrLauncher.launch(options)
                     },
-                    onConnectUSB = { triggerConnect("127.0.0.1", 54921, tokenInput) }
+                    onConnectUSB = { triggerConnect("127.0.0.1", 54921, tokenInput) },
+                    onConnectManual = { ip -> triggerConnect(ip.trim(), 54921, tokenInput) }
                 )
             }
 
@@ -337,8 +338,12 @@ class MainActivity : ComponentActivity() {
     private fun PairingCard(
         tokenInput: String,
         onScanQR: () -> Unit,
-        onConnectUSB: () -> Unit
+        onConnectUSB: () -> Unit,
+        onConnectManual: (String) -> Unit
     ) {
+        var showManualInput by remember { mutableStateOf(false) }
+        var manualIp by remember { mutableStateOf("") }
+
         AppCard {
             Button(onClick = onScanQR, shape = LR.control, modifier = Modifier.fillMaxWidth()) {
                 Icon(
@@ -347,7 +352,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(Modifier.width(LS.s))
-                Text("Scan Mac QR code")
+                Text("Scan Mac QR code (Wireless)")
             }
             FilledTonalButton(onClick = onConnectUSB, shape = LR.control, modifier = Modifier.fillMaxWidth()) {
                 Icon(
@@ -356,7 +361,32 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(Modifier.width(LS.s))
-                Text("Connect via USB")
+                Text("Connect via USB cable")
+            }
+
+            if (!showManualInput) {
+                TextButton(
+                    onClick = { showManualInput = true },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text("Or enter Mac IP manually", fontSize = 12.sp)
+                }
+            } else {
+                OutlinedTextField(
+                    value = manualIp,
+                    onValueChange = { manualIp = it },
+                    label = { Text("Mac IP Address (e.g. 10.3.9.246)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = { if (manualIp.isNotBlank()) onConnectManual(manualIp) },
+                    enabled = manualIp.isNotBlank(),
+                    shape = LR.control,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Connect to IP")
+                }
             }
         }
     }

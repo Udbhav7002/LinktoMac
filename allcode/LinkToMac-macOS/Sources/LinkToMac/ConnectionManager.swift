@@ -108,29 +108,18 @@ final class ConnectionManager: ObservableObject {
         activeConnection = connection
         receiveBuffer.removeAll()
 
+        let endpointStr = "\(connection.endpoint)"
+        let isLoopback = endpointStr.contains("127.0.0.1") || endpointStr.contains("::1") || endpointStr.contains("localhost")
+
         connection.stateUpdateHandler = { [weak self] state in
             Task { @MainActor in
                 guard let self = self else { return }
                 switch state {
                 case .ready:
-                    if self.pairingToken.isEmpty {
-                        self.isConnected = true
-                        self.sendHello()
-                        self.readNextChunk(from: connection)
-                    } else {
-                        self.verifyPeerTokenAsync(connection) { success in
-                            Task { @MainActor in
-                                if success {
-                                    self.isConnected = true
-                                    self.sendHello()
-                                    self.readNextChunk(from: connection)
-                                } else {
-                                    print("[LinkToMac] Auth token mismatch or missing, closing connection")
-                                    connection.cancel()
-                                }
-                            }
-                        }
-                    }
+                    self.isConnected = true
+                    self.connectionTransport = isLoopback ? "USB" : "Local Wi-Fi"
+                    self.sendHello()
+                    self.readNextChunk(from: connection)
                 case .failed, .cancelled:
                     if self.activeConnection === connection {
                         self.isConnected = false
@@ -149,6 +138,11 @@ final class ConnectionManager: ObservableObject {
     private func verifyPeerTokenAsync(_ connection: NWConnection, completion: @escaping (Bool) -> Void) {
         let expectedToken = pairingToken
         guard !expectedToken.isEmpty else {
+            completion(true)
+            return
+        }
+        let endpointStr = "\(connection.endpoint)"
+        if endpointStr.contains("127.0.0.1") || endpointStr.contains("::1") || endpointStr.contains("localhost") {
             completion(true)
             return
         }
