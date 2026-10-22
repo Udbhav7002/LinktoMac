@@ -21,13 +21,13 @@
 
 ## 🚀 Fast Downloads
 
-Download production-ready installers directly from the repository or GitHub Releases:
+Download production-ready installers directly from the latest release:
 
 | Platform | Download Installer | Package Details |
 | :--- | :--- | :--- |
-| **macOS** | [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/raw/main/public/downloads/LinkToMac.dmg) | Drag-and-drop installer for Apple Silicon & Intel (`macOS 13+`) |
-| **Android** | [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/raw/main/public/downloads/LinkToMac.apk) | Companion app (`Android 11–15`), zero root required |
-| **Releases** | [**GitHub Releases**](https://github.com/Udbhav7002/LinktoMac/releases) | Tagged binaries, changelogs, and signature checksums |
+| **macOS** | [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.dmg) | Drag-and-drop installer for Apple Silicon & Intel (`macOS 13+`) |
+| **Android** | [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.apk) | Companion app (`Android 11–15`), zero root required |
+| **Releases** | [**Official v1.62 Release**](https://github.com/Udbhav7002/LinktoMac/releases/tag/v1.62) | Release notes, standalone ZIP, and signature checksums |
 
 *Cryptographic verification checksums for all distribution artifacts are published in [`release/SHA256SUMS.txt`](release/SHA256SUMS.txt).*
 
@@ -100,7 +100,7 @@ Download production-ready installers directly from the repository or GitHub Rele
 
 ### macOS Installation
 
-1. Download [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/raw/main/public/downloads/LinkToMac.dmg).
+1. Download [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.dmg).
 2. Open the disk image and drag **LinkToMac.app** into the **Applications** folder shortcut.
 3. Launch `LinkToMac` from **Applications**, **Launchpad**, or **Spotlight** (`Cmd + Space`).
 4. *(If macOS Gatekeeper flags an unnotarized build on first open)*:
@@ -110,7 +110,7 @@ Download production-ready installers directly from the repository or GitHub Rele
 
 ### Android Installation
 
-1. Download [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/raw/main/public/downloads/LinkToMac.apk) onto your device and tap **Install** (allow *Install from Unknown Sources* if prompted).
+1. Download [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.apk) onto your device and tap **Install** (allow *Install from Unknown Sources* if prompted).
 2. Or install directly from your Mac terminal over USB:
    ```bash
    adb install -r public/downloads/LinkToMac.apk
