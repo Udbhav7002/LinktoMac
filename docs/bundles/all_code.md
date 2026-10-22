@@ -1,6 +1,6 @@
 # LinktoMac — Complete Codebase & Project Architecture
 
-> **Repository Summary**: `221` Source & Configuration Files | `90,859` Total Lines of Code
+> **Repository Summary**: `221` Source & Configuration Files | `90,935` Total Lines of Code
 
 LinktoMac is a high-performance, low-latency screen mirroring and remote control ecosystem connecting Android devices with macOS. It features hardware-accelerated 60fps streaming, bi-directional clipboard sync, telephony/SMS management, notification bridging, and low-latency input event injection over USB (ADB) and local Wi-Fi networks.
 
@@ -4144,8 +4144,8 @@ android {
         applicationId = "com.linktomac.android"
         minSdk = 29
         targetSdk = 34
-        versionCode = 162
-        versionName = "1.62"
+        versionCode = 163
+        versionName = "1.62.1"
     }
 
     buildFeatures {
@@ -4303,22 +4303,11 @@ dependencies {
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
-    <!-- SMS, Contacts & Call Controls -->
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-
     <!-- Files, Photos, Camera & Microphone -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
@@ -5901,6 +5890,7 @@ class MainActivity : ComponentActivity() {
         var statusText by remember { mutableStateOf(LinkConnectionService.statusMessage) }
         var discoveredHost by remember { mutableStateOf(LinkConnectionService.discoveredMacHost) }
         var permissionTick by remember { mutableStateOf(0) }
+        var showRestrictedGuide by remember { mutableStateOf(false) }
 
         // Existing 1s status poll — now also refreshes permission checklist states
         LaunchedEffect(Unit) {
@@ -5985,15 +5975,17 @@ class MainActivity : ComponentActivity() {
                     states = perms,
                     onRequestRuntime = { permLauncher.launch(runtimePermissionBundle()) },
                     onOpenNotificationSettings = {
-                        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        if (Build.VERSION.SDK_INT >= 33) {
+                            showRestrictedGuide = true
+                        } else {
+                            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        }
                     },
                     onOpenStorageSettings = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-                            val intent = Intent(
-                                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                                android.net.Uri.parse("package:$packageName")
-                            )
-                            startActivity(intent)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            permLauncher.launch(arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO))
+                        } else {
+                            permLauncher.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
                         }
                     },
                     onOpenBatterySettings = {
@@ -6007,6 +5999,25 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     onOpenAccessibilitySettings = {
+                        if (Build.VERSION.SDK_INT >= 33) {
+                            showRestrictedGuide = true
+                        } else {
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        }
+                    }
+                )
+            }
+
+            if (showRestrictedGuide) {
+                RestrictedSettingsUnlockDialog(
+                    onDismiss = { showRestrictedGuide = false },
+                    onOpenAppDetails = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = android.net.Uri.fromParts("package", packageName, null)
+                        }
+                        startActivity(intent)
+                    },
+                    onOpenAccessibility = {
                         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     }
                 )
@@ -6223,9 +6234,9 @@ class MainActivity : ComponentActivity() {
 
         val missing = listOf(
             Row(
-                icon = R.drawable.ic_chat,
-                title = "Messages, calls & camera",
-                subtitle = "SMS, contacts, phone state, camera and microphone",
+                icon = R.drawable.ic_link,
+                title = "Camera & Microphone",
+                subtitle = "Virtual webcam and audio streaming for your Mac",
                 granted = states.runtime,
                 onFix = onRequestRuntime
             ),
@@ -6296,6 +6307,74 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Composable
+    private fun RestrictedSettingsUnlockDialog(
+        onDismiss: () -> Unit,
+        onOpenAppDetails: () -> Unit,
+        onOpenAccessibility: () -> Unit
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                    text = "Unlock Remote Control (Android 13+)",
+                    fontSize = LT.section,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(LS.m)) {
+                    Text(
+                        text = "Android protects sideloaded apps by restricting accessibility and notifications by default. Follow these quick steps to unlock:",
+                        fontSize = LT.body,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(LS.s),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), shape = LR.card)
+                            .padding(LS.m)
+                    ) {
+                        Text(
+                            text = "1. Tap '1. Open App Settings' below.",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = LT.body,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "2. Tap the three dots (⋮) in the top-right corner and select 'Allow restricted settings' (confirm with PIN/fingerprint).",
+                            fontSize = LT.caption,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "3. Tap '2. Enable Accessibility' below and toggle LinkToMac ON.",
+                            fontSize = LT.caption,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = onOpenAppDetails,
+                    shape = LR.control
+                ) {
+                    Text("1. Open App Settings")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = onOpenAccessibility,
+                    shape = LR.control
+                ) {
+                    Text("2. Enable Accessibility")
+                }
+            }
+        )
+    }
+
     // ---------------------------------------------------- permission state
 
     private data class PermissionStates(
@@ -6311,14 +6390,6 @@ class MainActivity : ComponentActivity() {
 
     private fun runtimePermissionBundle(): Array<String> {
         val perms = mutableListOf(
-            Manifest.permission.READ_SMS,
-            Manifest.permission.SEND_SMS,
-            Manifest.permission.RECEIVE_SMS,
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_CALL_LOG,
-            Manifest.permission.ANSWER_PHONE_CALLS,
-            Manifest.permission.CALL_PHONE,
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO
         )
@@ -6342,9 +6413,11 @@ class MainActivity : ComponentActivity() {
             )?.contains(packageName) == true
         } catch (_: Exception) { false }
 
-        val storageGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Environment.isExternalStorageManager()
-        } else true
+        val storageGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
 
         val batteryGranted = try {
             (getSystemService(POWER_SERVICE) as PowerManager)
@@ -25334,13 +25407,13 @@ release:
 
 ## 🚀 Fast Downloads
 
-Download production-ready installers directly from the repository or GitHub Releases:
+Download production-ready installers directly from the latest release:
 
 | Platform | Download Installer | Package Details |
 | :--- | :--- | :--- |
-| **macOS** | [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/raw/main/public/downloads/LinkToMac.dmg) | Drag-and-drop installer for Apple Silicon & Intel (`macOS 13+`) |
-| **Android** | [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/raw/main/public/downloads/LinkToMac.apk) | Companion app (`Android 11–15`), zero root required |
-| **Releases** | [**GitHub Releases**](https://github.com/Udbhav7002/LinktoMac/releases) | Tagged binaries, changelogs, and signature checksums |
+| **macOS** | [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.dmg) | Drag-and-drop installer for Apple Silicon & Intel (`macOS 13+`) |
+| **Android** | [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.apk) | Companion app (`Android 11–15`), zero root required |
+| **Releases** | [**Official v1.62.1 Release**](https://github.com/Udbhav7002/LinktoMac/releases/tag/v1.62.1) | Release notes, standalone ZIP, and signature checksums |
 
 *Cryptographic verification checksums for all distribution artifacts are published in [`release/SHA256SUMS.txt`](release/SHA256SUMS.txt).*
 
@@ -25413,7 +25486,7 @@ Download production-ready installers directly from the repository or GitHub Rele
 
 ### macOS Installation
 
-1. Download [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/raw/main/public/downloads/LinkToMac.dmg).
+1. Download [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.dmg).
 2. Open the disk image and drag **LinkToMac.app** into the **Applications** folder shortcut.
 3. Launch `LinkToMac` from **Applications**, **Launchpad**, or **Spotlight** (`Cmd + Space`).
 4. *(If macOS Gatekeeper flags an unnotarized build on first open)*:
@@ -25423,7 +25496,7 @@ Download production-ready installers directly from the repository or GitHub Rele
 
 ### Android Installation
 
-1. Download [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/raw/main/public/downloads/LinkToMac.apk) onto your device and tap **Install** (allow *Install from Unknown Sources* if prompted).
+1. Download [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.apk) onto your device and tap **Install** (allow *Install from Unknown Sources* if prompted).
 2. Or install directly from your Mac terminal over USB:
    ```bash
    adb install -r public/downloads/LinkToMac.apk
@@ -51213,9 +51286,12 @@ ditto -c -k --keepParent "$APP_BUNDLE" "$RELEASE_DIR/LinkToMac-macOS.zip"
 # ------------------------------------------------------------------------------
 echo "🤖 [3/4] Building Android Companion Application (LinkToMac.apk)..."
 cd "$REPO_ROOT/allcode/LinkToMac-Android"
-./gradlew assembleDebug --no-daemon
+./gradlew assembleRelease --no-daemon
 
-APK_SRC="$REPO_ROOT/allcode/LinkToMac-Android/app/build/outputs/apk/debug/app-debug.apk"
+APK_SRC="$REPO_ROOT/allcode/LinkToMac-Android/app/build/outputs/apk/release/app-release.apk"
+if [ ! -f "$APK_SRC" ]; then
+    APK_SRC="$REPO_ROOT/allcode/LinkToMac-Android/app/build/outputs/apk/debug/app-debug.apk"
+fi
 cp -f "$APK_SRC" "$RELEASE_DIR/LinkToMac.apk"
 
 # Sync web portal distribution files
@@ -60051,7 +60127,7 @@ if __name__ == "__main__":
           <line x1="12" y1="18" x2="12.01" y2="18"></line>
         </svg>
         LinkToMac
-        <span class="logo-badge">v1.62</span>
+        <span class="logo-badge">v1.62.1</span>
       </a>
       <a href="https://github.com/Udbhav7002/LinktoMac" target="_blank" class="github-link">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -60088,7 +60164,7 @@ if __name__ == "__main__":
         </div>
 
         <div class="badge-bar">
-          <span class="badge-pill">v1.62 (Latest)</span>
+          <span class="badge-pill">v1.62.1 (Latest)</span>
           <span class="badge-pill">macOS 13+ (Apple Silicon & Intel)</span>
           <span class="badge-pill">Android 11–15 Ready</span>
           <span class="badge-pill">Zero Cloud Needed</span>
@@ -60254,6 +60330,6 @@ LinkToMac Remote Mode does **NOT** require configuring router NAT port-forwardin
 ```text
 c83dd972db367dd422112e814baa628e2529d59d5c327b77fb612fdec50cab4b  LinkToMac.dmg
 588abf728f80673af36739a6f5de110f92a26df576bc4607c9cb2aa2a5c95a4c  LinkToMac-macOS.zip
-6ff37d0791ddc3a405ffdcd364412ed5a30e009f5e7e8a36f1ce8ddb9ab27acc  LinkToMac.apk
+ea78014913a2abaddae09b081ad8b39da3563d44878f8f39de51283d868dbe19  LinkToMac.apk
 ```
 

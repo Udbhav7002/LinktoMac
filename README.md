@@ -27,7 +27,7 @@ Download production-ready installers directly from the latest release:
 | :--- | :--- | :--- |
 | **macOS** | [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.dmg) | Drag-and-drop installer for Apple Silicon & Intel (`macOS 13+`) |
 | **Android** | [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.apk) | Companion app (`Android 11–15`), zero root required |
-| **Releases** | [**Official v1.62 Release**](https://github.com/Udbhav7002/LinktoMac/releases/tag/v1.62) | Release notes, standalone ZIP, and signature checksums |
+| **Releases** | [**Official v1.62.1 Release**](https://github.com/Udbhav7002/LinktoMac/releases/tag/v1.62.1) | Release notes, standalone ZIP, and signature checksums |
 
 *Cryptographic verification checksums for all distribution artifacts are published in [`release/SHA256SUMS.txt`](release/SHA256SUMS.txt).*
 

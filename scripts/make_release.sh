@@ -38,9 +38,12 @@ ditto -c -k --keepParent "$APP_BUNDLE" "$RELEASE_DIR/LinkToMac-macOS.zip"
 # ------------------------------------------------------------------------------
 echo "🤖 [3/4] Building Android Companion Application (LinkToMac.apk)..."
 cd "$REPO_ROOT/allcode/LinkToMac-Android"
-./gradlew assembleDebug --no-daemon
+./gradlew assembleRelease --no-daemon
 
-APK_SRC="$REPO_ROOT/allcode/LinkToMac-Android/app/build/outputs/apk/debug/app-debug.apk"
+APK_SRC="$REPO_ROOT/allcode/LinkToMac-Android/app/build/outputs/apk/release/app-release.apk"
+if [ ! -f "$APK_SRC" ]; then
+    APK_SRC="$REPO_ROOT/allcode/LinkToMac-Android/app/build/outputs/apk/debug/app-debug.apk"
+fi
 cp -f "$APK_SRC" "$RELEASE_DIR/LinkToMac.apk"
 
 # Sync web portal distribution files

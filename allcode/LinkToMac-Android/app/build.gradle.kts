@@ -12,8 +12,8 @@ android {
         applicationId = "com.linktomac.android"
         minSdk = 29
         targetSdk = 34
-        versionCode = 162
-        versionName = "1.62"
+        versionCode = 163
+        versionName = "1.62.1"
     }
 
     buildFeatures {

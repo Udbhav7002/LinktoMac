@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity() {
         var statusText by remember { mutableStateOf(LinkConnectionService.statusMessage) }
         var discoveredHost by remember { mutableStateOf(LinkConnectionService.discoveredMacHost) }
         var permissionTick by remember { mutableStateOf(0) }
+        var showRestrictedGuide by remember { mutableStateOf(false) }
 
         // Existing 1s status poll — now also refreshes permission checklist states
         LaunchedEffect(Unit) {
@@ -143,15 +144,17 @@ class MainActivity : ComponentActivity() {
                     states = perms,
                     onRequestRuntime = { permLauncher.launch(runtimePermissionBundle()) },
                     onOpenNotificationSettings = {
-                        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        if (Build.VERSION.SDK_INT >= 33) {
+                            showRestrictedGuide = true
+                        } else {
+                            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        }
                     },
                     onOpenStorageSettings = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-                            val intent = Intent(
-                                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                                android.net.Uri.parse("package:$packageName")
-                            )
-                            startActivity(intent)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            permLauncher.launch(arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO))
+                        } else {
+                            permLauncher.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
                         }
                     },
                     onOpenBatterySettings = {
@@ -165,6 +168,25 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     onOpenAccessibilitySettings = {
+                        if (Build.VERSION.SDK_INT >= 33) {
+                            showRestrictedGuide = true
+                        } else {
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        }
+                    }
+                )
+            }
+
+            if (showRestrictedGuide) {
+                RestrictedSettingsUnlockDialog(
+                    onDismiss = { showRestrictedGuide = false },
+                    onOpenAppDetails = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = android.net.Uri.fromParts("package", packageName, null)
+                        }
+                        startActivity(intent)
+                    },
+                    onOpenAccessibility = {
                         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     }
                 )
@@ -381,9 +403,9 @@ class MainActivity : ComponentActivity() {
 
         val missing = listOf(
             Row(
-                icon = R.drawable.ic_chat,
-                title = "Messages, calls & camera",
-                subtitle = "SMS, contacts, phone state, camera and microphone",
+                icon = R.drawable.ic_link,
+                title = "Camera & Microphone",
+                subtitle = "Virtual webcam and audio streaming for your Mac",
                 granted = states.runtime,
                 onFix = onRequestRuntime
             ),
@@ -454,6 +476,74 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Composable
+    private fun RestrictedSettingsUnlockDialog(
+        onDismiss: () -> Unit,
+        onOpenAppDetails: () -> Unit,
+        onOpenAccessibility: () -> Unit
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                    text = "Unlock Remote Control (Android 13+)",
+                    fontSize = LT.section,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(LS.m)) {
+                    Text(
+                        text = "Android protects sideloaded apps by restricting accessibility and notifications by default. Follow these quick steps to unlock:",
+                        fontSize = LT.body,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(LS.s),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), shape = LR.card)
+                            .padding(LS.m)
+                    ) {
+                        Text(
+                            text = "1. Tap '1. Open App Settings' below.",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = LT.body,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "2. Tap the three dots (⋮) in the top-right corner and select 'Allow restricted settings' (confirm with PIN/fingerprint).",
+                            fontSize = LT.caption,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "3. Tap '2. Enable Accessibility' below and toggle LinkToMac ON.",
+                            fontSize = LT.caption,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = onOpenAppDetails,
+                    shape = LR.control
+                ) {
+                    Text("1. Open App Settings")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = onOpenAccessibility,
+                    shape = LR.control
+                ) {
+                    Text("2. Enable Accessibility")
+                }
+            }
+        )
+    }
+
     // ---------------------------------------------------- permission state
 
     private data class PermissionStates(
@@ -469,14 +559,6 @@ class MainActivity : ComponentActivity() {
 
     private fun runtimePermissionBundle(): Array<String> {
         val perms = mutableListOf(
-            Manifest.permission.READ_SMS,
-            Manifest.permission.SEND_SMS,
-            Manifest.permission.RECEIVE_SMS,
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_CALL_LOG,
-            Manifest.permission.ANSWER_PHONE_CALLS,
-            Manifest.permission.CALL_PHONE,
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO
         )
@@ -500,9 +582,11 @@ class MainActivity : ComponentActivity() {
             )?.contains(packageName) == true
         } catch (_: Exception) { false }
 
-        val storageGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Environment.isExternalStorageManager()
-        } else true
+        val storageGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
 
         val batteryGranted = try {
             (getSystemService(POWER_SERVICE) as PowerManager)
