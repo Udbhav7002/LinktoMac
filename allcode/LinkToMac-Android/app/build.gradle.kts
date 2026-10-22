@@ -19,6 +19,12 @@ android {
     buildFeatures {
         compose = true
     }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.10"
     }

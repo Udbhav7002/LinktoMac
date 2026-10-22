@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -32,13 +33,14 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            android-app/.gradle
-          key: gradle-android-app-${{ runner.os }}-${{ hashFiles('android-app/**/*.gradle', 'android-app/**/gradle-wrapper.properties') }}
+            allcode/LinkToMac-Android/.gradle
+          key: gradle-android-app-${{ runner.os }}-${{ hashFiles('allcode/LinkToMac-Android/**/*.gradle*', 'allcode/LinkToMac-Android/**/gradle-wrapper.properties') }}
 
       - name: Build Companion App APK
         run: |
-          cd android-app
-          ./gradlew assembleRelease
+          cd allcode/LinkToMac-Android
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/LinkToMac.apk
 
       - name: Cache Gradle (Server JAR)
         uses: actions/cache@v4
@@ -52,12 +54,25 @@ jobs:
       - name: Build Server JAR
         run: |
           cd android-server
-          ./gradlew jar
+          ./gradlew jar --no-daemon
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: |
+            allcode/LinkToMac-Android/app/build/outputs/apk/release/LinkToMac.apk
+            allcode/LinkToMac-Android/app/build/outputs/apk/release/app-release.apk
+            android-server/build/libs/server.jar
 
       - name: Upload Release Assets
-        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
         with:
           files: |
-            android-app/app/build/outputs/apk/release/app-release.apk
+            allcode/LinkToMac-Android/app/build/outputs/apk/release/LinkToMac.apk
+            allcode/LinkToMac-Android/app/build/outputs/apk/release/app-release.apk
             android-server/build/libs/server.jar
           generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
