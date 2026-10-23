@@ -53,9 +53,9 @@ let package = Package(
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.61</string>
+    <string>1.62</string>
     <key>CFBundleVersion</key>
-    <string>161</string>
+    <string>162</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>NSHighResolutionCapable</key>
@@ -608,12 +608,26 @@ final class ConnectionManager: ObservableObject {
         activeConnection = connection
         receiveBuffer.removeAll()
 
+        let endpointStr = "\(connection.endpoint)"
+        let isLoopback = endpointStr.contains("127.0.0.1") || endpointStr.contains("::1") || endpointStr.contains("localhost")
+
         connection.stateUpdateHandler = { [weak self] state in
             Task { @MainActor in
                 guard let self = self else { return }
                 switch state {
                 case .ready:
                     self.isConnected = true
+                    if isLoopback {
+                        if ADBBridge.shared.isUSBDeviceConnected {
+                            self.connectionTransport = "USB"
+                        } else if PinggyTunnelManager.shared.isRunning {
+                            self.connectionTransport = "Remote Relay"
+                        } else {
+                            self.connectionTransport = "USB"
+                        }
+                    } else {
+                        self.connectionTransport = "Local Wi-Fi"
+                    }
                     self.sendHello()
                     self.readNextChunk(from: connection)
                 case .failed, .cancelled:
@@ -628,6 +642,34 @@ final class ConnectionManager: ObservableObject {
             }
         }
         connection.start(queue: .main)
+    }
+
+    /// Asynchronously verifies the 36-byte shared-secret authentication token from the connecting peer.
+    private func verifyPeerTokenAsync(_ connection: NWConnection, completion: @escaping (Bool) -> Void) {
+        let expectedToken = pairingToken
+        guard !expectedToken.isEmpty else {
+            completion(true)
+            return
+        }
+        let endpointStr = "\(connection.endpoint)"
+        if endpointStr.contains("127.0.0.1") || endpointStr.contains("::1") || endpointStr.contains("localhost") {
+            completion(true)
+            return
+        }
+        connection.receive(minimumIncompleteLength: 36, maximumLength: 36) { data, _, _, error in
+            guard let data = data, data.count == 36 else {
+                completion(false)
+                return
+            }
+            let tokenBytes = Array(data)
+            let expected = Array(expectedToken.utf8)
+            var diff = 0
+            for i in 0..<36 {
+                let expByte = (i < expected.count) ? expected[i] : 0
+                diff |= Int(tokenBytes[i]) ^ Int(expByte)
+            }
+            completion(diff == 0)
+        }
     }
 
     private func readNextChunk(from connection: NWConnection) {
@@ -689,7 +731,13 @@ final class ConnectionManager: ObservableObject {
             if let batStr = env.payload["battery"], let bat = Int(batStr) { self.batteryLevel = bat }
             if let chg = env.payload["charging"] { self.isCharging = (chg == "true") }
             if let trans = env.payload["transport"] {
-                self.connectionTransport = ADBBridge.shared.isUSBDeviceConnected ? "USB" : trans
+                if ADBBridge.shared.isUSBDeviceConnected {
+                    self.connectionTransport = "USB"
+                } else if trans == "Remote Relay" || PinggyTunnelManager.shared.isRunning {
+                    self.connectionTransport = "Remote Relay"
+                } else {
+                    self.connectionTransport = trans
+                }
             }
             if let ringer = env.payload["ringerMode"] { self.ringerMode = ringer }
             if let track = env.payload["mediaTitle"], !track.isEmpty {
@@ -1055,8 +1103,8 @@ final class ConnectionManager: ObservableObject {
         ))
     }
 
+    /// Injects a normalized tap coordinates (0.0 - 1.0) on the remote Android screen.
     func sendRemoteTap(normalizedX: Double, normalizedY: Double) {
-        // If USB ADB is available, ADBBridge injects zero-latency tap; also send over socket
         sendEnvelope(LinkEnvelope(
             type: "STREAM_CONTROL",
             payload: [
@@ -1065,15 +1113,22 @@ final class ConnectionManager: ObservableObject {
                 "y": String(format: "%.4f", normalizedY)
             ]
         ))
-        ADBBridge.shared.injectTapNormalized(x: normalizedX, y: normalizedY)
+        // Only use ADB on USB transport
+        if connectionTransport == "USB" {
+            ADBBridge.shared.injectTapNormalized(x: normalizedX, y: normalizedY)
+        }
     }
 
+    /// Injects an Android key code event into the remote device.
     func sendRemoteKeyEvent(_ keyCode: Int) {
         sendEnvelope(LinkEnvelope(
             type: "STREAM_CONTROL",
             payload: ["mode": "REMOTE_KEY", "keyCode": "\(keyCode)"]
         ))
-        ADBBridge.shared.injectKeyEvent(keyCode)
+        // Only use ADB on USB transport
+        if connectionTransport == "USB" {
+            ADBBridge.shared.injectKeyEvent(keyCode)
+        }
     }
 
     // MARK: - Live Audio Playback (Android Mic / Cast)
@@ -2139,24 +2194,31 @@ private struct SidebarView: View {
 // MARK: - Unified live connection pill (reused concept on Android + web)
 struct StatusPill: View {
     @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var tunnel = PinggyTunnelManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: LS.s) {
             HStack(spacing: LS.s) {
-                StatusDot(state: conn.isConnected ? .connected : .waiting)
+                StatusDot(state: conn.isConnected ? .connected : (tunnel.isRunning ? .waiting : .disconnected))
                 Text(conn.isConnected ? conn.connectedDeviceName : "Waiting for Android")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(LinkTheme.textPrimary)
                     .lineLimit(1)
             }
             HStack(spacing: LS.s) {
-                Label(
-                    conn.isConnected ? conn.connectionTransport : "Port \(conn.listenPort)",
-                    systemImage: conn.connectionTransport == "USB" ? "cable.connector" : "wifi"
-                )
                 if conn.isConnected {
+                    Label(
+                        conn.connectionTransport,
+                        systemImage: transportIcon(for: conn.connectionTransport)
+                    )
                     Text("·").foregroundStyle(LinkTheme.textTertiary)
                     Label("\(conn.batteryLevel)%", systemImage: batterySymbol)
+                } else {
+                    if tunnel.isRunning, let port = tunnel.publicPort {
+                        Label("Relay :\(port)", systemImage: "globe")
+                    } else {
+                        Label("Port \(conn.listenPort)", systemImage: "wifi")
+                    }
                 }
             }
             .font(.caption)
@@ -2172,6 +2234,14 @@ struct StatusPill: View {
         )
         .padding(.horizontal, LS.m)
         .accessibilityElement(children: .combine)
+    }
+
+    private func transportIcon(for transport: String) -> String {
+        switch transport {
+        case "USB":          return "cable.connector"
+        case "Remote Relay": return "globe"
+        default:             return "wifi"
+        }
     }
 
     private var batterySymbol: String {
@@ -3047,36 +3117,138 @@ struct ImageToolbarButton: View {
 import SwiftUI
 import CoreImage.CIFilterBuiltins
 
+// MARK: - Pairing Mode Enum
+enum PairingMode: String, CaseIterable, Identifiable {
+    case local = "Local Wi-Fi"
+    case remote = "Remote Relay (Anywhere)"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .local:  return "wifi"
+        case .remote: return "globe"
+        }
+    }
+}
+
 // MARK: - Pairing: QR card + connection facts + USB bridge
 struct PairingQRSetupView: View {
     @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var tunnel = PinggyTunnelManager.shared
     @ObservedObject var adb = ADBBridge.shared
+    @LocalState private var selectedMode: PairingMode = .local
 
+    private static let qrContext = CIContext()
+
+    /// Remote relay is ready when the tunnel process is running, host is known, and a non-zero port is parsed.
+    var isRemoteReady: Bool {
+        tunnel.isRunning && (tunnel.publicPort ?? 0) > 0 && !(tunnel.publicHost ?? "").isEmpty
+    }
+
+    /// JSON Payload conforming strictly to LinkToMac pairing specification.
     var qrPayloadString: String {
-        "{\"host\":\"\(conn.localIPAddress)\",\"port\":\(conn.listenPort),\"token\":\"\(conn.pairingToken)\",\"macName\":\"\(Host.current().localizedName ?? "Mac")\"}"
+        let macName = Host.current().localizedName ?? "Mac"
+        let host: String
+        let port: Int
+        var mode: String? = nil
+
+        switch selectedMode {
+        case .local:
+            host = conn.localIPAddress
+            port = Int(conn.listenPort)
+        case .remote:
+            host = tunnel.publicHost ?? ""
+            port = tunnel.publicPort ?? 0
+            mode = "remote"
+        }
+
+        var dict: [String: Any] = [
+            "host": host,
+            "port": port,
+            "token": conn.pairingToken,
+            "macName": macName
+        ]
+        if let mode = mode {
+            dict["mode"] = mode
+        }
+
+        if let data = try? JSONSerialization.data(withJSONObject: dict, options: [.sortedKeys]),
+           let str = String(data: data, encoding: .utf8) {
+            return str
+        }
+
+        // Fallback string interpolation if JSONSerialization fails
+        if let mode = mode {
+            return "{\"host\":\"\(host)\",\"port\":\(port),\"token\":\"\(conn.pairingToken)\",\"macName\":\"\(macName)\",\"mode\":\"\(mode)\"}"
+        } else {
+            return "{\"host\":\"\(host)\",\"port\":\(port),\"token\":\"\(conn.pairingToken)\",\"macName\":\"\(macName)\"}"
+        }
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: LS.xl) {
-                SectionHeader(title: "Pair your Android",
-                              subtitle: "Scan once in the LinkToMac Android app — or plug in a USB cable.") {}
+                SectionHeader(
+                    title: "Pair your Android",
+                    subtitle: "Scan once in the LinkToMac Android app — or plug in a USB cable."
+                ) {}
+
+                modeSelector
+                    .frame(maxWidth: 940, alignment: .leading)
+                    .padding(.horizontal, LS.xl)
 
                 HStack(alignment: .top, spacing: LS.xl) {
                     qrCard
                     connectionFacts
                 }
                 .frame(maxWidth: 940, alignment: .leading)
+                .padding(.horizontal, LS.xl)
             }
             .padding(.bottom, LS.xxl)
         }
         .background(LinkTheme.canvas)
     }
 
-    // MARK: QR — white backing is functional (scanner contrast), not decoration
+    // MARK: - Mode Selector Bar (Quiet Segmented Control)
+    private var modeSelector: some View {
+        HStack(spacing: 2) {
+            ForEach(PairingMode.allCases) { mode in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        selectedMode = mode
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: mode.icon)
+                            .font(.system(size: 13, weight: .medium))
+                        Text(mode.rawValue)
+                            .font(.subheadline.weight(selectedMode == mode ? .semibold : .regular))
+                    }
+                    .foregroundStyle(selectedMode == mode ? LinkTheme.textPrimary : LinkTheme.textSecondary)
+                    .padding(.horizontal, LS.m)
+                    .padding(.vertical, 7)
+                    .background(selectedMode == mode ? LinkTheme.surface : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: LR.control - 2))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LR.control - 2)
+                            .strokeBorder(selectedMode == mode ? LinkTheme.hairline : Color.clear, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .background(LinkTheme.surfaceAlt)
+        .clipShape(RoundedRectangle(cornerRadius: LR.control))
+    }
+
+    // MARK: - QR Card
     private var qrCard: some View {
         VStack(spacing: LS.m) {
-            if let qrImg = generateQRCode(from: qrPayloadString) {
+            if selectedMode == .remote && !isRemoteReady {
+                remoteUnavailableCard
+            } else if let qrImg = generateQRCode(from: qrPayloadString) {
                 Image(nsImage: qrImg)
                     .interpolation(.none)
                     .resizable()
@@ -3085,79 +3257,189 @@ struct PairingQRSetupView: View {
                     .padding(LS.m)
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: LR.control))
+
+                HStack(spacing: 6) {
+                    StatusDot(state: selectedMode == .remote ? (isRemoteReady ? .connected : .waiting) : .connected)
+                    Text(selectedMode == .remote ? "Scan from anywhere (WAN)" : "Scan on local Wi-Fi")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(LinkTheme.textSecondary)
+                }
+            } else {
+                Text("Generating QR Code...")
+                    .font(.caption)
+                    .foregroundStyle(LinkTheme.textTertiary)
+                    .frame(width: 196, height: 196)
             }
-            Text("Scan in the Android app")
-                .font(.caption)
+
+            Text(selectedMode == .remote
+                 ? "Traverses cellular networks & firewalls via Pinggy reverse tunnel."
+                 : "Scan with the LinkToMac Android app while on the same network.")
+                .font(.caption2)
                 .foregroundStyle(LinkTheme.textTertiary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 220)
         }
         .linkCard(padding: LS.l)
     }
 
-    // MARK: Facts — IP, port, token, USB bridge
+    // MARK: - Remote Unavailable / Connecting Placeholder Card
+    private var remoteUnavailableCard: some View {
+        VStack(spacing: LS.m) {
+            ZStack {
+                RoundedRectangle(cornerRadius: LR.control)
+                    .fill(LinkTheme.surfaceAlt)
+                    .frame(width: 196, height: 196)
+
+                if tunnel.isRunning && (tunnel.publicPort ?? 0) == 0 {
+                    VStack(spacing: LS.s) {
+                        ProgressView()
+                            .controlSize(.regular)
+                        Text("Negotiating tunnel...")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(LinkTheme.textSecondary)
+                    }
+                } else {
+                    VStack(spacing: LS.s) {
+                        Image(systemName: "globe.badge.chevron.backward")
+                            .font(.system(size: 32, weight: .light))
+                            .foregroundStyle(LinkTheme.textTertiary)
+                        Text("Relay Offline")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(LinkTheme.textSecondary)
+                        Button("Start Relay") {
+                            tunnel.startTunnel()
+                        }
+                        .buttonStyle(.primary)
+                    }
+                    .padding(LS.m)
+                }
+            }
+        }
+    }
+
+    // MARK: - Connection Facts
     private var connectionFacts: some View {
         VStack(alignment: .leading, spacing: LS.l) {
-            VStack(alignment: .leading, spacing: LS.m) {
-                Label("Local Wi-Fi", systemImage: "wifi")
-                    .font(.headline)
-                    .foregroundStyle(LinkTheme.textPrimary)
-                MonoValue(label: "Mac address", value: conn.localIPAddress)
-                MonoValue(label: "Port", value: "\(conn.listenPort)")
-                MonoValue(label: "Pairing token", value: conn.pairingToken, prominent: true)
+            if selectedMode == .local {
+                localWiFiFacts
+            } else {
+                remoteRelayFacts
             }
 
             HairlineDivider()
 
-            VStack(alignment: .leading, spacing: LS.m) {
-                Label("USB bridge", systemImage: "cable.connector")
-                    .font(.headline)
-                    .foregroundStyle(LinkTheme.textPrimary)
-
-                HStack(spacing: LS.s) {
-                    StatusDot(state: adb.isUSBDeviceConnected ? .connected : .disconnected)
-                    Text(adb.isUSBDeviceConnected
-                         ? "Phone detected"
-                         : "No USB phone detected")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(LinkTheme.textPrimary)
-                    if adb.isUSBDeviceConnected {
-                        Text(adb.usbSerial)
-                            .font(.caption2.monospaced() as Font)
-                            .foregroundStyle(LinkTheme.textTertiary)
-                            .lineLimit(1)
-                    }
-                }
-
-                Text("With USB debugging on, port 54921 is bridged automatically for zero-latency transfers and screen-off mirroring.")
-                    .font(.caption)
-                    .foregroundStyle(LinkTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button("Refresh network & USB") {
-                    conn.localIPAddress = ConnectionManager.detectLocalIPAddress() ?? "127.0.0.1"
-                    conn.startServer()
-                    adb.pollUSBDevices()
-                }
-                .buttonStyle(.quiet)
-            }
+            usbBridgeFacts
         }
         .linkCard(padding: LS.l)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: QR generation (identical to original)
+    // MARK: Local Wi-Fi Facts
+    private var localWiFiFacts: some View {
+        VStack(alignment: .leading, spacing: LS.m) {
+            Label("Local Wi-Fi", systemImage: "wifi")
+                .font(.headline)
+                .foregroundStyle(LinkTheme.textPrimary)
+            MonoValue(label: "Mac address", value: conn.localIPAddress)
+            MonoValue(label: "Port", value: "\(conn.listenPort)")
+            MonoValue(label: "Pairing token", value: conn.pairingToken, prominent: true)
+        }
+    }
+
+    // MARK: Remote Relay Facts
+    private var remoteRelayFacts: some View {
+        VStack(alignment: .leading, spacing: LS.m) {
+            HStack {
+                Label("Remote WAN Relay", systemImage: "globe")
+                    .font(.headline)
+                    .foregroundStyle(LinkTheme.textPrimary)
+                Spacer()
+                HStack(spacing: 6) {
+                    StatusDot(state: isRemoteReady ? .connected : (tunnel.isRunning ? .waiting : .disconnected))
+                    Text(isRemoteReady ? "Active" : (tunnel.isRunning ? "Connecting" : "Offline"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(isRemoteReady ? LinkTheme.success : (tunnel.isRunning ? LinkTheme.warning : LinkTheme.textSecondary))
+                }
+            }
+
+            if isRemoteReady {
+                MonoValue(label: "Relay host", value: tunnel.publicHost ?? "a.pinggy.io")
+                MonoValue(label: "Relay port", value: "\(tunnel.publicPort ?? 0)")
+                MonoValue(label: "Forwarded port", value: "\(conn.listenPort) (local)")
+                MonoValue(label: "Pairing token", value: conn.pairingToken, prominent: true)
+            } else {
+                Text(tunnel.statusMessage)
+                    .font(.caption)
+                    .foregroundStyle(LinkTheme.textSecondary)
+            }
+
+            HStack(spacing: LS.s) {
+                if tunnel.isRunning {
+                    Button("Stop Remote Relay") {
+                        tunnel.stopTunnel()
+                    }
+                    .buttonStyle(.quietDanger)
+                } else {
+                    Button("Start Remote Relay") {
+                        tunnel.startTunnel()
+                    }
+                    .buttonStyle(.primary)
+                }
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    // MARK: USB Bridge Facts
+    private var usbBridgeFacts: some View {
+        VStack(alignment: .leading, spacing: LS.m) {
+            Label("USB bridge", systemImage: "cable.connector")
+                .font(.headline)
+                .foregroundStyle(LinkTheme.textPrimary)
+
+            HStack(spacing: LS.s) {
+                StatusDot(state: adb.isUSBDeviceConnected ? .connected : .disconnected)
+                Text(adb.isUSBDeviceConnected
+                     ? "Phone detected"
+                     : "No USB phone detected")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(LinkTheme.textPrimary)
+                if adb.isUSBDeviceConnected {
+                    Text(adb.usbSerial)
+                        .font(.caption2.monospaced() as Font)
+                        .foregroundStyle(LinkTheme.textTertiary)
+                        .lineLimit(1)
+                }
+            }
+
+            Text("With USB debugging on, port 54921 is bridged automatically for zero-latency transfers and screen-off mirroring.")
+                .font(.caption)
+                .foregroundStyle(LinkTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button("Refresh network & USB") {
+                conn.localIPAddress = ConnectionManager.detectLocalIPAddress() ?? "127.0.0.1"
+                conn.startServer()
+                adb.pollUSBDevices()
+            }
+            .buttonStyle(.quiet)
+        }
+    }
+
+    // MARK: QR generation via CIFilter
     private func generateQRCode(from string: String) -> NSImage? {
-        let context = CIContext()
+        guard !string.isEmpty else { return nil }
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(string.utf8)
         filter.correctionLevel = "M"
         guard let outputImage = filter.outputImage else { return nil }
         let transformed = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
-        guard let cgImg = context.createCGImage(transformed, from: transformed.extent) else { return nil }
+        guard let cgImg = Self.qrContext.createCGImage(transformed, from: transformed.extent) else { return nil }
         return NSImage(cgImage: cgImg, size: NSSize(width: 220, height: 220))
     }
 }
 
-// MARK: - Floating incoming call HUD
+// MARK: - Floating incoming call HUD (Preserved Exactly)
 struct IncomingCallHUDView: View {
     @ObservedObject var conn = ConnectionManager.shared
 
@@ -3214,6 +3496,354 @@ struct IncomingCallHUDView: View {
         )
         .shadow(color: .black.opacity(0.15), radius: 24, y: 8)  // the ONE allowed shadow (floating overlay)
         .frame(minWidth: 300)
+    }
+}
+```
+
+---
+
+### FILE: allcode/LinkToMac-macOS/Sources/LinkToMac/PinggyTunnelManager.swift
+```swift
+import Foundation
+import AppKit
+
+/// Represents an SSH target endpoint for Pinggy reverse tunnel forwarding.
+public struct PinggyTarget: Equatable, Sendable {
+    public let host: String
+    public let port: Int
+    public let user: String
+
+    public init(host: String, port: Int, user: String = "tcp") {
+        self.host = host
+        self.port = port
+        self.user = user
+    }
+}
+
+/// Manages the background SSH reverse tunnel process to Pinggy, extracts dynamic
+/// public host/port endpoints, handles connection fallbacks, and manages process lifecycles.
+@MainActor
+public final class PinggyTunnelManager: ObservableObject {
+    public static let shared = PinggyTunnelManager()
+
+    // MARK: - Published Properties
+    @Published public private(set) var isRunning: Bool = false
+    @Published public private(set) var isConnecting: Bool = false
+    @Published public private(set) var publicHost: String? = nil
+    @Published public private(set) var publicPort: Int? = nil
+    @Published public private(set) var publicURL: String? = nil
+    @Published public private(set) var statusMessage: String = "Stopped"
+    @Published public private(set) var lastError: String? = nil
+
+    // MARK: - Process & Stream State
+    private var process: Process?
+    private var stdoutPipe: Pipe?
+    private var stdinPipe: Pipe?
+    private var lineBuffer: String = ""
+    private var targetIndex: Int = 0
+    private var retryTimer: Timer?
+    private var watchdogTimer: Timer?
+
+    // Candidate targets in priority order (free.pinggy.io succeeds when a.pinggy.io is refused)
+    private static let targets: [PinggyTarget] = [
+        PinggyTarget(host: "free.pinggy.io", port: 443),
+        PinggyTarget(host: "a.pinggy.io", port: 443),
+        PinggyTarget(host: "free.pinggy.io", port: 22),
+        PinggyTarget(host: "a.pinggy.io", port: 22)
+    ]
+
+    private init() {
+        setupLifecycleObservers()
+    }
+
+    // MARK: - Lifecycle Observers
+    private func setupLifecycleObservers() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.stopTunnel()
+            }
+        }
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.stopTunnelInternal()
+            }
+        }
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self = self else { return }
+                if self.isRunning {
+                    self.restartTunnel()
+                }
+            }
+        }
+    }
+
+    // MARK: - Public Control API
+    public func startTunnel() {
+        guard !isRunning && !isConnecting else { return }
+        targetIndex = 0
+        connectToCurrentTarget()
+    }
+
+    public func stopTunnel() {
+        retryTimer?.invalidate()
+        retryTimer = nil
+        watchdogTimer?.invalidate()
+        watchdogTimer = nil
+
+        stopTunnelInternal()
+        statusMessage = "Tunnel stopped"
+        lastError = nil
+    }
+
+    public func toggleTunnel() {
+        if isRunning || isConnecting {
+            stopTunnel()
+        } else {
+            startTunnel()
+        }
+    }
+
+    public func restartTunnel() {
+        stopTunnel()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.startTunnel()
+        }
+    }
+
+    // MARK: - Process Execution & Target Fallback
+    private func connectToCurrentTarget() {
+        guard targetIndex < Self.targets.count else {
+            statusMessage = "All tunnel endpoints failed. Retrying in 12s..."
+            isConnecting = false
+            scheduleRetry(seconds: 12.0)
+            return
+        }
+
+        let target = Self.targets[targetIndex]
+        isConnecting = true
+        statusMessage = "Connecting to relay (\(target.host):\(target.port))..."
+
+        ensureIdentityKey()
+        let keyPath = resolvedKeyPath()
+
+        let proc = Process()
+        let outPipe = Pipe()
+        let inPipe = Pipe()
+
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/ssh")
+        var args = [
+            "-tt",
+            "-p", "\(target.port)",
+            "-R0:localhost:54921",
+            "\(target.user)@\(target.host)",
+            "-o", "StrictHostKeyChecking=no",
+            "-o", "UserKnownHostsFile=/dev/null",
+            "-o", "ServerAliveInterval=15",
+            "-o", "ServerAliveCountMax=3",
+            "-o", "ExitOnForwardFailure=yes",
+            "-o", "ConnectTimeout=8"
+        ]
+        if let key = keyPath {
+            args.append(contentsOf: ["-i", key])
+        }
+
+        proc.arguments = args
+        proc.standardOutput = outPipe
+        proc.standardError = outPipe
+        proc.standardInput = inPipe
+
+        self.process = proc
+        self.stdoutPipe = outPipe
+        self.stdinPipe = inPipe
+        self.lineBuffer = ""
+
+        outPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            if let chunk = String(data: data, encoding: .utf8) {
+                Task { @MainActor in
+                    self?.handleIncomingOutput(chunk)
+                }
+            }
+        }
+
+        proc.terminationHandler = { [weak self] terminatedProc in
+            Task { @MainActor in
+                self?.handleProcessExited(code: terminatedProc.terminationStatus)
+            }
+        }
+
+        do {
+            try proc.run()
+            // 12-second watchdog timer: if target does not establish tunnel in time, try next
+            watchdogTimer?.invalidate()
+            watchdogTimer = Timer.scheduledTimer(withTimeInterval: 12.0, repeats: false) { [weak self] _ in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    if self.isConnecting && !self.isRunning {
+                        print("[PinggyTunnelManager] Watchdog timeout connecting to \(target.host):\(target.port)")
+                        self.targetIndex += 1
+                        self.stopTunnelInternal()
+                        self.connectToCurrentTarget()
+                    }
+                }
+            }
+        } catch {
+            print("[PinggyTunnelManager] Failed to launch ssh process: \(error)")
+            lastError = error.localizedDescription
+            targetIndex += 1
+            connectToCurrentTarget()
+        }
+    }
+
+    private func handleIncomingOutput(_ chunk: String) {
+        lineBuffer.append(chunk)
+
+        let cleanChunk = Self.stripAnsiCodes(chunk)
+        if let endpoint = Self.extractTunnelEndpoint(from: cleanChunk) {
+            watchdogTimer?.invalidate()
+            watchdogTimer = nil
+            self.publicHost = endpoint.host
+            self.publicPort = endpoint.port
+            self.publicURL = endpoint.url
+            self.isRunning = true
+            self.isConnecting = false
+            self.statusMessage = "Relay Active: \(endpoint.host):\(endpoint.port)"
+            self.lastError = nil
+            print("[PinggyTunnelManager] Tunnel established successfully: \(endpoint.url)")
+        }
+    }
+
+    private func handleProcessExited(code: Int32) {
+        let wasRunning = isRunning
+        stopTunnelInternal()
+
+        if wasRunning {
+            statusMessage = "Tunnel dropped (exit \(code)). Reconnecting in 3s..."
+            scheduleRetry(seconds: 3.0)
+        } else if isConnecting {
+            print("[PinggyTunnelManager] Target \(targetIndex) failed with exit code \(code)")
+            targetIndex += 1
+            connectToCurrentTarget()
+        }
+    }
+
+    private func stopTunnelInternal() {
+        stdoutPipe?.fileHandleForReading.readabilityHandler = nil
+        if let proc = process, proc.isRunning {
+            proc.terminate()
+            let pid = proc.processIdentifier
+            DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
+                if pid > 0 {
+                    kill(pid, SIGKILL)
+                }
+            }
+        }
+        process = nil
+        stdoutPipe = nil
+        stdinPipe = nil
+        isRunning = false
+        publicHost = nil
+        publicPort = nil
+        publicURL = nil
+    }
+
+    private func scheduleRetry(seconds: Double = 10.0) {
+        retryTimer?.invalidate()
+        retryTimer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.startTunnel()
+            }
+        }
+    }
+
+    // MARK: - Identity Key Provisioning (Eliminates Password Prompt)
+    private func resolvedKeyPath() -> String? {
+        let fm = FileManager.default
+        let home = NSHomeDirectory()
+        let candidates = [
+            "\(home)/.linktomac/id_ed25519",
+            "\(home)/.ssh/id_ed25519",
+            "\(home)/.ssh/id_rsa",
+            "\(home)/.ssh/spawn_ed25519"
+        ]
+        return candidates.first { fm.fileExists(atPath: $0) }
+    }
+
+    private func ensureIdentityKey() {
+        if resolvedKeyPath() != nil { return }
+        let home = NSHomeDirectory()
+        let dir = "\(home)/.linktomac"
+        let keyPath = "\(dir)/id_ed25519"
+        let fm = FileManager.default
+
+        try? fm.createDirectory(atPath: dir, withIntermediateDirectories: true, attributes: nil)
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/ssh-keygen")
+        proc.arguments = ["-t", "ed25519", "-N", "", "-f", keyPath, "-q"]
+        try? proc.run()
+        proc.waitUntilExit()
+    }
+
+    // MARK: - VT100/ANSI Code Stripping & URL Parsing
+    public static func stripAnsiCodes(_ input: String) -> String {
+        let pattern = #"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[@-Z\\-_]|\r"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return input
+        }
+        let range = NSRange(input.startIndex..<input.endIndex, in: input)
+        return regex.stringByReplacingMatches(in: input, options: [], range: range, withTemplate: "")
+    }
+
+    public static func extractTunnelEndpoint(from text: String) -> (host: String, port: Int, url: String)? {
+        let cleaned = stripAnsiCodes(text)
+
+        // Matches both "tcp://<host>:<port>" and standard pinggy hostnames with ports
+        let pattern = #"(?:tcp:\/\/)?([a-zA-Z0-9_\-\.]+pinggy[a-zA-Z0-9_\-\.]*\.[a-z]{2,}|(?:[a-zA-Z0-9_\-]+\.)+[a-zA-Z]{2,}):([0-9]{2,5})"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+            return nil
+        }
+
+        let range = NSRange(cleaned.startIndex..<cleaned.endIndex, in: cleaned)
+        if let match = regex.firstMatch(in: cleaned, options: [], range: range) {
+            guard let hostRange = Range(match.range(at: 1), in: cleaned),
+                  let portRange = Range(match.range(at: 2), in: cleaned),
+                  let port = Int(cleaned[portRange]),
+                  port > 0 && port <= 65535 else {
+                return nil
+            }
+            let host = String(cleaned[hostRange])
+            let fullMatchRange = Range(match.range(at: 0), in: cleaned)!
+            let fullString = String(cleaned[fullMatchRange])
+            return (host: host, port: port, url: fullString)
+        }
+
+        // Secondary fallback scanning for any explicit "tcp://" token
+        if let tcpIdx = cleaned.range(of: "tcp://") {
+            let sub = cleaned[tcpIdx.upperBound...]
+            if let token = sub.components(separatedBy: CharacterSet.whitespacesAndNewlines).first(where: { !$0.isEmpty }) {
+                let parts = token.trimmingCharacters(in: CharacterSet(charactersIn: " \t\r\n\0\"'<>[]()")).components(separatedBy: ":")
+                if parts.count == 2, let p = Int(parts[1]), p > 0 && p <= 65535 {
+                    return (host: parts[0], port: p, url: "tcp://\(token)")
+                }
+            }
+        }
+        return nil
     }
 }
 ```
@@ -13651,7 +14281,7 @@ X$versionY$archiverT$topX$objects ��_NSKeyedArchiver�	Troot��
 set -e
 
 echo "=========================================="
-echo " Building LinkToMac for macOS (v1.61)..."
+echo " Building LinkToMac for macOS (v1.62)..."
 echo "=========================================="
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

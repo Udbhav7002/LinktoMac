@@ -303,19 +303,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun friendlyStatus(raw: String): String = when {
-        raw.startsWith("Connection failed") || raw.contains("ECONNREFUSED") ->
-            "Couldn't reach your Mac. Keep LinkToMac open on the Mac, then try USB or QR again."
-        raw.startsWith("Connected") -> when {
-            raw.contains("USB") -> "Connected over USB"
-            raw.contains("Remote Relay") -> "Connected over Remote Relay"
-            else -> "Connected over Wi-Fi"
+    private fun friendlyStatus(raw: String): String {
+        // Surface the failed target so stale-USB-loopback, isolated-subnet and
+        // relay-down failures are tellable apart at a glance on the phone.
+        val failedHost = Regex("failed to connect to /([^ ]+)").find(raw)
+            ?.groupValues?.get(1)?.substringBefore(" ")
+        return when {
+            raw.startsWith("Connection failed") || raw.contains("ECONNREFUSED") -> when {
+                failedHost == "127.0.0.1" ->
+                    "Couldn't reach your Mac over USB. Plug in the cable, or scan the QR code on the Mac instead."
+                failedHost != null ->
+                    "Couldn't reach your Mac at $failedHost. If the phone is on different Wi-Fi, scan the Remote Relay QR on the Mac."
+                else ->
+                    "Couldn't reach your Mac. Keep LinkToMac open on the Mac, then try USB or QR again."
+            }
+            raw.startsWith("Connected") -> when {
+                raw.contains("USB") -> "Connected over USB"
+                raw.contains("Remote Relay") -> "Connected over Remote Relay"
+                else -> "Connected over Wi-Fi"
+            }
+            raw.startsWith("Connecting to") -> "Connecting to your Mac…"
+            raw.startsWith("Reconnecting to") -> "Reconnecting…"
+            raw.startsWith("Waiting for Mac") -> "Waiting for your Mac…"
+            raw == "Disconnected" -> "Not connected"
+            else -> raw
         }
-        raw.startsWith("Connecting to") -> "Connecting to your Mac…"
-        raw.startsWith("Reconnecting to") -> "Reconnecting…"
-        raw.startsWith("Waiting for Mac") -> "Waiting for your Mac…"
-        raw == "Disconnected" -> "Not connected"
-        else -> raw
     }
 
     @Composable
