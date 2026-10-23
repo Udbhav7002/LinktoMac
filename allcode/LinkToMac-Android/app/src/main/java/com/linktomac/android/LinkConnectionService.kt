@@ -63,8 +63,9 @@ class LinkConnectionService : Service() {
         val savedHost = prefs.getString("lastHost", null)
         val savedPort = prefs.getInt("lastPort", 54921)
         val savedToken = prefs.getString("lastToken", "") ?: ""
+        val savedMode = prefs.getString("lastMode", "") ?: ""
         if (!savedHost.isNullOrBlank()) {
-            connectToMac(savedHost, savedPort, savedToken)
+            connectToMac(savedHost, savedPort, savedToken, savedMode)
         }
     }
 
@@ -77,13 +78,14 @@ class LinkConnectionService : Service() {
             val port = intent.getIntExtra("port", 54921)
             val token = intent.getStringExtra("token") ?: ""
             val macName = intent.getStringExtra("macName") ?: ""
+            val mode = intent.getStringExtra("mode") ?: ""
             if (macName.isNotBlank()) {
                 connectedMacName = macName
                 getSharedPreferences("linktomac", MODE_PRIVATE).edit()
                     .putString("lastMacName", macName)
                     .apply()
             }
-            connectToMac(host, port, token)
+            connectToMac(host, port, token, mode)
         } else if (action == "DISCONNECT") {
             userRequestedDisconnect = true
             reconnectJob?.cancel()
@@ -138,24 +140,27 @@ class LinkConnectionService : Service() {
      * @param port Target TCP port.
      * @param token Authentication / pairing token.
      */
-    fun connectToMac(host: String, port: Int, token: String) {
+    fun connectToMac(host: String, port: Int, token: String, mode: String = "") {
         userRequestedDisconnect = false
         reconnectJob?.cancel()
         serviceScope.launch {
             closeSocketInternal()
             try {
                 statusMessage = "Connecting to $host:$port..."
-                val isLocal = host == "127.0.0.1" || host == "localhost" ||
+                val isLocal = mode != "remote" && (
+                    host == "127.0.0.1" || host == "localhost" ||
                     host.startsWith("10.") || host.startsWith("192.168.") ||
                     host.startsWith("172.") || host.endsWith(".local")
+                )
                 val caPem = getSharedPreferences("linktomac", MODE_PRIVATE)
                     .getString("ca_cert_pem", null)
 
-                val s = if (isLocal || caPem.isNullOrEmpty()) {
+                // Remote Relay and unconfigured TLS always use raw TCP socket with 5s timeout
+                val s = if (isLocal || mode == "remote" || caPem.isNullOrEmpty()) {
                     val raw = Socket()
                     raw.tcpNoDelay = true
                     raw.keepAlive = true
-                    raw.connect(InetSocketAddress(host, port), 4000)
+                    raw.connect(InetSocketAddress(host, port), 5000)
                     raw
                 } else {
                     makeTlsSocket(host, port, caPem)
@@ -164,15 +169,22 @@ class LinkConnectionService : Service() {
                 socket = s
                 outputStream = s.getOutputStream()
                 isConnectedState = true
-                val transport = if (host == "127.0.0.1") "USB" else if (isLocal) "Local Wi-Fi" else "Remote Relay"
+                val transport = when {
+                    host == "127.0.0.1" -> "USB"
+                    mode == "remote" -> "Remote Relay"
+                    isLocal -> "Local Wi-Fi"
+                    else -> "Remote Relay"
+                }
                 statusMessage = "Connected ($transport • $host)"
                 startForegroundNotification("Connected to Mac ($transport)")
 
-                // Save last successful host
+                // Save last successful host, transport, and mode
                 getSharedPreferences("linktomac", MODE_PRIVATE).edit()
                     .putString("lastHost", host)
                     .putInt("lastPort", port)
                     .putString("lastToken", token)
+                    .putString("lastTransport", transport)
+                    .putString("lastMode", if (transport == "Remote Relay") "remote" else "local")
                     .apply()
 
                 sendHelloAndStatus(transport, token)
@@ -483,9 +495,27 @@ class LinkConnectionService : Service() {
                 if (isConnectedState || userRequestedDisconnect) break
 
                 val prefs = getSharedPreferences("linktomac", MODE_PRIVATE)
-                val targetHost = if (discoveredMacHost.isNotEmpty()) discoveredMacHost else prefs.getString("lastHost", null)
-                val targetPort = if (discoveredMacHost.isNotEmpty()) discoveredMacPort else prefs.getInt("lastPort", 54921)
+                val savedMode = prefs.getString("lastMode", "") ?: ""
+                val savedHost = prefs.getString("lastHost", null)
+                val savedPort = prefs.getInt("lastPort", 54921)
                 val targetToken = prefs.getString("lastToken", "") ?: ""
+
+                // If last session was Remote Relay, prioritize savedHost over stale mDNS
+                val targetHost = if (savedMode == "remote" && !savedHost.isNullOrBlank()) {
+                    savedHost
+                } else if (discoveredMacHost.isNotEmpty()) {
+                    discoveredMacHost
+                } else {
+                    savedHost
+                }
+
+                val targetPort = if (savedMode == "remote" && !savedHost.isNullOrBlank()) {
+                    savedPort
+                } else if (discoveredMacHost.isNotEmpty()) {
+                    discoveredMacPort
+                } else {
+                    savedPort
+                }
 
                 if (!targetHost.isNullOrBlank()) {
                     statusMessage = "Reconnecting to $targetHost:$targetPort..."
@@ -493,11 +523,23 @@ class LinkConnectionService : Service() {
                         val s = Socket()
                         s.tcpNoDelay = true
                         s.keepAlive = true
-                        s.connect(InetSocketAddress(targetHost, targetPort), 4000)
+                        s.connect(InetSocketAddress(targetHost, targetPort), 5000)
                         socket = s
                         outputStream = s.getOutputStream()
                         isConnectedState = true
-                        val transport = if (targetHost == "127.0.0.1") "USB" else "Local Wi-Fi"
+
+                        val isLocal = savedMode != "remote" && (
+                            targetHost == "127.0.0.1" || targetHost == "localhost" ||
+                            targetHost.startsWith("10.") || targetHost.startsWith("192.168.") ||
+                            targetHost.startsWith("172.") || targetHost.endsWith(".local")
+                        )
+                        val transport = when {
+                            targetHost == "127.0.0.1" -> "USB"
+                            savedMode == "remote" -> "Remote Relay"
+                            isLocal -> "Local Wi-Fi"
+                            else -> "Remote Relay"
+                        }
+
                         statusMessage = "Connected ($transport • $targetHost)"
                         startForegroundNotification("Connected to Mac ($transport)")
 

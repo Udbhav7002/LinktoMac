@@ -117,7 +117,17 @@ final class ConnectionManager: ObservableObject {
                 switch state {
                 case .ready:
                     self.isConnected = true
-                    self.connectionTransport = isLoopback ? "USB" : "Local Wi-Fi"
+                    if isLoopback {
+                        if ADBBridge.shared.isUSBDeviceConnected {
+                            self.connectionTransport = "USB"
+                        } else if PinggyTunnelManager.shared.isRunning {
+                            self.connectionTransport = "Remote Relay"
+                        } else {
+                            self.connectionTransport = "USB"
+                        }
+                    } else {
+                        self.connectionTransport = "Local Wi-Fi"
+                    }
                     self.sendHello()
                     self.readNextChunk(from: connection)
                 case .failed, .cancelled:
@@ -221,7 +231,13 @@ final class ConnectionManager: ObservableObject {
             if let batStr = env.payload["battery"], let bat = Int(batStr) { self.batteryLevel = bat }
             if let chg = env.payload["charging"] { self.isCharging = (chg == "true") }
             if let trans = env.payload["transport"] {
-                self.connectionTransport = ADBBridge.shared.isUSBDeviceConnected ? "USB" : trans
+                if ADBBridge.shared.isUSBDeviceConnected {
+                    self.connectionTransport = "USB"
+                } else if trans == "Remote Relay" || PinggyTunnelManager.shared.isRunning {
+                    self.connectionTransport = "Remote Relay"
+                } else {
+                    self.connectionTransport = trans
+                }
             }
             if let ringer = env.payload["ringerMode"] { self.ringerMode = ringer }
             if let track = env.payload["mediaTitle"], !track.isEmpty {

@@ -127,24 +127,31 @@ private struct SidebarView: View {
 // MARK: - Unified live connection pill (reused concept on Android + web)
 struct StatusPill: View {
     @ObservedObject var conn = ConnectionManager.shared
+    @ObservedObject var tunnel = PinggyTunnelManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: LS.s) {
             HStack(spacing: LS.s) {
-                StatusDot(state: conn.isConnected ? .connected : .waiting)
+                StatusDot(state: conn.isConnected ? .connected : (tunnel.isRunning ? .waiting : .disconnected))
                 Text(conn.isConnected ? conn.connectedDeviceName : "Waiting for Android")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(LinkTheme.textPrimary)
                     .lineLimit(1)
             }
             HStack(spacing: LS.s) {
-                Label(
-                    conn.isConnected ? conn.connectionTransport : "Port \(conn.listenPort)",
-                    systemImage: conn.connectionTransport == "USB" ? "cable.connector" : "wifi"
-                )
                 if conn.isConnected {
+                    Label(
+                        conn.connectionTransport,
+                        systemImage: transportIcon(for: conn.connectionTransport)
+                    )
                     Text("·").foregroundStyle(LinkTheme.textTertiary)
                     Label("\(conn.batteryLevel)%", systemImage: batterySymbol)
+                } else {
+                    if tunnel.isRunning, let port = tunnel.publicPort {
+                        Label("Relay :\(port)", systemImage: "globe")
+                    } else {
+                        Label("Port \(conn.listenPort)", systemImage: "wifi")
+                    }
                 }
             }
             .font(.caption)
@@ -160,6 +167,14 @@ struct StatusPill: View {
         )
         .padding(.horizontal, LS.m)
         .accessibilityElement(children: .combine)
+    }
+
+    private func transportIcon(for transport: String) -> String {
+        switch transport {
+        case "USB":          return "cable.connector"
+        case "Remote Relay": return "globe"
+        default:             return "wifi"
+        }
     }
 
     private var batterySymbol: String {

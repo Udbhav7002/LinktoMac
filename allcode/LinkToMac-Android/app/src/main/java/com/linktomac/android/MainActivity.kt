@@ -76,18 +76,28 @@ class MainActivity : ComponentActivity() {
             ActivityResultContracts.RequestMultiplePermissions()
         ) { _ -> permissionTick++ }
 
-        // QR scanner launcher (unchanged parsing)
+        // QR scanner launcher (sanitizes schemes and forwards mode)
         val qrLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
             val contents = result.contents ?: return@rememberLauncherForActivityResult
             try {
                 val json = JSONObject(contents)
-                val h = json.optString("host")
-                val p = json.optInt("port", 54921)
+                var rawHost = json.optString("host").trim()
+                var p = json.optInt("port", 54921)
                 val t = json.optString("token")
                 val n = json.optString("macName")
-                if (h.isNotEmpty()) {
+                val mode = json.optString("mode", "")
+
+                // Sanitize URL schemes and embedded ports
+                rawHost = rawHost.removePrefix("tcp://").removePrefix("http://").removePrefix("https://")
+                if (rawHost.contains(":")) {
+                    val parts = rawHost.split(":")
+                    rawHost = parts[0]
+                    parts[1].toIntOrNull()?.let { p = it }
+                }
+
+                if (rawHost.isNotEmpty()) {
                     tokenInput = t
-                    triggerConnect(h, p, t, n)
+                    triggerConnect(rawHost, p, t, n, mode)
                 }
             } catch (_: Exception) {}
         }
@@ -135,7 +145,20 @@ class MainActivity : ComponentActivity() {
                         qrLauncher.launch(options)
                     },
                     onConnectUSB = { triggerConnect("127.0.0.1", 54921, tokenInput) },
-                    onConnectManual = { ip -> triggerConnect(ip.trim(), 54921, tokenInput) }
+                    onConnectManual = { input ->
+                        var raw = input.trim().removePrefix("tcp://").removePrefix("http://")
+                        var port = 54921
+                        if (raw.contains(":")) {
+                            val parts = raw.split(":")
+                            raw = parts[0]
+                            parts[1].toIntOrNull()?.let { port = it }
+                        }
+                        val isLocal = raw == "127.0.0.1" || raw == "localhost" ||
+                            raw.startsWith("10.") || raw.startsWith("192.168.") ||
+                            raw.startsWith("172.") || raw.endsWith(".local")
+                        val mode = if (!isLocal && raw != "127.0.0.1") "remote" else ""
+                        triggerConnect(raw, port, tokenInput, mode = mode)
+                    }
                 )
             }
 
@@ -283,8 +306,11 @@ class MainActivity : ComponentActivity() {
     private fun friendlyStatus(raw: String): String = when {
         raw.startsWith("Connection failed") || raw.contains("ECONNREFUSED") ->
             "Couldn't reach your Mac. Keep LinkToMac open on the Mac, then try USB or QR again."
-        raw.startsWith("Connected") ->
-            if (raw.contains("USB")) "Connected over USB" else "Connected over Wi-Fi"
+        raw.startsWith("Connected") -> when {
+            raw.contains("USB") -> "Connected over USB"
+            raw.contains("Remote Relay") -> "Connected over Remote Relay"
+            else -> "Connected over Wi-Fi"
+        }
         raw.startsWith("Connecting to") -> "Connecting to your Mac…"
         raw.startsWith("Reconnecting to") -> "Reconnecting…"
         raw.startsWith("Waiting for Mac") -> "Waiting for your Mac…"
@@ -711,13 +737,14 @@ class MainActivity : ComponentActivity() {
         }.start()
     }
 
-    private fun triggerConnect(host: String, port: Int, token: String, macName: String = "") {
+    private fun triggerConnect(host: String, port: Int, token: String, macName: String = "", mode: String = "") {
         startService(Intent(this, LinkConnectionService::class.java).apply {
             action = "CONNECT_HOST"
             putExtra("host", host)
             putExtra("port", port)
             putExtra("token", token)
             putExtra("macName", macName)
+            putExtra("mode", mode)
         })
     }
 }
