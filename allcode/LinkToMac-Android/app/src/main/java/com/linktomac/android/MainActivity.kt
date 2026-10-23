@@ -140,7 +140,9 @@ class MainActivity : ComponentActivity() {
                             setDesiredBarcodeFormats(ScanOptions.QR_CODE)
                             setPrompt("Scan the LinkToMac QR Code on your Mac")
                             setBeepEnabled(false)
-                            setOrientationLocked(true)
+                            // false = follow device rotation; the zxing capture
+                            // activity is landscape-declared, so locking keeps it sideways.
+                            setOrientationLocked(false)
                         }
                         qrLauncher.launch(options)
                     },
