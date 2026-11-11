@@ -407,7 +407,7 @@ def generate_all_code():
     bundle_out.parent.mkdir(parents=True, exist_ok=True)
     bundle_out.write_text(output_text, encoding="utf-8")
 
-    print(f"Successfully generated all_code.md!")
+    print("Successfully generated all_code.md!")
     print(f"  - Root file:   {root_out} ({root_out.stat().st_size:,} bytes)")
     print(f"  - Bundle file: {bundle_out} ({bundle_out.stat().st_size:,} bytes)")
     print(f"  - Total files included: {total_files}")

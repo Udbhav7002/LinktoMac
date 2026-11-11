@@ -1,6 +1,5 @@
 """Configuration constants for LinktoMac"""
 
-import os
 import sys
 from pathlib import Path
 

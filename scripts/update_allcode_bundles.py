@@ -7,7 +7,6 @@ docs/bundles/linktomac_complete_macos_source_code.md.
 Dynamically discovers all files so no piece of code is ever missed.
 """
 
-import os
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent

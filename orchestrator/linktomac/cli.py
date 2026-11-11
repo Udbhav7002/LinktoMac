@@ -1,7 +1,6 @@
 import argparse
 import sys
 import time
-import socket
 import logging
 import os
 import subprocess

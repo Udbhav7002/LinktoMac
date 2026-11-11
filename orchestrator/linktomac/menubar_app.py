@@ -3,7 +3,6 @@ LinktoMac Menu Bar App
 Stub — full implementation coming in Phase 2.
 Falls back to the standard webview UI if rumps is not installed.
 """
-import sys
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,7 +10,7 @@ logger = logging.getLogger(__name__)
 def main():
     logger.info("Menu bar mode requested")
     try:
-        import rumps
+        import rumps  # noqa: F401 — imported to probe availability
         _run_menubar()
     except ImportError:
         logger.warning("rumps not installed — falling back to standard window UI")
@@ -20,7 +19,6 @@ def main():
 def _run_window_fallback():
     """Launch the standard webview window when rumps isn't available."""
     import webview
-    from pathlib import Path
     from linktomac.backend import LinktoMacBackend
     from linktomac import config
 
@@ -90,8 +88,6 @@ def _run_window_fallback():
 def _run_menubar():
     """Quiet Premium rumps menu bar implementation."""
     import rumps
-    import json
-    import threading
     from linktomac.backend import LinktoMacBackend
 
     backend = LinktoMacBackend()
