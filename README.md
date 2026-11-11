@@ -1,71 +1,58 @@
-<p align="center">
-  <img src="assets/AppIcon.png" alt="LinkToMac Icon" width="128" height="128" style="border-radius: 28px;">
-</p>
+# LinktoMac
 
-<h1 align="center">LinkToMac</h1>
+<img src="assets/AppIcon.png" width="80" alt="LinkToMac icon">
 
-<p align="center">
-  <strong>Ultra-low latency Android workspace bridge & continuity suite for macOS.</strong><br>
-  Engineered natively with Apple VideoToolbox, Metal, SwiftUI, and Jetpack Compose.
-</p>
+Control your Android phone from your Mac: hardware-decoded screen mirroring, two-way clipboard sync, file and photo access, SMS threads with call alerts, and full touch/keyboard input from the macOS window.
 
-<p align="center">
-  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/macOS-13%2B%20Ventura%20%2F%20Sonoma%20%2F%20Sequoia-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS"></a>
-  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/Android-11%20to%2015%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android"></a>
-  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/Decoder-VideoToolbox%20%2B%20Metal-18181B?style=for-the-badge&logo=apple" alt="VideoToolbox"></a>
-  <a href="https://github.com/Udbhav7002/LinktoMac"><img src="https://img.shields.io/badge/Latency-%3C%202ms%20(USB)%20%7C%20%3C%208ms%20(Wi--Fi)-10b981?style=for-the-badge" alt="Latency"></a>
-  <a href="https://github.com/Udbhav7002/LinktoMac/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-gray?style=for-the-badge" alt="License"></a>
-</p>
+Requires macOS 13+ (Apple Silicon or Intel) and Android 11–15. No root required.
 
----
+## Download
 
-## 🚀 Fast Downloads
+Prebuilt installers are on the [releases page](https://github.com/Udbhav7002/LinktoMac/releases):
 
-Download production-ready installers directly from the latest release:
+- macOS: [LinkToMac.dmg](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.dmg)
+- Android: [LinkToMac.apk](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.apk)
 
-| Platform | Download Installer | Package Details |
-| :--- | :--- | :--- |
-| **macOS** | [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.dmg) | Drag-and-drop installer for Apple Silicon & Intel (`macOS 13+`) |
-| **Android** | [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.apk) | Companion app (`Android 11–15`), zero root required |
-| **Releases** | [**Official v1.62.1 Release**](https://github.com/Udbhav7002/LinktoMac/releases/tag/v1.62.1) | Release notes, standalone ZIP, and signature checksums |
+SHA-256 checksums for the release artifacts are in [`release/SHA256SUMS.txt`](release/SHA256SUMS.txt).
 
-*Cryptographic verification checksums for all distribution artifacts are published in [`release/SHA256SUMS.txt`](release/SHA256SUMS.txt).*
+## Install
 
----
+### macOS
 
-## ✨ Key Features
+1. Open the DMG and drag LinkToMac.app into Applications.
+2. Launch it from Applications, Launchpad, or Spotlight.
+3. If Gatekeeper blocks the unnotarized build on first open:
 
-```text
-+---------------------------------------------------------------------------------------+
-|                                    LINKTOMAC SUITE                                    |
-+---------------------------------------------------------------------------------------+
-|  📺 Hardware Mirroring    | Sub-2ms 60fps streaming via Apple VideoToolbox & Metal.   |
-|  📋 Universal Clipboard   | Seamless two-way pasteboard synchronization.             |
-|  📁 Files & Photo Gallery | Direct device filesystem access with drag-and-drop.       |
-|  💬 Messages & Call HUD   | Live SMS conversation threads & desktop incoming alerts.  |
-|  🖱️ Touch & Keyboard      | Kinetic trackpad scrolling, native IME typing, gestures.  |
-|  🧭 Menu Bar Companion    | Lightweight popover for battery, media controls & alerts. |
-+---------------------------------------------------------------------------------------+
-```
+   ```bash
+   xattr -cr /Applications/LinkToMac.app
+   ```
 
-### 1. Hardware-Accelerated Mirroring (Sub-2ms)
-- **Zero-Copy Pipeline**: Hardware-encoded H.265/HEVC or H.264 video streams from Android `MediaCodec` are decompressed directly to GPU memory via Apple `VideoToolbox`.
-- **Direct Metal Shaders**: Display frames render onto an optimized `CAMetalLayer` surface synchronized with Retina display refresh rates (60–120Hz ProMotion).
+### Android
 
-### 2. Universal Clipboard Sync
-- Instant bidirectional text and link transfer between macOS `NSPasteboard` and Android system clipboard with zero manual triggers.
+1. Install the APK (allow installs from unknown sources if prompted), or install over USB from your Mac:
 
-### 3. Native macOS SwiftUI Experience
-- Built from the ground up in modern SwiftUI adhering to Apple Human Interface Guidelines: Quiet Premium matte design tokens, sidebar workspace navigation, and native system appearance (Light & Dark mode).
+   ```bash
+   adb install -r public/downloads/LinkToMac.apk
+   ```
 
-### 4. Direct USB & Wireless Zero-Config
-- **Direct USB-C**: Sub-2ms latency over standard ADB reverse socket forwarding (`tcp:54921`). Bypasses Wi-Fi congestion entirely and works offline.
-- **Wireless LAN**: Automatic zero-configuration discovery via Apple Bonjour / mDNS (`_linktomac._tcp`) with 6-digit PIN handshake verification.
-- **Remote Relay**: Dynamic SSH reverse tunneling for remote assistance across different networks.
+2. Open LinkToMac on the phone and enable the LinkToMac Accessibility Service. This is required for touch and gesture injection.
 
----
+## What it does
 
-## 🛠️ System Architecture
+- **Screen mirroring** — Android `MediaProjection` frames are hardware-encoded to H.265/HEVC or H.264 by `MediaCodec` and decoded on the Mac by VideoToolbox directly into GPU memory, then rendered with Metal on a `CAMetalLayer` at the display refresh rate (60–120 Hz ProMotion). Measured latency is under 2 ms over USB and under 8 ms over Wi-Fi.
+- **Clipboard sync** — text and links move both ways between the macOS `NSPasteboard` and the Android clipboard with no manual trigger.
+- **Files and photos** — direct access to the device filesystem with drag and drop.
+- **Messages and calls** — live SMS conversation threads and incoming-call alerts on the desktop.
+- **Input control** — click, drag, two-finger kinetic scrolling, gestures, and keyboard typing including IME input.
+- **Menu bar companion** — a popover with battery status, media controls, and alerts.
+
+## Connectivity
+
+- **USB-C** — ADB reverse socket forwarding (`tcp:54921`). Works offline, no Wi-Fi needed.
+- **Wi-Fi** — automatic discovery via Bonjour/mDNS (`_linktomac._tcp`), pairing confirmed with a 6-digit PIN handshake.
+- **Remote networks** — SSH reverse tunneling via Pinggy for connecting across different networks.
+
+## Architecture
 
 ```text
 [ Android Companion App ]                              [ macOS Workstation ]
@@ -79,7 +66,7 @@ Download production-ready installers directly from the latest release:
 +------------+------------+                            +---------+----------+
 |  Hardware MediaCodec    |                            |  Apple VideoToolbox|
 |  (H.265 / H.264 Annex-B)|                            |  Zero-Copy Decoder |
-+------------+------------+                            +---------^----------+
++------------+------------+                            +---------+----------+
              |                                                   |
              v                                                   |
 +------------+------------+       TCP Port 27189       +---------+----------+
@@ -94,110 +81,76 @@ Download production-ready installers directly from the latest release:
 +-------------------------+                            +--------------------+
 ```
 
----
+The Android app is Kotlin with Jetpack Compose; the macOS app is SwiftUI; the decoder is a standalone C++ client using VideoToolbox and Metal; a Python orchestrator handles connection routing and the menu bar UI.
 
-## 📦 Installation & Setup
+## Desktop controls
 
-### macOS Installation
+| macOS input | Android event |
+| :--- | :--- |
+| Click / tap | Touch down / up (`MotionEvent.ACTION_DOWN` / `ACTION_UP`) |
+| Click + drag | Swipe / drag gesture (`MotionEvent.ACTION_MOVE`) |
+| Two-finger scroll | Kinetic vertical and horizontal wheel injection |
+| Keyboard typing | Character and keycode injection |
+| Escape | Back button (`KEYCODE_BACK`) |
+| Cmd+1 | Home (`CATEGORY_HOME`) |
+| Cmd+2 | Recents (accessibility `GLOBAL_RECENTS`) |
+| Cmd+3 | Back (accessibility `GLOBAL_BACK`) |
+| Cmd+C / Cmd+V | Clipboard sync |
 
-1. Download [**`LinkToMac.dmg`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.dmg).
-2. Open the disk image and drag **LinkToMac.app** into the **Applications** folder shortcut.
-3. Launch `LinkToMac` from **Applications**, **Launchpad**, or **Spotlight** (`Cmd + Space`).
-4. *(If macOS Gatekeeper flags an unnotarized build on first open)*:
-   ```bash
-   xattr -cr /Applications/LinkToMac.app
-   ```
+## Building from source
 
-### Android Installation
+Prerequisites: macOS 13+ with Xcode Command Line Tools (`xcode-select --install`), CMake (`brew install cmake`), and Android Studio or the Android SDK with platform tools.
 
-1. Download [**`LinkToMac.apk`**](https://github.com/Udbhav7002/LinktoMac/releases/latest/download/LinkToMac.apk) onto your device and tap **Install** (allow *Install from Unknown Sources* if prompted).
-2. Or install directly from your Mac terminal over USB:
-   ```bash
-   adb install -r public/downloads/LinkToMac.apk
-   ```
-3. Open **LinkToMac** on your phone and enable the **LinkToMac Accessibility Service** (required for touch and gesture injection).
-
----
-
-## ⌨️ Desktop Shortcuts & Controls
-
-| macOS Action | Android Emulated Event | Trigger |
-| :--- | :--- | :--- |
-| **Click / Tap** | Touch Down / Up | `MotionEvent.ACTION_DOWN / UP` |
-| **Click + Drag** | Swipe / Drag Gesture | `MotionEvent.ACTION_MOVE` |
-| **Two-Finger Scroll**| Kinetic Vertical & Horizontal Wheel | Smooth pixel-ratio wheel injection |
-| **Keyboard Typing** | Direct Character & Keycode Injection | Native macOS key bridge |
-| **Escape Key** | Android Back Button | Keycode 4 (`KEYCODE_BACK`) |
-| **Command + 1** | Return Home | Intent `CATEGORY_HOME` |
-| **Command + 2** | App Switcher (Recents) | Accessibility `GLOBAL_RECENTS` |
-| **Command + 3** | Back Navigation | Accessibility `GLOBAL_BACK` |
-| **Command + C / V** | Universal Clipboard Sync | Instant dual-direction sync hook |
-
----
-
-## 🏗️ Building from Source
-
-### Prerequisites
-- macOS 13+ with Xcode Command Line Tools installed (`xcode-select --install`)
-- CMake (`brew install cmake`)
-- Android Studio or Android SDK with platform tools installed
-
-### 1. Build macOS Application
 ```bash
-# Build standalone native SwiftUI app bundle & DMG installer
+# Build the macOS app bundle and DMG installer
 cd allcode/LinkToMac-macOS
 bash build_mac_app.sh
 
-# Open newly built bundle
+# Open the newly built bundle
 open build/LinkToMac.app
 ```
 
-### 2. Build Android Companion App
 ```bash
+# Build the Android companion app
 cd allcode/LinkToMac-Android
 ./gradlew assembleDebug
 
-# Deploy directly to connected Android device
+# Deploy directly to a connected device
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### 3. Generate Complete Release Suite
-To compile both macOS and Android artifacts, generate checksums, and package the release directory in one step:
 ```bash
+# Build both platforms, generate checksums, and package the release directory
 make release
 ```
 
----
-
-## 📂 Repository Layout
+## Repository layout
 
 ```text
 LinktoMac/
 ├── allcode/
-│   ├── LinkToMac-macOS/      # Native macOS SwiftUI application (App, Views, Managers)
-│   └── LinkToMac-Android/    # Android companion app (Kotlin, Jetpack Compose, Services)
-├── assets/                   # High-res icons (AppIcon.icns, AppIcon.png) & banners
-├── native-client/            # C++ Apple VideoToolbox / Metal hardware decoding client
-├── orchestrator/             # Lightweight Python connection router & webview bridge
-├── public/                   # Web landing portal & distribution downloads
-│   └── downloads/            # Distribution binaries (LinkToMac.dmg, LinkToMac.apk)
-├── release/                  # Checksums (SHA256SUMS.txt) & installation documentation
-├── scripts/                  # Build, packaging (make_release.sh) & export scripts
-└── tests/                    # Multi-tier adversarial stress test harnesses
+│   ├── LinkToMac-macOS/      # macOS SwiftUI application (App, Views, Managers)
+│   └── LinkToMac-Android/    # Android companion app (Kotlin, Jetpack Compose)
+├── android-app/              # Android companion app sources
+├── android-server/           # Java screen capture and input server
+├── assets/                   # Icons (AppIcon.icns, AppIcon.png) and banners
+├── docs/                     # Design docs and audits
+├── native-client/            # C++ VideoToolbox / Metal decoding client
+├── orchestrator/             # Python connection router and menu bar UI
+├── public/                   # Landing page and distribution downloads
+├── release/                  # SHA256SUMS.txt and installation docs
+├── scripts/                  # Build and packaging scripts (make_release.sh)
+└── tests/                    # Adversarial stress test harnesses
 ```
 
----
+## Privacy
 
-## 🔒 Security & Privacy Philosophy
+- Screen video and input events travel directly over the local network or USB cable; there are no relay servers in the path.
+- Video frames are decompressed into GPU texture memory and never written to disk.
+- No accounts, subscriptions, or telemetry. Pairing uses a local PIN handshake.
 
-1. **100% Local-First**: Screen video streams and input events travel directly over your local Wi-Fi subnet or physical USB-C cable. Zero intermediary relay servers can intercept or view your display frames.
-2. **Ephemeral Memory Pipeline**: Video frames are decompressed directly into GPU texture memory with zero frames written to disk.
-3. **No Mandatory Accounts**: LinkToMac operates out-of-the-box with PIN-based local handshakes. No subscriptions, logins, or telemetry tracking required.
+Note on committed Firebase configuration: this repository includes `google-services.json` files (under `android-app/app/` and `allcode/LinkToMac-Android/app/`). These are Firebase client config files, which are public by design — the API key identifies the app to Firebase and is not a secret. Access is protected through Firebase console restrictions (package-name/SHA fingerprint restrictions and security rules), not key secrecy.
 
-> **Note on committed Firebase configuration**: This repository includes `google-services.json` files (under `android-app/app/` and `allcode/LinkToMac-Android/app/`). These are **public-by-design client configuration**: Firebase Android API keys identify the application to Firebase services and are not secrets. Access is protected through Firebase console restrictions (package-name/SHA fingerprint restrictions and security rules) rather than key secrecy.
+## License
 
----
-
-## 📄 License
-
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
