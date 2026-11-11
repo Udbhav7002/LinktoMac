@@ -194,6 +194,8 @@ LinktoMac/
 2. **Ephemeral Memory Pipeline**: Video frames are decompressed directly into GPU texture memory with zero frames written to disk.
 3. **No Mandatory Accounts**: LinkToMac operates out-of-the-box with PIN-based local handshakes. No subscriptions, logins, or telemetry tracking required.
 
+> **Note on committed Firebase configuration**: This repository includes `google-services.json` files (under `android-app/app/` and `allcode/LinkToMac-Android/app/`). These are **public-by-design client configuration**: Firebase Android API keys identify the application to Firebase services and are not secrets. Access is protected through Firebase console restrictions (package-name/SHA fingerprint restrictions and security rules) rather than key secrecy.
+
 ---
 
 ## 📄 License
