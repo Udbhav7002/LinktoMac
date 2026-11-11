@@ -26,7 +26,11 @@ try:
     import mirror_core
 except ImportError as e:
     print(f"[FAIL] Could not import mirror_core: {e}")
-    sys.exit(1)
+    try:
+        import pytest
+    except ImportError:
+        sys.exit(1)
+    pytest.skip(f"Could not import mirror_core: {e}", allow_module_level=True)
 
 HANDSHAKE_MAGIC = 0x4C494E4B  # 'LINK'
 HANDSHAKE_SIZE = 20

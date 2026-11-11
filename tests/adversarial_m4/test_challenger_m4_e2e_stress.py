@@ -22,7 +22,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CLIENT_BIN = REPO_ROOT / "native-client" / "build" / "mirror_client"
-CORE_SO = REPO_ROOT / "native-client" / "build" / "mirror_core.cpython-314-darwin.so"
+_CORE_BUILD = REPO_ROOT / "native-client" / "build"
+_core_so_candidates = sorted(_CORE_BUILD.glob("mirror_core*.so"))
+CORE_SO = _core_so_candidates[0] if _core_so_candidates else _CORE_BUILD / "mirror_core.so"
 APK_PATH = REPO_ROOT / "android-app" / "app" / "build" / "outputs" / "apk" / "debug" / "app-debug.apk"
 
 MAGIC = 0x4C494E4B  # "LINK"

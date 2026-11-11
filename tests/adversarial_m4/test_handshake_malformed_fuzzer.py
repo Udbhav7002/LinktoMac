@@ -28,7 +28,7 @@ def create_packet(magic, version, width, height, flags):
     return struct.pack("!IIIII", magic, version, width, height, flags)
 
 
-def test_handshake_case(name, payload, should_succeed=False, close_after=True, send_delay=0.0, timeout=2.5):
+def handshake_case(name, payload, should_succeed=False, close_after=True, send_delay=0.0, timeout=2.5):
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_sock.bind(("127.0.0.1", 0))
@@ -105,7 +105,7 @@ def run_all():
     print("\n--- 1. Truncated Packets Stress ---")
     valid_pkt = create_packet(MAGIC, VERSION_V2, 1080, 1920, 0)
     for length in [0, 1, 2, 4, 15, 16, 19]:
-        test_handshake_case(
+        handshake_case(
             f"Truncated handshake ({length} bytes / 20)",
             valid_pkt[:length],
             should_succeed=False,
@@ -124,7 +124,7 @@ def run_all():
     ]
     for label, magic_val in bad_magics:
         pkt = create_packet(magic_val, VERSION_V2, 1080, 1920, 0)
-        test_handshake_case(f"Bad Magic: {label}", pkt, should_succeed=False)
+        handshake_case(f"Bad Magic: {label}", pkt, should_succeed=False)
 
     # 3. Version Invariants
     print("\n--- 3. Protocol Version Hardening ---")
@@ -137,7 +137,7 @@ def run_all():
     ]
     for label, ver in bad_versions:
         pkt = create_packet(MAGIC, ver, 1080, 1920, 0)
-        test_handshake_case(f"Unsupported: {label}", pkt, should_succeed=False)
+        handshake_case(f"Unsupported: {label}", pkt, should_succeed=False)
 
     # 4. Dimension Boundary & Malformed Resolution Stress
     print("\n--- 4. Dimension Boundary & Overflow Stress ---")
@@ -153,13 +153,13 @@ def run_all():
     ]
     for label, w, h in bad_dims:
         pkt = create_packet(MAGIC, VERSION_V2, w, h, 0)
-        test_handshake_case(f"Dimension Boundary: {label}", pkt, should_succeed=False)
+        handshake_case(f"Dimension Boundary: {label}", pkt, should_succeed=False)
 
     # 5. Fragmented TCP Delivery (Slow LORIS byte-by-byte handshake)
     print("\n--- 5. Fragmented TCP Byte-by-Byte Handshake ---")
     pkt = create_packet(MAGIC, VERSION_V2, 1080, 1920, 0)
     # 20 bytes delivered 1 byte at a time with 5ms sleep: mirror_client must assemble accurately
-    test_handshake_case(
+    handshake_case(
         "Fragmented TCP (1 byte every 5ms, 20 bytes total)",
         pkt,
         should_succeed=True,
